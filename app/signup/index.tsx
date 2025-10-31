@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
+import { authStorage } from "../../utils/auth";
 import InfoStep from "./components/InfoStep";
 import PasswordStep from "./components/PasswordStep";
 import OTPStep from "./components/OTPStep";
@@ -35,6 +36,10 @@ export default function SignUp() {
   const [timer, setTimer] = useState(59);
 
   useEffect(() => {
+    checkLoginStatus();
+  }, []);
+
+  useEffect(() => {
     if (step === "otp" && timer > 0) {
       const interval = setInterval(() => {
         setTimer((prev) => prev - 1);
@@ -43,7 +48,14 @@ export default function SignUp() {
     }
   }, [step, timer]);
 
-  const handleContinue = () => {
+  const checkLoginStatus = async () => {
+    const isLoggedIn = await authStorage.isLoggedIn();
+    if (isLoggedIn) {
+      router.replace("/(tabs)");
+    }
+  };
+
+  const handleContinue = async () => {
     if (step === "info") {
       setStep("password");
     } else if (step === "password") {
@@ -64,6 +76,14 @@ export default function SignUp() {
     } else {
       // Handle final submission
       console.log("Sign up complete");
+
+      // After successful signup, set loggedIn to true
+      try {
+        await authStorage.setLoggedIn();
+        router.replace("/(tabs)");
+      } catch (error) {
+        console.error("Error saving login status:", error);
+      }
     }
   };
 
