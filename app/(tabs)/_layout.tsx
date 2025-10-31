@@ -38,12 +38,7 @@ export default function TabLayout() {
         name="index"
         options={{
           tabBarIcon: ({ color, focused }) => (
-            <View
-              style={[
-                styles.iconContainer,
-                focused && styles.activeIconContainer,
-              ]}
-            >
+            <View style={styles.iconContainer}>
               <Ionicons name="home" size={24} color={color} />
             </View>
           ),
