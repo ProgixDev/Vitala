@@ -1,8 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Image,
   KeyboardAvoidingView,
@@ -14,11 +13,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { authStorage } from "../../utils/auth";
 import PasswordInput from "../../components/PasswordInput";
+import { authStorage } from "../../utils/auth";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
@@ -31,7 +27,7 @@ export default function SignIn() {
   const checkLoginStatus = async () => {
     const isLoggedIn = await authStorage.isLoggedIn();
     if (isLoggedIn) {
-      router.replace("/(tabs)");
+      router.replace("/(tabs)" as any);
     }
   };
 
@@ -40,11 +36,9 @@ export default function SignIn() {
     console.log("Sign in with:", email, password);
     // TODO: Add actual authentication logic here
     // For now, navigate to tabs
-    router.replace("/(tabs)" as any);
-    // After successful login, set loggedIn to true
     try {
       await authStorage.setLoggedIn();
-      router.replace("/(tabs)");
+      router.replace("/(tabs)" as any);
     } catch (error) {
       console.error("Error saving login status:", error);
     }
