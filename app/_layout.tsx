@@ -20,8 +20,8 @@ export default function RootLayout() {
         <Stack.Screen name="signin/index" />
         <Stack.Screen name="signup/index" />
 
-        {/* Authenticated pages - HAS DRAWER */}
-        <Stack.Screen name="(drawer)" />
+        {/* Authenticated pages - HAS TABS + DRAWER */}
+        <Stack.Screen name="(tabs)" />
       </Stack>
     </DrawerProvider>
   );

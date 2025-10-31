@@ -11,6 +11,7 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { Ionicons, FontAwesome6 } from "@expo/vector-icons";
 import BookingComponent from "../../components/BookingComponent";
+import { useDrawer } from "../../src/navigation/drawer/DrawerProvider";
 
 const services = [
   {
@@ -87,6 +88,7 @@ export default function Home() {
     setSelectedService(null);
   };
 
+  const { toggleDrawer } = useDrawer();
   return (
     <View style={styles.container}>
       <StatusBar hidden />

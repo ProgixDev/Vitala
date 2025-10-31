@@ -9,9 +9,21 @@ export const useDrawerMenu = () => {
 
   const handleMenuItemPress = useCallback((route: string) => {
     setActiveRoute(route);
-    // Navigate to the drawer group routes
-    const drawerRoute = route.replace('/', '/(drawer)/');
-    router.push(drawerRoute as any);
+
+    // Map drawer routes to tab routes
+    const routeMapping: Record<string, string> = {
+      '/home': '/(tabs)',
+      '/schedules': '/(tabs)/schedule',
+      '/family-members': '/(tabs)/profile', // Map to profile tab
+      '/payments': '/(tabs)/profile', // Map to profile tab
+      '/medical-records': '/(tabs)/profile', // Map to profile tab
+      '/privacy-policy': '/(tabs)/profile', // Map to profile tab
+      '/help-center': '/(tabs)/profile', // Map to profile tab
+      '/settings': '/(tabs)/profile', // Map to profile tab
+    };
+
+    const targetRoute = routeMapping[route] || '/(tabs)';
+    router.push(targetRoute as any);
   }, [router]);
 
   const handleLogout = useCallback(async () => {

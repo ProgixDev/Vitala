@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
   Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,7 +30,7 @@ export default function SignIn() {
   const checkLoginStatus = async () => {
     const isLoggedIn = await authStorage.isLoggedIn();
     if (isLoggedIn) {
-      router.replace("/(tabs)");
+      router.replace("/(tabs)" as any);
     }
   };
 
