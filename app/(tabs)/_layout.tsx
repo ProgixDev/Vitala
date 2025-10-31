@@ -37,7 +37,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ color }) => (
             <View style={styles.iconContainer}>
               <Ionicons name="home" size={24} color={color} />
             </View>

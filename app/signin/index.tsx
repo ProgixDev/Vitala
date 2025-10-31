@@ -13,9 +13,8 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { authStorage } from "../../utils/auth";
+import { authStorage, CurrentUser } from "../../utils/auth";
 import PasswordInput from "../../components/PasswordInput";
-import { DrawerToggleButton } from "../../src/navigation/components/DrawerToggleButton";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
@@ -33,14 +32,37 @@ export default function SignIn() {
   };
 
   const handleContinue = async () => {
-    // Handle sign in logic
-    console.log("Sign in with:", email, password);
-    // After successful login, set loggedIn to true
+    // Validate inputs
+    if (!email || !password) {
+      alert("Please enter both email and password");
+      return;
+    }
+
     try {
+      // Validate credentials
+      const user = await authStorage.validateCredentials(email, password);
+
+      if (!user) {
+        alert("Invalid email or password");
+        return;
+      }
+
+      // Set current user (without password)
+      const currentUser: CurrentUser = {
+        fullName: user.fullName,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+      };
+      await authStorage.setCurrentUser(currentUser);
+
+      // Set logged in status
       await authStorage.setLoggedIn();
+
+      console.log("Sign in successful");
       router.replace("/(tabs)");
     } catch (error) {
-      console.error("Error saving login status:", error);
+      console.error("Error during sign in:", error);
+      alert("Error signing in. Please try again.");
     }
   };
 
@@ -62,19 +84,16 @@ export default function SignIn() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <StatusBar style="dark" />
+      <StatusBar hidden />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header with Back and Drawer Toggle */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-            <Ionicons name="arrow-back" size={28} color="#2D3142" />
-          </TouchableOpacity>
-          <DrawerToggleButton color="#2D3142" size={28} />
-        </View>
+        {/* Back Button */}
+        <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
+          <Ionicons name="arrow-back" size={28} color="#2D3142" />
+        </TouchableOpacity>
 
         {/* Logo */}
         <View style={styles.logoContainer}>
@@ -161,17 +180,12 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 40,
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
   backButton: {
     width: 48,
     height: 48,
     justifyContent: "center",
     alignItems: "flex-start",
+    marginBottom: 20,
   },
   logoContainer: {
     alignItems: "center",

@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
-import { authStorage } from "../../utils/auth";
+import { authStorage, User } from "../../utils/auth";
 import InfoStep from "./components/InfoStep";
 import PasswordStep from "./components/PasswordStep";
 import OTPStep from "./components/OTPStep";
@@ -57,6 +57,32 @@ export default function SignUp() {
 
   const handleContinue = async () => {
     if (step === "info") {
+      // Validate info fields
+      if (!fullName || !email || !phoneNumber) {
+        alert("Please fill in all fields");
+        return;
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        alert("Please enter a valid email address");
+        return;
+      }
+
+      // Validate phone format
+      const phoneRegex = /^[0-9]{10,}$/;
+      if (!phoneRegex.test(phoneNumber.replace(/\D/g, ""))) {
+        alert("Please enter a valid phone number (at least 10 digits)");
+        return;
+      }
+
+      // Validate name length
+      if (fullName.trim().length < 2) {
+        alert("Name must be at least 2 characters");
+        return;
+      }
+
       setStep("password");
     } else if (step === "password") {
       // Validate password
@@ -74,15 +100,38 @@ export default function SignUp() {
       }
       setStep("otp");
     } else {
-      // Handle final submission
-      console.log("Sign up complete");
-
-      // After successful signup, set loggedIn to true
+      // Handle final OTP verification and save user
       try {
+        // Create user object
+        const user: User = {
+          fullName,
+          email,
+          phoneNumber,
+          password: newPassword,
+        };
+
+        // Save user to storage
+        await authStorage.saveUser(user);
+
+        // Set current user (without password)
+        await authStorage.setCurrentUser({
+          fullName,
+          email,
+          phoneNumber,
+        });
+
+        // Set logged in status
         await authStorage.setLoggedIn();
+
+        console.log("Sign up complete");
         router.replace("/(tabs)");
       } catch (error) {
-        console.error("Error saving login status:", error);
+        console.error("Error completing signup:", error);
+        if (error instanceof Error) {
+          alert(error.message);
+        } else {
+          alert("Error completing signup. Please try again.");
+        }
       }
     }
   };
@@ -127,7 +176,7 @@ export default function SignUp() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <StatusBar style="dark" />
+      <StatusBar hidden />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
