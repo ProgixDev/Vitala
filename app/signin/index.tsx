@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { authStorage } from "../../utils/auth";
 import PasswordInput from "../../components/PasswordInput";
+import { DrawerToggleButton } from "../../src/navigation/components/DrawerToggleButton";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
@@ -34,7 +35,6 @@ export default function SignIn() {
   const handleContinue = async () => {
     // Handle sign in logic
     console.log("Sign in with:", email, password);
-
     // After successful login, set loggedIn to true
     try {
       await authStorage.setLoggedIn();
@@ -68,10 +68,13 @@ export default function SignIn() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Back Button */}
-        <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-          <Ionicons name="arrow-back" size={28} color="#2D3142" />
-        </TouchableOpacity>
+        {/* Header with Back and Drawer Toggle */}
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
+            <Ionicons name="arrow-back" size={28} color="#2D3142" />
+          </TouchableOpacity>
+          <DrawerToggleButton color="#2D3142" size={28} />
+        </View>
 
         {/* Logo */}
         <View style={styles.logoContainer}>
@@ -158,12 +161,17 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 40,
   },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
   backButton: {
     width: 48,
     height: 48,
     justifyContent: "center",
     alignItems: "flex-start",
-    marginBottom: 20,
   },
   logoContainer: {
     alignItems: "center",

@@ -31,7 +31,7 @@ export default function Index() {
       "Create account pressed - marking onboarding as completed and navigating to signup"
     );
     await markOnboardingCompleted();
-    router.push("/signup");
+    router.replace("/signup");
   };
 
   const handleLogin = async () => {
@@ -39,7 +39,7 @@ export default function Index() {
       "Login pressed - marking onboarding as completed and navigating to login"
     );
     await markOnboardingCompleted();
-    router.push("/signin");
+    router.replace("/signin");
   };
 
   // Show loading or onboarding based on status
