@@ -1,20 +1,19 @@
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
   Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import PasswordInput from "../../components/PasswordInput";
-import { DrawerToggleButton } from "../../src/navigation/components/DrawerToggleButton";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
@@ -24,8 +23,8 @@ export default function SignIn() {
     // Handle sign in logic
     console.log("Sign in with:", email, password);
     // TODO: Add actual authentication logic here
-    // For now, navigate to home page
-    router.replace("/(drawer)/home");
+    // For now, navigate to tabs
+    router.replace("/(tabs)" as any);
   };
 
   const handleForgotPassword = () => {
@@ -52,13 +51,10 @@ export default function SignIn() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header with Back and Drawer Toggle */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-            <Ionicons name="arrow-back" size={28} color="#2D3142" />
-          </TouchableOpacity>
-          <DrawerToggleButton color="#2D3142" size={28} />
-        </View>
+        {/* Back Button */}
+        <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
+          <Ionicons name="arrow-back" size={28} color="#2D3142" />
+        </TouchableOpacity>
 
         {/* Logo */}
         <View style={styles.logoContainer}>
@@ -145,17 +141,12 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 40,
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
   backButton: {
     width: 48,
     height: 48,
     justifyContent: "center",
     alignItems: "flex-start",
+    marginBottom: 20,
   },
   logoContainer: {
     alignItems: "center",

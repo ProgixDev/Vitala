@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { FontAwesome6, Ionicons } from "@expo/vector-icons";
+import { useDrawer } from "../../src/navigation/drawer/DrawerProvider";
 
 const services = [
   {
@@ -55,6 +56,7 @@ const services = [
 ];
 
 export default function Home() {
+  const { toggleDrawer } = useDrawer();
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
@@ -66,7 +68,7 @@ export default function Home() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <TouchableOpacity style={styles.menuButton}>
+            <TouchableOpacity style={styles.menuButton} onPress={toggleDrawer}>
               <Ionicons name="menu" size={24} color="#2D3142" />
             </TouchableOpacity>
             <View>
