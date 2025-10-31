@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -11,6 +11,32 @@ interface InfoStepProps {
   setPhoneNumber: (value: string) => void;
 }
 
+const validateEmail = (email: string): string => {
+  if (!email) return "";
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return "Please enter a valid email address";
+  }
+  return "";
+};
+
+const validatePhoneNumber = (phone: string): string => {
+  if (!phone) return "";
+  const phoneRegex = /^[0-9]{10,}$/;
+  if (!phoneRegex.test(phone.replace(/\D/g, ""))) {
+    return "Please enter a valid phone number (at least 10 digits)";
+  }
+  return "";
+};
+
+const validateFullName = (name: string): string => {
+  if (!name) return "";
+  if (name.trim().length < 2) {
+    return "Name must be at least 2 characters";
+  }
+  return "";
+};
+
 export default function InfoStep({
   fullName,
   setFullName,
@@ -19,6 +45,28 @@ export default function InfoStep({
   phoneNumber,
   setPhoneNumber,
 }: InfoStepProps) {
+  const [nameError, setNameError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+
+  useEffect(() => {
+    if (fullName) {
+      setNameError(validateFullName(fullName));
+    }
+  }, [fullName]);
+
+  useEffect(() => {
+    if (email) {
+      setEmailError(validateEmail(email));
+    }
+  }, [email]);
+
+  useEffect(() => {
+    if (phoneNumber) {
+      setPhoneError(validatePhoneNumber(phoneNumber));
+    }
+  }, [phoneNumber]);
+
   return (
     <>
       <Text style={styles.title}>Sign Up</Text>
@@ -41,6 +89,7 @@ export default function InfoStep({
             autoCorrect={false}
           />
         </View>
+        {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
       </View>
 
       <View style={styles.inputContainer}>
@@ -62,6 +111,7 @@ export default function InfoStep({
             autoCorrect={false}
           />
         </View>
+        {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
       </View>
 
       <View style={styles.inputContainer}>
@@ -82,6 +132,7 @@ export default function InfoStep({
             autoCorrect={false}
           />
         </View>
+        {phoneError ? <Text style={styles.errorText}>{phoneError}</Text> : null}
       </View>
     </>
   );
@@ -121,5 +172,11 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: "#2D3142",
+  },
+  errorText: {
+    color: "#FF3B30",
+    fontSize: 13,
+    marginTop: 6,
+    marginLeft: 4,
   },
 });

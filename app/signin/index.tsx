@@ -1,6 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import {
   Image,
@@ -13,8 +10,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { authStorage, CurrentUser } from "../../utils/auth";
 import PasswordInput from "../../components/PasswordInput";
-import { authStorage } from "../../utils/auth";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
@@ -32,15 +32,37 @@ export default function SignIn() {
   };
 
   const handleContinue = async () => {
-    // Handle sign in logic
-    console.log("Sign in with:", email, password);
-    // TODO: Add actual authentication logic here
-    // For now, navigate to tabs
+    // Validate inputs
+    if (!email || !password) {
+      alert("Please enter both email and password");
+      return;
+    }
+
     try {
+      // Validate credentials
+      const user = await authStorage.validateCredentials(email, password);
+
+      if (!user) {
+        alert("Invalid email or password");
+        return;
+      }
+
+      // Set current user (without password)
+      const currentUser: CurrentUser = {
+        fullName: user.fullName,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+      };
+      await authStorage.setCurrentUser(currentUser);
+
+      // Set logged in status
       await authStorage.setLoggedIn();
-      router.replace("/(tabs)" as any);
+
+      console.log("Sign in successful");
+      router.replace("/(tabs)");
     } catch (error) {
-      console.error("Error saving login status:", error);
+      console.error("Error during sign in:", error);
+      alert("Error signing in. Please try again.");
     }
   };
 
@@ -62,7 +84,7 @@ export default function SignIn() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <StatusBar style="dark" />
+      <StatusBar hidden />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
