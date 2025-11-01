@@ -1,17 +1,16 @@
+import { FontAwesome6, Ionicons } from "@expo/vector-icons";
+import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
   Image,
+  ScrollView,
+  StyleSheet,
+  Text,
   TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { Ionicons, FontAwesome6 } from "@expo/vector-icons";
 import BookingComponent from "../../components/BookingComponent";
-import { useDrawer } from "../../src/navigation/drawer/DrawerProvider";
 
 const services = [
   {
@@ -88,7 +87,6 @@ export default function Home() {
     setSelectedService(null);
   };
 
-  const { toggleDrawer } = useDrawer();
   return (
     <View style={styles.container}>
       <StatusBar hidden />
@@ -107,12 +105,6 @@ export default function Home() {
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.headerLeft}>
-                <TouchableOpacity
-                  style={styles.menuButton}
-                  onPress={toggleDrawer}
-                >
-                  <Ionicons name="menu" size={24} color="#2D3142" />
-                </TouchableOpacity>
                 <View>
                   <Text style={styles.headerTitle}>Find a nurse</Text>
                   <Text style={styles.headerSubtitle}>Welcome Back</Text>
@@ -235,12 +227,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-  },
-  menuButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
   },
   headerTitle: {
     fontSize: 20,
