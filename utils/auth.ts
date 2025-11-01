@@ -24,8 +24,10 @@ export interface Appointment {
   serviceName: string;
   date: string;
   time: string;
+  duration: string;
   type: "normal" | "emergency";
   location: string;
+  locationLabel: string;
   createdAt: string;
 }
 
