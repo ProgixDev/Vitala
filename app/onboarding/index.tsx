@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Dimensions,
   Image,
@@ -7,10 +7,56 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SlideData } from "../constants/slides";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { SlideData, slides } from "./constants/slides";
 
 const { width, height } = Dimensions.get("window");
 
+// Inline useOnboarding
+const useOnboarding = () => {
+  const [currentStep, setCurrentStep] = useState(0);
+
+  const nextStep = () => {
+    if (currentStep < slides.length - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const skip = () => {
+    setCurrentStep(slides.length - 1);
+  };
+
+  return {
+    currentStep,
+    nextStep,
+    skip,
+    totalSteps: slides.length,
+  };
+};
+
+// Inline PaginationDots
+interface PaginationDotsProps {
+  total: number;
+  current: number;
+}
+
+const PaginationDots: React.FC<PaginationDotsProps> = ({ total, current }) => {
+  return (
+    <View style={styles.paginationContainer}>
+      {Array.from({ length: total }).map((_, index) => (
+        <View
+          key={index}
+          style={[
+            styles.dot,
+            index === current ? styles.activeDot : styles.inactiveDot,
+          ]}
+        />
+      ))}
+    </View>
+  );
+};
+
+// Inline OnboardingSlide
 interface OnboardingSlideProps {
   slide: SlideData;
   onPrimaryPress: () => void;
@@ -19,23 +65,23 @@ interface OnboardingSlideProps {
   showLogo?: boolean;
 }
 
-export const OnboardingSlide: React.FC<OnboardingSlideProps> = ({
+const OnboardingSlide: React.FC<OnboardingSlideProps> = ({
   slide,
   onPrimaryPress,
   onSecondaryPress,
   onSkipPress,
-  showLogo = false,
+  showLogo,
 }) => {
   const BackgroundSVG = slide.background;
   const IllustrationSVG = slide.illustration;
 
   return (
-    <View style={styles.container}>
+    <View style={styles.slideContainer}>
       {/* Logo - only shown on first screen */}
       {showLogo ? (
         <View style={styles.logoContainer}>
           <Image
-            source={require("../../../assets/images/Logo.png")}
+            source={require("../../assets/images/Logo.png")}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -97,8 +143,76 @@ export const OnboardingSlide: React.FC<OnboardingSlideProps> = ({
   );
 };
 
+interface OnboardingProps {
+  onComplete?: () => void;
+  onLogin?: () => void;
+}
+
+export const Onboarding: React.FC<OnboardingProps> = ({
+  onComplete,
+  onLogin,
+}) => {
+  const { currentStep, nextStep, skip, totalSteps } = useOnboarding();
+
+  const handleCreateAccount = () => {
+    if (onComplete) {
+      onComplete();
+    }
+  };
+
+  const handleLogin = () => {
+    if (onLogin) {
+      onLogin();
+    }
+  };
+
+  const renderSlide = () => {
+    const slide = slides[currentStep];
+    const showLogo = currentStep === 0;
+    let onPrimary, onSecondary, onSkipPress;
+
+    if (currentStep === 0) {
+      onPrimary = nextStep;
+    } else if (currentStep === 1) {
+      onPrimary = nextStep;
+      onSkipPress = skip;
+    } else {
+      onPrimary = handleCreateAccount;
+      onSecondary = handleLogin;
+    }
+
+    return (
+      <OnboardingSlide
+        slide={slide}
+        onPrimaryPress={onPrimary}
+        onSecondaryPress={onSecondary}
+        onSkipPress={onSkipPress}
+        showLogo={showLogo}
+      />
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.container} edges={["bottom"]}>
+      <View style={styles.content}>
+        {renderSlide()}
+        <View style={styles.paginationWrapper}>
+          <PaginationDots total={totalSteps} current={currentStep} />
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+};
+
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
+  content: {
+    flex: 1,
+  },
+  slideContainer: {
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
@@ -204,4 +318,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "400",
   },
+  paginationWrapper: {
+    position: "absolute",
+    bottom: 20,
+    left: 0,
+    right: 0,
+  },
+  paginationContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginVertical: 15,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginHorizontal: 4,
+  },
+  activeDot: {
+    backgroundColor: "#2D59F0",
+    width: 24,
+  },
+  inactiveDot: {
+    backgroundColor: "#D1D5DB",
+  },
 });
+
+export default Onboarding;

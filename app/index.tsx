@@ -1,11 +1,11 @@
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import Onboarding from "../src/onboarding";
+import Onboarding from "./onboarding";
 import {
   isOnboardingCompleted,
   markOnboardingCompleted,
-} from "../src/onboarding/utils/onboardingStorage";
+} from "./onboarding/utils/onboardingStorage";
 
 export default function Index() {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<
