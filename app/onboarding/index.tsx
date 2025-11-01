@@ -8,9 +8,100 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { SlideData, slides } from "./constants/slides";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SvgProps } from "react-native-svg";
+
+// Import SVG files as components
+import BackgroundPageOne from "../../assets/images/OnBoardingPages/BackgroundPageOne.svg";
+import BackgroundPageThree from "../../assets/images/OnBoardingPages/BackgroundPageThree.svg";
+import BackgroundPageTwo from "../../assets/images/OnBoardingPages/BackgroundPageTwo.svg";
+import OnBoardingPageOne from "../../assets/images/OnBoardingPages/OnBoardingPageOne.svg";
+import OnBoardingPageThree from "../../assets/images/OnBoardingPages/OnBoardingPageThree.svg";
+import OnBoardingPageTwo from "../../assets/images/OnBoardingPages/OnBoardingPageTwo.svg";
 
 const { width, height } = Dimensions.get("window");
+
+// Onboarding Storage Constants and Functions
+const ONBOARDING_COMPLETED_KEY = "onboarding_completed";
+
+/**
+ * Check if the user has completed onboarding
+ */
+export const isOnboardingCompleted = async (): Promise<boolean> => {
+  try {
+    const value = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
+    return value === "true";
+  } catch (error) {
+    console.error("Error checking onboarding status:", error);
+    return false;
+  }
+};
+
+/**
+ * Mark onboarding as completed
+ */
+export const markOnboardingCompleted = async (): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, "true");
+  } catch (error) {
+    console.error("Error marking onboarding as completed:", error);
+  }
+};
+
+/**
+ * Reset onboarding status (useful for testing)
+ */
+export const resetOnboardingStatus = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(ONBOARDING_COMPLETED_KEY);
+  } catch (error) {
+    console.error("Error resetting onboarding status:", error);
+  }
+};
+
+// Slide Data Interface and Array
+export interface SlideData {
+  id: number;
+  title: string;
+  subtitle: string;
+  illustration: React.FC<SvgProps>;
+  background: React.FC<SvgProps>;
+  primaryButton: string;
+  secondaryButton?: string;
+  hasSkip?: boolean;
+}
+
+export const slides: SlideData[] = [
+  {
+    id: 1,
+    title: "Healthcare,\nAnytime, Anywhere",
+    subtitle:
+      "Get quality home healthcare services wherever you are. fast, simple, and reliable.",
+    illustration: OnBoardingPageOne,
+    background: BackgroundPageOne,
+    primaryButton: "Get Started",
+  },
+  {
+    id: 2,
+    title: "Services\nMade for You",
+    subtitle:
+      "Find personalized care options tailored to your health needs and daily schedule.",
+    illustration: OnBoardingPageTwo,
+    background: BackgroundPageTwo,
+    primaryButton: "Explore our services",
+    hasSkip: true,
+  },
+  {
+    id: 3,
+    title: "Your Well-Being,\nOur Priority",
+    subtitle:
+      "Trusted professionals dedicated to your comfort, safety, and peace of mind.",
+    illustration: OnBoardingPageThree,
+    background: BackgroundPageThree,
+    primaryButton: "Create your account",
+    secondaryButton: "Already have an account? Log In",
+  },
+];
 
 // Inline useOnboarding
 const useOnboarding = () => {

@@ -1,14 +1,17 @@
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
+  Alert,
   ScrollView,
+  StyleSheet,
   Switch,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { authStorage } from "../../utils/auth";
+import { resetOnboardingStatus } from "../onboarding";
 
 interface SettingItemProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -42,9 +45,10 @@ const SettingItem: React.FC<SettingItemProps> = ({
         {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
       </View>
     </View>
-    {rightElement || (showArrow && (
-      <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-    ))}
+    {rightElement ||
+      (showArrow && (
+        <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+      ))}
   </TouchableOpacity>
 );
 
@@ -54,6 +58,57 @@ export default function Settings() {
   const [smsNotifications, setSmsNotifications] = useState(false);
   const [locationServices, setLocationServices] = useState(true);
   const [biometricAuth, setBiometricAuth] = useState(false);
+
+  const handleLogout = async () => {
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await authStorage.setLoggedOut();
+            router.replace("/signin");
+          } catch (error) {
+            console.error("Error logging out:", error);
+            Alert.alert("Error", "Failed to logout. Please try again.");
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleResetOnboarding = async () => {
+    Alert.alert(
+      "Reset Onboarding",
+      "This will reset the onboarding status. You'll see the onboarding flow again next time you open the app. Continue?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Reset",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await resetOnboardingStatus();
+              Alert.alert("Success", "Onboarding status has been reset!");
+            } catch (error) {
+              console.error("Error resetting onboarding:", error);
+              Alert.alert(
+                "Error",
+                "Failed to reset onboarding. Please try again."
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -250,10 +305,46 @@ export default function Settings() {
           </View>
         </View>
 
-        {/* App Info */}
-        <View style={styles.appInfoSection}>
-          <Text style={styles.appVersion}>Vitala App</Text>
-          <Text style={styles.versionNumber}>Version 1.0.0</Text>
+        {/* Account Actions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Account Actions</Text>
+          <View style={styles.settingsCard}>
+            <TouchableOpacity
+              style={styles.dangerButton}
+              onPress={handleResetOnboarding}
+              activeOpacity={0.7}
+            >
+              <View style={styles.settingLeft}>
+                <View style={styles.iconContainer}>
+                  <Ionicons name="refresh-outline" size={22} color="#DC2626" />
+                </View>
+                <View style={styles.settingTextContainer}>
+                  <Text style={styles.dangerButtonText}>Reset Onboarding</Text>
+                  <Text style={styles.settingSubtitle}>
+                    Show onboarding flow again
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+            <View style={styles.divider} />
+            <TouchableOpacity
+              style={styles.dangerButton}
+              onPress={handleLogout}
+              activeOpacity={0.7}
+            >
+              <View style={styles.settingLeft}>
+                <View style={styles.iconContainer}>
+                  <Ionicons name="log-out-outline" size={22} color="#DC2626" />
+                </View>
+                <View style={styles.settingTextContainer}>
+                  <Text style={styles.dangerButtonText}>Logout</Text>
+                  <Text style={styles.settingSubtitle}>
+                    Sign out of your account
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -370,5 +461,18 @@ const styles = StyleSheet.create({
   versionNumber: {
     fontSize: 14,
     color: "#6B7280",
+  },
+  dangerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  dangerButtonText: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#DC2626",
+    marginBottom: 2,
   },
 });

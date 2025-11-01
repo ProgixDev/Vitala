@@ -1,11 +1,10 @@
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import Onboarding from "./onboarding";
-import {
+import Onboarding, {
   isOnboardingCompleted,
   markOnboardingCompleted,
-} from "./onboarding/utils/onboardingStorage";
+} from "./onboarding";
 
 export default function Index() {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<
@@ -28,7 +27,7 @@ export default function Index() {
 
   const handleComplete = async () => {
     console.log(
-      "Create account pressed - marking onboarding as completed and navigating to signup",
+      "Create account pressed - marking onboarding as completed and navigating to signup"
     );
     await markOnboardingCompleted();
     router.replace("/signup");
@@ -36,7 +35,7 @@ export default function Index() {
 
   const handleLogin = async () => {
     console.log(
-      "Login pressed - marking onboarding as completed and navigating to login",
+      "Login pressed - marking onboarding as completed and navigating to login"
     );
     await markOnboardingCompleted();
     router.replace("/signin");
