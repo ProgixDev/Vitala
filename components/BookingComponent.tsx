@@ -179,6 +179,7 @@ export default function BookingComponent({
         type: type,
         location: locationOptions[selectedLocation].address,
         locationLabel: locationOptions[selectedLocation].label,
+        status: "pending",
       });
 
       // Get the newly created appointment ID (it's the last one added)

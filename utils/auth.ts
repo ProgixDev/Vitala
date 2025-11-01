@@ -28,6 +28,7 @@ export interface Appointment {
   type: "normal" | "emergency";
   location: string;
   locationLabel: string;
+  status: "pending" | "confirmed" | "on-the-way" | "in-progress" | "completed";
   createdAt: string;
 }
 
@@ -251,6 +252,36 @@ export const authStorage = {
       );
     } catch (error) {
       console.error("Error deleting appointment:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Save all appointments to storage
+   * @param appointments Array of appointments to save
+   * @returns Promise<void>
+   */
+  saveAppointments: async (appointments: Appointment[]): Promise<void> => {
+    try {
+      await AsyncStorage.setItem(
+        APPOINTMENTS_KEY,
+        JSON.stringify(appointments),
+      );
+    } catch (error) {
+      console.error("Error saving appointments:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Clear all appointments from storage
+   * @returns Promise<void>
+   */
+  clearAppointments: async (): Promise<void> => {
+    try {
+      await AsyncStorage.setItem(APPOINTMENTS_KEY, JSON.stringify([]));
+    } catch (error) {
+      console.error("Error clearing appointments:", error);
       throw error;
     }
   },
