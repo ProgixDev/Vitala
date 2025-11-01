@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Image,
   ActivityIndicator,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
@@ -71,35 +70,28 @@ export default function AppointmentDetails() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View className="flex-row justify-between items-center">
+        <View className="pb-5">
           <TouchableOpacity
-            className="w-10 h-10 justify-center items-center"
+            className="w-12 h-12 -ml-3 justify-center items-center mb-4"
             onPress={handleGoBack}
           >
-            <Ionicons name="chevron-back" size={24} color="#2D3142" />
+            <Ionicons name="arrow-back" size={24} color="#2D3142" />
           </TouchableOpacity>
-          <View className="flex-1 ml-3">
-            <Text className="text-xl font-semibold text-[#2D3142]">
+          <View>
+            <Text className="text-[28px] font-bold text-[#2D3142] mb-1">
               Payment Method
             </Text>
-            <Text className="text-sm text-[#9E9E9E] mt-0.5">
-              Choose your method
-            </Text>
+            <Text className="text-sm text-[#9E9E9E]">Choose your method</Text>
           </View>
-          <Image
-            source={require("@/assets/images/Logo.png")}
-            className="w-[50px] h-[50px]"
-            resizeMode="contain"
-          />
         </View>
 
         {/* About the Service */}
-        <View className="mb-6 px-5">
+        <View className="mb-6">
           <Text className="text-lg font-semibold text-[#2D3142] mb-4">
             About the service
           </Text>
           <View className="bg-white rounded-2xl p-5 shadow-sm">
-            <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
+            <View className="flex-row justify-between items-center py-3">
               <Text className="text-[15px] text-[#9E9E9E]">Service:</Text>
               <Text className="text-[15px] font-semibold text-[#2D3142]">
                 {appointment.serviceName}
@@ -109,7 +101,7 @@ export default function AppointmentDetails() {
         </View>
 
         {/* Schedule Appointment */}
-        <View className="mb-6 px-5">
+        <View className="mb-6">
           <View className="flex-row justify-between items-center mb-4">
             <Text className="text-lg font-semibold text-[#2D3142]">
               Schedule appointment
@@ -134,14 +126,25 @@ export default function AppointmentDetails() {
             <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
               <Text className="text-[15px] text-[#9E9E9E]">Duration:</Text>
               <Text className="text-[15px] font-semibold text-[#2D3142]">
-                30Min
+                {appointment.duration}
               </Text>
+            </View>
+            <View className="flex-row justify-between items-start py-3">
+              <Text className="text-[15px] text-[#9E9E9E]">Location:</Text>
+              <View className="flex-1 items-end ml-2">
+                <Text className="text-[15px] font-semibold text-[#2D3142] mb-1">
+                  {appointment.locationLabel}
+                </Text>
+                <Text className="text-[13px] text-[#9E9E9E] text-right">
+                  {appointment.location}
+                </Text>
+              </View>
             </View>
           </View>
         </View>
 
         {/* Patient Information */}
-        <View className="mb-6 px-5">
+        <View className="mb-6">
           <View className="flex-row justify-between items-center mb-4">
             <Text className="text-lg font-semibold text-[#2D3142]">
               Patient Informations
@@ -163,7 +166,7 @@ export default function AppointmentDetails() {
                 Not specified
               </Text>
             </View>
-            <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
+            <View className="flex-row justify-between items-center py-3">
               <Text className="text-[15px] text-[#9E9E9E]">Age:</Text>
               <Text className="text-[15px] font-semibold text-[#2D3142]">
                 Not specified
@@ -174,7 +177,7 @@ export default function AppointmentDetails() {
 
         {/* Book Button */}
         <TouchableOpacity
-          className="bg-[#4461F2] mx-5 py-4 rounded-[28px] justify-center items-center shadow-lg mt-5"
+          className="bg-[#4461F2] py-4 rounded-[28px] justify-center items-center shadow-lg mt-5"
           onPress={handleConfirmBooking}
         >
           <Text className="text-lg font-semibold text-white">

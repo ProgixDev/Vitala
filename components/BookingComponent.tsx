@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  Image,
   BackHandler,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,6 +16,7 @@ interface Service {
   id: number;
   name: string;
   description: string;
+  tags: string[];
 }
 
 interface BookingComponentProps {
@@ -37,6 +37,28 @@ const timeSlots = [
   { time: "10:00 AM", available: true },
   { time: "2:00 PM", available: false },
   { time: "4:00 PM", available: true },
+];
+
+const durationOptions = [
+  { label: "30 minutes", value: 30 },
+  { label: "1 hour", value: 60 },
+  { label: "1 hour 30 minutes", value: 90 },
+  { label: "2 hours", value: 120 },
+];
+
+const locationOptions = [
+  {
+    label: "Home",
+    address: "931 2nd Street, Rivers, Manitoba, R0K 1X0.",
+  },
+  {
+    label: "Grandma's Home",
+    address: "123 Main Street, Winnipeg, Manitoba, R3C 1A5.",
+  },
+  {
+    label: "Work",
+    address: "456 Oak Avenue, Brandon, Manitoba, R7A 0K4.",
+  },
 ];
 
 const generateMonthDates = (year: number, month: number): DateOption[] => {
@@ -90,6 +112,8 @@ export default function BookingComponent({
   const [dates, setDates] = useState<DateOption[]>([]);
   const [selectedDate, setSelectedDate] = useState(1);
   const [selectedTime, setSelectedTime] = useState(0);
+  const [selectedDuration, setSelectedDuration] = useState(0);
+  const [selectedLocation, setSelectedLocation] = useState(0);
   const [currentMonth, setCurrentMonth] = useState("");
 
   useEffect(() => {
@@ -151,8 +175,10 @@ export default function BookingComponent({
         serviceName: service.name,
         date: formattedDate,
         time: timeSlots[selectedTime].time,
+        duration: durationOptions[selectedDuration].label,
         type: type,
-        location: "931 2nd Street, Rivers, Manitoba, R0K 1X0.",
+        location: locationOptions[selectedLocation].address,
+        locationLabel: locationOptions[selectedLocation].label,
       });
 
       // Get the newly created appointment ID (it's the last one added)
@@ -213,33 +239,37 @@ export default function BookingComponent({
   return (
     <>
       {/* Header */}
-      <View className="flex-row items-center justify-between mb-8">
+      <View className="mb-8">
         <TouchableOpacity
-          className="w-12 h-12 justify-center items-center"
+          className="w-12 h-12 -ml-3 justify-center items-center mb-4"
           onPress={onBack}
         >
           <Ionicons name="arrow-back" size={24} color="#2D3142" />
         </TouchableOpacity>
-        <View className="flex-1 ml-4">
-          <Text className="text-xl font-bold text-black mb-1">
+        <View>
+          <Text className="text-[28px] font-bold text-[#2D3142] mb-1">
             Book your nurse
           </Text>
-          <Text className="text-sm text-[#666666]">Welcome Back</Text>
+          <Text className="text-sm text-[#9E9E9E]">Welcome Back</Text>
         </View>
-        <Image
-          source={require("../assets/images/Logo.png")}
-          className="w-12 h-12"
-          resizeMode="contain"
-        />
       </View>
 
-      {/* Service Title */}
-      <Text className="text-2xl font-bold text-black mb-3">{service.name}</Text>
-
-      {/* Service Description */}
-      <Text className="text-base text-[#666666] leading-6 mb-8">
-        {service.description}
-      </Text>
+      {/* Service Card */}
+      <View className="bg-white rounded-[20px] p-5 mb-8 shadow-sm">
+        <Text className="text-2xl font-bold text-[#2D3142] mb-3">
+          {service.name}
+        </Text>
+        <Text className="text-base text-[#9E9E9E] leading-6 mb-3">
+          {service.description}
+        </Text>
+        <View className="flex-row flex-wrap gap-2">
+          {service.tags.map((tag, index) => (
+            <View key={index} className="bg-[#F5F6FA] px-3 py-1.5 rounded-full">
+              <Text className="text-xs text-[#4461F2] font-medium">{tag}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
 
       {/* Date Selection */}
       <View className="mb-8">
@@ -322,49 +352,87 @@ export default function BookingComponent({
       </View>
 
       {/* Time Selection */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        className="mb-8"
-        contentContainerStyle={{
-          flexDirection: "row",
-          gap: 12,
-          paddingRight: 20,
-        }}
-      >
-        {timeSlots.map((slot, index) => (
-          <TouchableOpacity
-            key={index}
-            className={`px-6 py-3 rounded-[20px] ${
-              selectedTime === index
-                ? "bg-[#4461F2]"
-                : !slot.available
-                  ? "bg-[#F5F5F5]"
-                  : "bg-[#E8E8E8]"
-            }`}
-            onPress={() => slot.available && setSelectedTime(index)}
-            disabled={!slot.available}
-          >
-            <Text
-              className={`text-base font-semibold ${
+      <View className="mb-8">
+        <Text className="text-lg font-semibold text-black mb-5">
+          Select Time
+        </Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            flexDirection: "row",
+            gap: 12,
+            paddingRight: 20,
+          }}
+        >
+          {timeSlots.map((slot, index) => (
+            <TouchableOpacity
+              key={index}
+              className={`px-6 py-3 rounded-[20px] ${
                 selectedTime === index
-                  ? "text-white"
+                  ? "bg-[#4461F2]"
                   : !slot.available
-                    ? "text-[#CCCCCC]"
-                    : "text-black"
+                    ? "bg-[#F5F5F5]"
+                    : "bg-[#E8E8E8]"
               }`}
+              onPress={() => slot.available && setSelectedTime(index)}
+              disabled={!slot.available}
             >
-              {slot.time}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+              <Text
+                className={`text-base font-semibold ${
+                  selectedTime === index
+                    ? "text-white"
+                    : !slot.available
+                      ? "text-[#CCCCCC]"
+                      : "text-black"
+                }`}
+              >
+                {slot.time}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Duration Selection */}
+      <View className="mb-8">
+        <Text className="text-lg font-semibold text-black mb-5">
+          Estimated Time
+        </Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            flexDirection: "row",
+            gap: 12,
+            paddingRight: 20,
+          }}
+        >
+          {durationOptions.map((option, index) => (
+            <TouchableOpacity
+              key={index}
+              className={`px-6 py-3 rounded-[20px] ${
+                selectedDuration === index ? "bg-[#4461F2]" : "bg-[#E8E8E8]"
+              }`}
+              onPress={() => setSelectedDuration(index)}
+            >
+              <Text
+                className={`text-base font-semibold ${
+                  selectedDuration === index ? "text-white" : "text-black"
+                }`}
+              >
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
 
       {/* Location Section */}
       <View className="mb-8">
         <View className="flex-row justify-between items-center mb-5">
           <Text className="text-lg font-semibold text-black">
-            Add your location
+            Select your location
           </Text>
           <TouchableOpacity onPress={handleAddLocation}>
             <Text className="text-sm text-[#4461F2] font-medium">
@@ -373,12 +441,46 @@ export default function BookingComponent({
           </TouchableOpacity>
         </View>
 
-        {/* Saved Location */}
-        <View className="flex-row items-center bg-white p-5 rounded-xl gap-4 border border-[#E8E8E8]">
-          <Ionicons name="location-outline" size={24} color="#000000" />
-          <Text className="flex-1 text-sm font-semibold text-black leading-5">
-            931 2nd Street, Rivers, Manitoba, R0K 1X0.
-          </Text>
+        {/* Location Options */}
+        <View className="gap-3">
+          {locationOptions.map((location, index) => (
+            <TouchableOpacity
+              key={index}
+              className={`flex-row items-center p-5 rounded-xl gap-4 ${
+                selectedLocation === index
+                  ? "bg-[#4461F2] border-2 border-[#4461F2]"
+                  : "bg-white border border-[#E8E8E8]"
+              }`}
+              onPress={() => setSelectedLocation(index)}
+            >
+              <Ionicons
+                name="location-outline"
+                size={24}
+                color={selectedLocation === index ? "#FFFFFF" : "#000000"}
+              />
+              <View className="flex-1">
+                <Text
+                  className={`text-base font-semibold mb-1 ${
+                    selectedLocation === index ? "text-white" : "text-black"
+                  }`}
+                >
+                  {location.label}
+                </Text>
+                <Text
+                  className={`text-sm leading-5 ${
+                    selectedLocation === index
+                      ? "text-white/80"
+                      : "text-[#9E9E9E]"
+                  }`}
+                >
+                  {location.address}
+                </Text>
+              </View>
+              {selectedLocation === index && (
+                <Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
+              )}
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
 
