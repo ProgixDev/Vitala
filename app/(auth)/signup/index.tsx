@@ -10,6 +10,7 @@ import {
 } from "react-native";
 
 import { router } from "expo-router";
+import Toast from "react-native-toast-message";
 import { authStorage, User } from "@/utils/auth";
 import InfoStep from "./components/InfoStep";
 import PasswordStep from "./components/PasswordStep";
@@ -69,27 +70,43 @@ export default function SignUp() {
     if (step === "info") {
       // Validate info fields
       if (!fullName || !email || !phoneNumber) {
-        alert("Please fill in all fields");
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Please fill in all fields",
+        });
         return;
       }
 
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        alert("Please enter a valid email address");
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Please enter a valid email address",
+        });
         return;
       }
 
       // Validate phone format
       const phoneRegex = /^[0-9]{10,}$/;
       if (!phoneRegex.test(phoneNumber.replace(/\D/g, ""))) {
-        alert("Please enter a valid phone number (at least 10 digits)");
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Please enter a valid phone number (at least 10 digits)",
+        });
         return;
       }
 
       // Validate name length
       if (fullName.trim().length < 2) {
-        alert("Name must be at least 2 characters");
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Name must be at least 2 characters",
+        });
         return;
       }
 
@@ -97,15 +114,27 @@ export default function SignUp() {
     } else if (step === "password") {
       // Validate password
       if (!newPassword || !confirmPassword) {
-        alert("Please fill in both password fields");
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Please fill in both password fields",
+        });
         return;
       }
       if (newPassword.length < 8) {
-        alert("Password must be at least 8 characters long");
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Password must be at least 8 characters long",
+        });
         return;
       }
       if (newPassword !== confirmPassword) {
-        alert("Passwords do not match");
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Passwords do not match",
+        });
         return;
       }
       setStep("otp");
@@ -138,9 +167,17 @@ export default function SignUp() {
       } catch (error) {
         console.error("Error completing signup:", error);
         if (error instanceof Error) {
-          alert(error.message);
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2: error.message,
+          });
         } else {
-          alert("Error completing signup. Please try again.");
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2: "Error completing signup. Please try again.",
+          });
         }
       }
     }

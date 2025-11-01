@@ -4,11 +4,11 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Alert,
   BackHandler,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import Toast from "react-native-toast-message";
 import { authStorage } from "../utils/auth";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 
@@ -143,17 +143,29 @@ export default function BookingComponent({
 
   const handleBookAppointment = async () => {
     if (!currentUser) {
-      Alert.alert("Error", "You must be logged in to book an appointment");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "You must be logged in to book an appointment",
+      });
       return;
     }
 
     if (selectedDate === -1 || !dates[selectedDate]) {
-      Alert.alert("Error", "Please select a date");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Please select a date",
+      });
       return;
     }
 
     if (selectedTime === -1 || !timeSlots[selectedTime]) {
-      Alert.alert("Error", "Please select a time");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Please select a time",
+      });
       return;
     }
 
@@ -191,7 +203,11 @@ export default function BookingComponent({
       router.push(`/appointment/${newAppointment.id}`);
     } catch (error) {
       console.error("Error booking appointment:", error);
-      Alert.alert("Error", "Failed to book appointment. Please try again.");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to book appointment. Please try again.",
+      });
     }
   };
 

@@ -11,6 +11,7 @@ import {
 
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import Toast from "react-native-toast-message";
 import { authStorage, CurrentUser } from "@/utils/auth";
 import PasswordInput from "@/components/PasswordInput";
 
@@ -21,7 +22,11 @@ export default function SignIn() {
   const handleContinue = async () => {
     // Validate inputs
     if (!email || !password) {
-      alert("Please enter both email and password");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Please enter both email and password",
+      });
       return;
     }
 
@@ -30,7 +35,11 @@ export default function SignIn() {
       const user = await authStorage.validateCredentials(email, password);
 
       if (!user) {
-        alert("Invalid email or password");
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Invalid email or password",
+        });
         return;
       }
 
@@ -49,7 +58,11 @@ export default function SignIn() {
       router.replace("/(tabs)");
     } catch (error) {
       console.error("Error during sign in:", error);
-      alert("Error signing in. Please try again.");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Error signing in. Please try again.",
+      });
     }
   };
 

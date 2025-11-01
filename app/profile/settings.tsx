@@ -1,14 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
-import {
-  Alert,
-  ScrollView,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ScrollView, Switch, Text, TouchableOpacity, View } from "react-native";
+import Toast from "react-native-toast-message";
 import { authStorage } from "../../utils/auth";
 import { resetOnboardingStatus } from "../onboarding";
 
@@ -63,54 +57,44 @@ export default function Settings() {
   const [biometricAuth, setBiometricAuth] = useState(false);
 
   const handleLogout = async () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      {
-        text: "Cancel",
-        style: "cancel",
+    Toast.show({
+      type: "info",
+      text1: "Logout",
+      text2: "Are you sure you want to logout?",
+      position: "bottom",
+      visibilityTime: 4000,
+      onPress: async () => {
+        try {
+          await authStorage.setLoggedOut();
+          router.replace("/signin");
+        } catch (error) {
+          console.error("Error logging out:", error);
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2: "Failed to logout. Please try again.",
+          });
+        }
       },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await authStorage.setLoggedOut();
-            router.replace("/signin");
-          } catch (error) {
-            console.error("Error logging out:", error);
-            Alert.alert("Error", "Failed to logout. Please try again.");
-          }
-        },
-      },
-    ]);
+    });
   };
 
   const handleResetOnboarding = async () => {
-    Alert.alert(
-      "Reset Onboarding",
-      "This will reset the onboarding status. You'll see the onboarding flow again next time you open the app. Continue?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Reset",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await resetOnboardingStatus();
-              Alert.alert("Success", "Onboarding status has been reset!");
-            } catch (error) {
-              console.error("Error resetting onboarding:", error);
-              Alert.alert(
-                "Error",
-                "Failed to reset onboarding. Please try again.",
-              );
-            }
-          },
-        },
-      ],
-    );
+    try {
+      await resetOnboardingStatus();
+      Toast.show({
+        type: "success",
+        text1: "Success",
+        text2: "Onboarding status has been reset!",
+      });
+    } catch (error) {
+      console.error("Error resetting onboarding:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to reset onboarding. Please try again.",
+      });
+    }
   };
 
   return (
