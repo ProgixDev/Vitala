@@ -1,5 +1,6 @@
 import { Stack } from "expo-router";
 import { DrawerProvider } from "../src/navigation/drawer/DrawerProvider";
+import "./global.css";
 
 export default function RootLayout() {
   return (
