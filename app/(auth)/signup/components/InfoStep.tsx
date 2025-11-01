@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, StyleSheet } from "react-native";
+import { View, Text, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 interface InfoStepProps {
@@ -69,18 +69,20 @@ export default function InfoStep({
 
   return (
     <>
-      <Text style={styles.title}>Sign Up</Text>
+      <Text className="text-4xl font-semibold text-[#2D3142] text-center my-[15%]">
+        Sign Up
+      </Text>
 
-      <View style={styles.inputContainer}>
-        <View style={styles.inputWrapper}>
+      <View className="mb-5">
+        <View className="flex-row items-center bg-white rounded-2xl px-4 h-[60px] shadow-sm">
           <Ionicons
             name="person-outline"
             size={24}
             color="#4461F2"
-            style={styles.inputIcon}
+            className="mr-3"
           />
           <TextInput
-            style={styles.input}
+            className="flex-1 text-base text-[#2D3142]"
             placeholder="Enter full name"
             placeholderTextColor="#B8B8B8"
             value={fullName}
@@ -89,19 +91,23 @@ export default function InfoStep({
             autoCorrect={false}
           />
         </View>
-        {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
+        {nameError ? (
+          <Text className="text-[#FF3B30] text-[13px] mt-1.5 ml-1">
+            {nameError}
+          </Text>
+        ) : null}
       </View>
 
-      <View style={styles.inputContainer}>
-        <View style={styles.inputWrapper}>
+      <View className="mb-5">
+        <View className="flex-row items-center bg-white rounded-2xl px-4 h-[60px] shadow-sm">
           <Ionicons
             name="person-outline"
             size={24}
             color="#4461F2"
-            style={styles.inputIcon}
+            className="mr-3"
           />
           <TextInput
-            style={styles.input}
+            className="flex-1 text-base text-[#2D3142]"
             placeholder="Enter email address"
             placeholderTextColor="#B8B8B8"
             value={email}
@@ -111,19 +117,23 @@ export default function InfoStep({
             autoCorrect={false}
           />
         </View>
-        {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+        {emailError ? (
+          <Text className="text-[#FF3B30] text-[13px] mt-1.5 ml-1">
+            {emailError}
+          </Text>
+        ) : null}
       </View>
 
-      <View style={styles.inputContainer}>
-        <View style={styles.inputWrapper}>
+      <View className="mb-5">
+        <View className="flex-row items-center bg-white rounded-2xl px-4 h-[60px] shadow-sm">
           <Ionicons
             name="call-outline"
             size={24}
             color="#4461F2"
-            style={styles.inputIcon}
+            className="mr-3"
           />
           <TextInput
-            style={styles.input}
+            className="flex-1 text-base text-[#2D3142]"
             placeholder="Enter phone number"
             placeholderTextColor="#B8B8B8"
             value={phoneNumber}
@@ -132,51 +142,12 @@ export default function InfoStep({
             autoCorrect={false}
           />
         </View>
-        {phoneError ? <Text style={styles.errorText}>{phoneError}</Text> : null}
+        {phoneError ? (
+          <Text className="text-[#FF3B30] text-[13px] mt-1.5 ml-1">
+            {phoneError}
+          </Text>
+        ) : null}
       </View>
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  title: {
-    fontSize: 36,
-    fontWeight: "600",
-    color: "#2D3142",
-    textAlign: "center",
-    marginBottom: 60,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  inputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    height: 60,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  inputIcon: {
-    marginRight: 12,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: "#2D3142",
-  },
-  errorText: {
-    color: "#FF3B30",
-    fontSize: 13,
-    marginTop: 6,
-    marginLeft: 4,
-  },
-});

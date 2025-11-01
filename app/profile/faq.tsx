@@ -1,11 +1,5 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-} from "react-native";
+import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -126,12 +120,14 @@ const FAQItemComponent: React.FC<FAQItemComponentProps> = ({
   onPress,
 }) => (
   <TouchableOpacity
-    style={styles.faqItem}
+    className="bg-white rounded-xl p-4 mb-3 shadow-sm"
     onPress={onPress}
     activeOpacity={0.7}
   >
-    <View style={styles.questionContainer}>
-      <Text style={styles.question}>{faq.question}</Text>
+    <View className="flex-row items-center justify-between">
+      <Text className="flex-1 text-[15px] font-semibold text-[#1F2937] mr-3">
+        {faq.question}
+      </Text>
       <Ionicons
         name={isExpanded ? "chevron-up" : "chevron-down"}
         size={20}
@@ -139,8 +135,10 @@ const FAQItemComponent: React.FC<FAQItemComponentProps> = ({
       />
     </View>
     {isExpanded && (
-      <View style={styles.answerContainer}>
-        <Text style={styles.answer}>{faq.answer}</Text>
+      <View className="mt-3 pt-3 border-t border-[#F3F4F6]">
+        <Text className="text-sm text-[#6B7280] leading-[22px]">
+          {faq.answer}
+        </Text>
       </View>
     )}
   </TouchableOpacity>
@@ -160,27 +158,29 @@ export default function FAQ() {
   };
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-[#F9FAFB]">
       {/* Header */}
-      <View style={styles.header}>
+      <View className="flex-row items-center justify-between px-4 pt-[60px] pb-4 bg-white border-b border-[#F3F4F6]">
         <TouchableOpacity
-          style={styles.backButton}
+          className="w-10 h-10 items-center justify-center"
           onPress={() => router.back()}
         >
           <Ionicons name="arrow-back" size={24} color="#1F2937" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>FAQ</Text>
-        <View style={styles.backButton} />
+        <Text className="text-lg font-semibold text-[#1F2937]">FAQ</Text>
+        <View className="w-10 h-10" />
       </View>
 
       {/* Info Banner */}
-      <View style={styles.infoBanner}>
-        <View style={styles.infoBannerIcon}>
+      <View className="flex-row bg-[#EEF2FF] mx-6 mt-5 p-4 rounded-xl items-center">
+        <View className="w-12 h-12 rounded-full bg-white items-center justify-center mr-3">
           <Ionicons name="help-circle" size={24} color="#4461F2" />
         </View>
-        <View style={styles.infoBannerContent}>
-          <Text style={styles.infoBannerTitle}>Need Help?</Text>
-          <Text style={styles.infoBannerText}>
+        <View className="flex-1">
+          <Text className="text-base font-semibold text-[#1F2937] mb-0.5">
+            Need Help?
+          </Text>
+          <Text className="text-[13px] text-[#6B7280]">
             Find answers to common questions below
           </Text>
         </View>
@@ -190,23 +190,23 @@ export default function FAQ() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={styles.categoryScroll}
-        contentContainerStyle={styles.categoryContainer}
+        className="mt-5"
+        contentContainerStyle={{ paddingHorizontal: 24, gap: 8 }}
       >
         {categories.map((category) => (
           <TouchableOpacity
             key={category}
-            style={[
-              styles.categoryChip,
-              selectedCategory === category && styles.activeCategoryChip,
-            ]}
+            className={`px-4 py-2 rounded-full border ${
+              selectedCategory === category
+                ? "bg-[#4461F2] border-[#4461F2]"
+                : "bg-white border-[#E5E7EB]"
+            }`}
             onPress={() => setSelectedCategory(category)}
           >
             <Text
-              style={[
-                styles.categoryChipText,
-                selectedCategory === category && styles.activeCategoryChipText,
-              ]}
+              className={`text-sm font-medium ${
+                selectedCategory === category ? "text-white" : "text-[#6B7280]"
+              }`}
             >
               {category}
             </Text>
@@ -216,20 +216,22 @@ export default function FAQ() {
 
       {/* FAQ List */}
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1 mt-5"
+        contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
         {filteredFAQs.length === 0 ? (
-          <View style={styles.emptyContainer}>
+          <View className="items-center justify-center py-[60px] px-12">
             <Ionicons name="document-text-outline" size={64} color="#D1D5DB" />
-            <Text style={styles.emptyTitle}>No FAQs Found</Text>
-            <Text style={styles.emptyMessage}>
+            <Text className="text-xl font-semibold text-[#1F2937] mt-4 mb-2">
+              No FAQs Found
+            </Text>
+            <Text className="text-sm text-[#6B7280] text-center leading-5">
               No questions found in this category
             </Text>
           </View>
         ) : (
-          <View style={styles.faqList}>
+          <View className="px-6">
             {filteredFAQs.map((faq) => (
               <FAQItemComponent
                 key={faq.id}
@@ -242,14 +244,16 @@ export default function FAQ() {
         )}
 
         {/* Still Need Help */}
-        <View style={styles.helpSection}>
-          <Text style={styles.helpTitle}>Still need help?</Text>
-          <Text style={styles.helpText}>
+        <View className="mx-6 mt-6 p-5 bg-white rounded-2xl items-center shadow-sm">
+          <Text className="text-lg font-bold text-[#1F2937] mb-2">
+            Still need help?
+          </Text>
+          <Text className="text-sm text-[#6B7280] text-center leading-5 mb-4">
             Can&apos;t find what you&apos;re looking for? Our support team is
             here to help!
           </Text>
           <TouchableOpacity
-            style={styles.contactButton}
+            className="flex-row items-center bg-[#4461F2] px-6 py-3 rounded-[10px] gap-2"
             onPress={() => console.log("Contact Support")}
           >
             <Ionicons
@@ -257,206 +261,12 @@ export default function FAQ() {
               size={20}
               color="#FFFFFF"
             />
-            <Text style={styles.contactButtonText}>Contact Support</Text>
+            <Text className="text-[15px] font-semibold text-white">
+              Contact Support
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 16,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1F2937",
-  },
-  infoBanner: {
-    flexDirection: "row",
-    backgroundColor: "#EEF2FF",
-    marginHorizontal: 24,
-    marginTop: 20,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  infoBannerIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  infoBannerContent: {
-    flex: 1,
-  },
-  infoBannerTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1F2937",
-    marginBottom: 2,
-  },
-  infoBannerText: {
-    fontSize: 13,
-    color: "#6B7280",
-  },
-  categoryScroll: {
-    marginTop: 20,
-  },
-  categoryContainer: {
-    paddingHorizontal: 24,
-    gap: 8,
-  },
-  categoryChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  activeCategoryChip: {
-    backgroundColor: "#4461F2",
-    borderColor: "#4461F2",
-  },
-  categoryChipText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#6B7280",
-  },
-  activeCategoryChipText: {
-    color: "#FFFFFF",
-  },
-  scrollView: {
-    flex: 1,
-    marginTop: 20,
-  },
-  scrollContent: {
-    paddingBottom: 32,
-  },
-  faqList: {
-    paddingHorizontal: 24,
-  },
-  faqItem: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  questionContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  question: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#1F2937",
-    marginRight: 12,
-  },
-  answerContainer: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
-  },
-  answer: {
-    fontSize: 14,
-    color: "#6B7280",
-    lineHeight: 22,
-  },
-  helpSection: {
-    marginHorizontal: 24,
-    marginTop: 24,
-    padding: 20,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  helpTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1F2937",
-    marginBottom: 8,
-  },
-  helpText: {
-    fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  contactButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#4461F2",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 10,
-    gap: 8,
-  },
-  contactButtonText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  emptyContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 60,
-    paddingHorizontal: 48,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#1F2937",
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyMessage: {
-    fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
-    lineHeight: 20,
-  },
-});

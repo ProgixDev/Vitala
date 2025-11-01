@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   TextInputProps,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -44,17 +43,17 @@ export default function PasswordInput({
 
   return (
     <>
-      <View style={styles.inputWrapper}>
+      <View className="flex-row items-center bg-white rounded-2xl px-4 h-[60px] shadow-sm">
         {showIcon && (
           <Ionicons
             name="lock-closed-outline"
             size={24}
             color="#4461F2"
-            style={styles.inputIcon}
+            className="mr-3"
           />
         )}
         <TextInput
-          style={styles.input}
+          className="flex-1 text-base text-[#2D3142]"
           placeholder={placeholder}
           placeholderTextColor="#B8B8B8"
           value={value}
@@ -65,7 +64,7 @@ export default function PasswordInput({
           {...rest}
         />
         <TouchableOpacity
-          style={styles.eyeIcon}
+          className="p-1"
           onPress={() => setShowPassword(!showPassword)}
         >
           <Ionicons
@@ -75,43 +74,11 @@ export default function PasswordInput({
           />
         </TouchableOpacity>
       </View>
-      {displayError && <Text style={styles.errorText}>{displayError}</Text>}
+      {displayError && (
+        <Text className="text-[#FF3B30] text-[13px] mt-1.5 ml-1">
+          {displayError}
+        </Text>
+      )}
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  inputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    height: 60,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  inputIcon: {
-    marginRight: 12,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: "#2D3142",
-  },
-  eyeIcon: {
-    padding: 4,
-  },
-  errorText: {
-    color: "#FF3B30",
-    fontSize: 13,
-    marginTop: 6,
-    marginLeft: 4,
-  },
-});

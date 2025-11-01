@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   Alert,
@@ -214,34 +213,41 @@ export default function BookingComponent({
   return (
     <>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
+      <View className="flex-row items-center justify-between mb-8">
+        <TouchableOpacity
+          className="w-12 h-12 justify-center items-center"
+          onPress={onBack}
+        >
           <Ionicons name="arrow-back" size={24} color="#2D3142" />
         </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Book your nurse</Text>
-          <Text style={styles.headerSubtitle}>Welcome Back</Text>
+        <View className="flex-1 ml-4">
+          <Text className="text-xl font-bold text-black mb-1">
+            Book your nurse
+          </Text>
+          <Text className="text-sm text-[#666666]">Welcome Back</Text>
         </View>
         <Image
           source={require("../assets/images/Logo.png")}
-          style={styles.logoContainer}
+          className="w-12 h-12"
           resizeMode="contain"
         />
       </View>
 
       {/* Service Title */}
-      <Text style={styles.serviceTitle}>{service.name}</Text>
+      <Text className="text-2xl font-bold text-black mb-3">{service.name}</Text>
 
       {/* Service Description */}
-      <Text style={styles.serviceDescription}>{service.description}</Text>
+      <Text className="text-base text-[#666666] leading-6 mb-8">
+        {service.description}
+      </Text>
 
       {/* Date Selection */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Select Date</Text>
+      <View className="mb-8">
+        <View className="flex-row justify-between items-center mb-5">
+          <Text className="text-lg font-semibold text-black">Select Date</Text>
 
           {/* Month Navigation */}
-          <View style={styles.monthNavigation}>
+          <View className="flex-row items-center gap-3">
             <TouchableOpacity
               onPress={handlePreviousMonth}
               disabled={
@@ -260,7 +266,9 @@ export default function BookingComponent({
                 }
               />
             </TouchableOpacity>
-            <Text style={styles.monthText}>{currentMonth}</Text>
+            <Text className="text-lg font-semibold text-black">
+              {currentMonth}
+            </Text>
             <TouchableOpacity onPress={handleNextMonth}>
               <Ionicons name="chevron-forward" size={20} color="#2D3142" />
             </TouchableOpacity>
@@ -271,35 +279,40 @@ export default function BookingComponent({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.dateScroll}
-          contentContainerStyle={styles.dateScrollContent}
+          contentContainerStyle={{ gap: 12, paddingRight: 20 }}
         >
           {dates.map((date, index) => (
             <TouchableOpacity
               key={index}
-              style={[
-                styles.dateCard,
-                selectedDate === index && styles.dateCardActive,
-                !date.available && styles.dateCardDisabled,
-              ]}
+              className={`w-[70px] h-[70px] rounded-full justify-center items-center ${
+                selectedDate === index
+                  ? "bg-[#4461F2]"
+                  : !date.available
+                    ? "bg-[#F5F5F5]"
+                    : "bg-[#E8E8E8]"
+              }`}
               onPress={() => date.available && setSelectedDate(index)}
               disabled={!date.available}
             >
               <Text
-                style={[
-                  styles.dateDay,
-                  selectedDate === index && styles.dateDayActive,
-                  !date.available && styles.dateTextDisabled,
-                ]}
+                className={`text-sm mb-1 ${
+                  selectedDate === index
+                    ? "text-white"
+                    : !date.available
+                      ? "text-[#CCCCCC]"
+                      : "text-black"
+                }`}
               >
                 {date.day}
               </Text>
               <Text
-                style={[
-                  styles.dateNumber,
-                  selectedDate === index && styles.dateNumberActive,
-                  !date.available && styles.dateTextDisabled,
-                ]}
+                className={`text-xl font-bold ${
+                  selectedDate === index
+                    ? "text-white"
+                    : !date.available
+                      ? "text-[#CCCCCC]"
+                      : "text-black"
+                }`}
               >
                 {date.date}
               </Text>
@@ -312,26 +325,34 @@ export default function BookingComponent({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={styles.timeScroll}
-        contentContainerStyle={styles.timeContainer}
+        className="mb-8"
+        contentContainerStyle={{
+          flexDirection: "row",
+          gap: 12,
+          paddingRight: 20,
+        }}
       >
         {timeSlots.map((slot, index) => (
           <TouchableOpacity
             key={index}
-            style={[
-              styles.timeSlot,
-              selectedTime === index && styles.timeSlotActive,
-              !slot.available && styles.timeSlotDisabled,
-            ]}
+            className={`px-6 py-3 rounded-[20px] ${
+              selectedTime === index
+                ? "bg-[#4461F2]"
+                : !slot.available
+                  ? "bg-[#F5F5F5]"
+                  : "bg-[#E8E8E8]"
+            }`}
             onPress={() => slot.available && setSelectedTime(index)}
             disabled={!slot.available}
           >
             <Text
-              style={[
-                styles.timeText,
-                selectedTime === index && styles.timeTextActive,
-                !slot.available && styles.timeTextDisabled,
-              ]}
+              className={`text-base font-semibold ${
+                selectedTime === index
+                  ? "text-white"
+                  : !slot.available
+                    ? "text-[#CCCCCC]"
+                    : "text-black"
+              }`}
             >
               {slot.time}
             </Text>
@@ -340,18 +361,22 @@ export default function BookingComponent({
       </ScrollView>
 
       {/* Location Section */}
-      <View style={styles.section}>
-        <View style={styles.locationHeader}>
-          <Text style={styles.sectionTitle}>Add your location</Text>
+      <View className="mb-8">
+        <View className="flex-row justify-between items-center mb-5">
+          <Text className="text-lg font-semibold text-black">
+            Add your location
+          </Text>
           <TouchableOpacity onPress={handleAddLocation}>
-            <Text style={styles.addLocationText}>Add a new location</Text>
+            <Text className="text-sm text-[#4461F2] font-medium">
+              Add a new location
+            </Text>
           </TouchableOpacity>
         </View>
 
         {/* Saved Location */}
-        <View style={styles.locationCard}>
-          <Ionicons name="location-outline" size={20} color="#000000" />
-          <Text style={styles.locationText}>
+        <View className="flex-row items-center bg-white p-5 rounded-xl gap-4 border border-[#E8E8E8]">
+          <Ionicons name="location-outline" size={24} color="#000000" />
+          <Text className="flex-1 text-sm font-semibold text-black leading-5">
             931 2nd Street, Rivers, Manitoba, R0K 1X0.
           </Text>
         </View>
@@ -359,211 +384,14 @@ export default function BookingComponent({
 
       {/* Book Button */}
       <TouchableOpacity
-        style={styles.bookButton}
+        className="flex-row items-center justify-center bg-[#4461F2] py-4 rounded-[28px] gap-3"
         onPress={handleBookAppointment}
       >
-        <Ionicons name="calendar-outline" size={20} color="#FFFFFF" />
-        <Text style={styles.bookButtonText}>Book Appointment</Text>
+        <Ionicons name="calendar-outline" size={22} color="#FFFFFF" />
+        <Text className="text-lg font-semibold text-white">
+          Book Appointment
+        </Text>
       </TouchableOpacity>
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 100,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    marginBottom: 20,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerContent: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#000000",
-    marginBottom: 2,
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: "#666666",
-  },
-  logoContainer: {
-    width: 48,
-    height: 48,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  serviceTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#000000",
-    paddingHorizontal: 20,
-    marginBottom: 8,
-  },
-  serviceDescription: {
-    fontSize: 14,
-    color: "#666666",
-    lineHeight: 20,
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#000000",
-  },
-  monthNavigation: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  monthText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#000000",
-  },
-  dateScroll: {
-    paddingLeft: 20,
-  },
-  dateScrollContent: {
-    gap: 8,
-    paddingRight: 20,
-  },
-  dateCard: {
-    width: 60,
-    height: 60,
-    backgroundColor: "#E8E8E8",
-    borderRadius: 30,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  dateCardActive: {
-    backgroundColor: "#4461F2",
-  },
-  dateCardDisabled: {
-    backgroundColor: "#F5F5F5",
-  },
-  dateDay: {
-    fontSize: 12,
-    color: "#000000",
-    marginBottom: 2,
-  },
-  dateDayActive: {
-    color: "#FFFFFF",
-  },
-  dateNumber: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#000000",
-  },
-  dateNumberActive: {
-    color: "#FFFFFF",
-  },
-  dateTextDisabled: {
-    color: "#CCCCCC",
-  },
-  timeScroll: {
-    paddingLeft: 20,
-    marginBottom: 24,
-  },
-  timeContainer: {
-    flexDirection: "row",
-    gap: 8,
-    paddingRight: 20,
-  },
-  timeSlot: {
-    backgroundColor: "#E8E8E8",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  timeSlotActive: {
-    backgroundColor: "#4461F2",
-  },
-  timeSlotDisabled: {
-    backgroundColor: "#F5F5F5",
-  },
-  timeText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#000000",
-  },
-  timeTextActive: {
-    color: "#FFFFFF",
-  },
-  timeTextDisabled: {
-    color: "#CCCCCC",
-  },
-  locationHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    marginBottom: 12,
-  },
-  addLocationText: {
-    fontSize: 13,
-    color: "#4461F2",
-    fontWeight: "500",
-  },
-  locationCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    marginHorizontal: 20,
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: "#E8E8E8",
-  },
-  locationText: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#000000",
-    lineHeight: 18,
-  },
-  bookButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#4461F2",
-    marginHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 25,
-    gap: 8,
-  },
-  bookButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-});

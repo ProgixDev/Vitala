@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import {
   Alert,
   ScrollView,
-  StyleSheet,
   Switch,
   Text,
   TouchableOpacity,
@@ -31,18 +30,22 @@ const SettingItem: React.FC<SettingItemProps> = ({
   rightElement,
 }) => (
   <TouchableOpacity
-    style={styles.settingItem}
+    className="flex-row items-center justify-between py-3 px-4"
     onPress={onPress}
     activeOpacity={0.7}
     disabled={!onPress && !rightElement}
   >
-    <View style={styles.settingLeft}>
-      <View style={styles.iconContainer}>
+    <View className="flex-row items-center flex-1">
+      <View className="w-10 h-10 rounded-[10px] bg-[#F0F2FF] items-center justify-center mr-3">
         <Ionicons name={icon} size={22} color="#4461F2" />
       </View>
-      <View style={styles.settingTextContainer}>
-        <Text style={styles.settingTitle}>{title}</Text>
-        {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
+      <View className="flex-1">
+        <Text className="text-[15px] font-medium text-gray-800 mb-0.5">
+          {title}
+        </Text>
+        {subtitle && (
+          <Text className="text-[13px] text-gray-500">{subtitle}</Text>
+        )}
       </View>
     </View>
     {rightElement ||
@@ -101,52 +104,54 @@ export default function Settings() {
               console.error("Error resetting onboarding:", error);
               Alert.alert(
                 "Error",
-                "Failed to reset onboarding. Please try again."
+                "Failed to reset onboarding. Please try again.",
               );
             }
           },
         },
-      ]
+      ],
     );
   };
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-gray-50">
       {/* Header */}
-      <View style={styles.header}>
+      <View className="flex-row items-center justify-between px-4 pt-[60px] pb-4 bg-white border-b border-gray-100">
         <TouchableOpacity
-          style={styles.backButton}
+          className="w-10 h-10 items-center justify-center"
           onPress={() => router.back()}
         >
           <Ionicons name="arrow-back" size={24} color="#1F2937" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
-        <View style={styles.backButton} />
+        <Text className="text-lg font-semibold text-gray-800">Settings</Text>
+        <View className="w-10 h-10" />
       </View>
 
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Account Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
-          <View style={styles.settingsCard}>
+        <View className="px-6 mt-6">
+          <Text className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wider">
+            Account
+          </Text>
+          <View className="bg-white rounded-2xl py-2 shadow-sm">
             <SettingItem
               icon="person-outline"
               title="Edit Profile"
               subtitle="Update your personal information"
               onPress={() => router.push("/profile/my-profile")}
             />
-            <View style={styles.divider} />
+            <View className="h-px bg-gray-100 ml-[68px]" />
             <SettingItem
               icon="key-outline"
               title="Change Password"
               subtitle="Update your password"
               onPress={() => console.log("Change Password")}
             />
-            <View style={styles.divider} />
+            <View className="h-px bg-gray-100 ml-[68px]" />
             <SettingItem
               icon="shield-checkmark-outline"
               title="Privacy & Security"
@@ -155,11 +160,12 @@ export default function Settings() {
             />
           </View>
         </View>
-
         {/* Notifications */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notifications</Text>
-          <View style={styles.settingsCard}>
+        <View className="px-6 mt-6">
+          <Text className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wider">
+            Notifications
+          </Text>
+          <View className="bg-white rounded-2xl py-2 shadow-sm">
             <SettingItem
               icon="notifications-outline"
               title="Push Notifications"
@@ -174,7 +180,7 @@ export default function Settings() {
                 />
               }
             />
-            <View style={styles.divider} />
+            <View className="h-px bg-gray-100 ml-[68px]" />
             <SettingItem
               icon="mail-outline"
               title="Email Notifications"
@@ -189,7 +195,7 @@ export default function Settings() {
                 />
               }
             />
-            <View style={styles.divider} />
+            <View className="h-px bg-gray-100 ml-[68px]" />
             <SettingItem
               icon="chatbubble-outline"
               title="SMS Notifications"
@@ -206,11 +212,12 @@ export default function Settings() {
             />
           </View>
         </View>
-
         {/* Privacy */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Privacy</Text>
-          <View style={styles.settingsCard}>
+        <View className="px-6 mt-6">
+          <Text className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wider">
+            Privacy
+          </Text>
+          <View className="bg-white rounded-2xl py-2 shadow-sm">
             <SettingItem
               icon="location-outline"
               title="Location Services"
@@ -225,7 +232,7 @@ export default function Settings() {
                 />
               }
             />
-            <View style={styles.divider} />
+            <View className="h-px bg-gray-100 ml-[68px]" />
             <SettingItem
               icon="finger-print-outline"
               title="Biometric Authentication"
@@ -242,18 +249,19 @@ export default function Settings() {
             />
           </View>
         </View>
-
         {/* App Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>App Settings</Text>
-          <View style={styles.settingsCard}>
+        <View className="px-6 mt-6">
+          <Text className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wider">
+            App Settings
+          </Text>
+          <View className="bg-white rounded-2xl py-2 shadow-sm">
             <SettingItem
               icon="language-outline"
               title="Language"
               subtitle="English"
               onPress={() => console.log("Language")}
             />
-            <View style={styles.divider} />
+            <View className="h-px bg-gray-100 ml-[68px]" />
             <SettingItem
               icon="moon-outline"
               title="Dark Mode"
@@ -268,7 +276,7 @@ export default function Settings() {
                 />
               }
             />
-            <View style={styles.divider} />
+            <View className="h-px bg-gray-100 ml-[68px]" />
             <SettingItem
               icon="download-outline"
               title="App Updates"
@@ -277,25 +285,26 @@ export default function Settings() {
             />
           </View>
         </View>
-
         {/* Support */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support</Text>
-          <View style={styles.settingsCard}>
+        <View className="px-6 mt-6">
+          <Text className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wider">
+            Support
+          </Text>
+          <View className="bg-white rounded-2xl py-2 shadow-sm">
             <SettingItem
               icon="help-circle-outline"
               title="Help Center"
               subtitle="Get help and support"
               onPress={() => console.log("Help Center")}
             />
-            <View style={styles.divider} />
+            <View className="h-px bg-gray-100 ml-[68px]" />
             <SettingItem
               icon="document-text-outline"
               title="Terms & Conditions"
               subtitle="Read our terms"
               onPress={() => console.log("Terms & Conditions")}
             />
-            <View style={styles.divider} />
+            <View className="h-px bg-gray-100 ml-[68px]" />
             <SettingItem
               icon="shield-outline"
               title="Privacy Policy"
@@ -304,41 +313,46 @@ export default function Settings() {
             />
           </View>
         </View>
-
         {/* Account Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account Actions</Text>
-          <View style={styles.settingsCard}>
+        <View className="px-6 mt-6">
+          <Text className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wider">
+            Account Actions
+          </Text>
+          <View className="bg-white rounded-2xl py-2 shadow-sm">
             <TouchableOpacity
-              style={styles.dangerButton}
+              className="flex-row items-center justify-between py-3 px-4"
               onPress={handleResetOnboarding}
               activeOpacity={0.7}
             >
-              <View style={styles.settingLeft}>
-                <View style={styles.iconContainer}>
+              <View className="flex-row items-center flex-1">
+                <View className="w-10 h-10 rounded-[10px] bg-[#F0F2FF] items-center justify-center mr-3">
                   <Ionicons name="refresh-outline" size={22} color="#DC2626" />
                 </View>
-                <View style={styles.settingTextContainer}>
-                  <Text style={styles.dangerButtonText}>Reset Onboarding</Text>
-                  <Text style={styles.settingSubtitle}>
+                <View className="flex-1">
+                  <Text className="text-[15px] font-medium text-red-600 mb-0.5">
+                    Reset Onboarding
+                  </Text>
+                  <Text className="text-[13px] text-gray-500">
                     Show onboarding flow again
                   </Text>
                 </View>
               </View>
             </TouchableOpacity>
-            <View style={styles.divider} />
+            <View className="h-px bg-gray-100 ml-[68px]" />
             <TouchableOpacity
-              style={styles.dangerButton}
+              className="flex-row items-center justify-between py-3 px-4"
               onPress={handleLogout}
               activeOpacity={0.7}
             >
-              <View style={styles.settingLeft}>
-                <View style={styles.iconContainer}>
+              <View className="flex-row items-center flex-1">
+                <View className="w-10 h-10 rounded-[10px] bg-[#F0F2FF] items-center justify-center mr-3">
                   <Ionicons name="log-out-outline" size={22} color="#DC2626" />
                 </View>
-                <View style={styles.settingTextContainer}>
-                  <Text style={styles.dangerButtonText}>Logout</Text>
-                  <Text style={styles.settingSubtitle}>
+                <View className="flex-1">
+                  <Text className="text-[15px] font-medium text-red-600 mb-0.5">
+                    Logout
+                  </Text>
+                  <Text className="text-[13px] text-gray-500">
                     Sign out of your account
                   </Text>
                 </View>
@@ -350,129 +364,3 @@ export default function Settings() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 16,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1F2937",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 32,
-  },
-  section: {
-    paddingHorizontal: 24,
-    marginTop: 24,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#6B7280",
-    marginBottom: 12,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  settingsCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingVertical: 8,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  settingItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  settingLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: "#F0F2FF",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  settingTextContainer: {
-    flex: 1,
-  },
-  settingTitle: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#1F2937",
-    marginBottom: 2,
-  },
-  settingSubtitle: {
-    fontSize: 13,
-    color: "#6B7280",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "#F3F4F6",
-    marginLeft: 68,
-  },
-  appInfoSection: {
-    alignItems: "center",
-    paddingVertical: 32,
-  },
-  appVersion: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1F2937",
-    marginBottom: 4,
-  },
-  versionNumber: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
-  dangerButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  dangerButtonText: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#DC2626",
-    marginBottom: 2,
-  },
-});

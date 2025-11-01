@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import Onboarding, {
   isOnboardingCompleted,
   markOnboardingCompleted,
@@ -27,7 +27,7 @@ export default function Index() {
 
   const handleComplete = async () => {
     console.log(
-      "Create account pressed - marking onboarding as completed and navigating to signup"
+      "Create account pressed - marking onboarding as completed and navigating to signup",
     );
     await markOnboardingCompleted();
     router.replace("/signup");
@@ -35,7 +35,7 @@ export default function Index() {
 
   const handleLogin = async () => {
     console.log(
-      "Login pressed - marking onboarding as completed and navigating to login"
+      "Login pressed - marking onboarding as completed and navigating to login",
     );
     await markOnboardingCompleted();
     router.replace("/signin");
@@ -44,24 +44,18 @@ export default function Index() {
   // Show loading or onboarding based on status
   if (hasCompletedOnboarding === null) {
     // Still checking status, could show a loading screen here
-    return <View style={styles.container} />;
+    return <View className="flex-1" />;
   }
 
   if (hasCompletedOnboarding) {
     // User has completed onboarding, navigation will happen in useEffect
-    return <View style={styles.container} />;
+    return <View className="flex-1" />;
   }
 
   // Show onboarding for first-time users
   return (
-    <View style={styles.container}>
+    <View className="flex-1">
       <Onboarding onComplete={handleComplete} onLogin={handleLogin} />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});

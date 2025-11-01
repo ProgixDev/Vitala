@@ -2,7 +2,6 @@ import React from "react";
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
   ScrollView,
   Linking,
@@ -19,19 +18,19 @@ interface InfoItemProps {
 
 const InfoItem: React.FC<InfoItemProps> = ({ icon, label, value, onPress }) => (
   <TouchableOpacity
-    style={styles.infoItem}
+    className="flex-row items-center justify-between py-3.5 px-4"
     onPress={onPress}
     activeOpacity={onPress ? 0.7 : 1}
     disabled={!onPress}
   >
-    <View style={styles.infoLeft}>
-      <View style={styles.iconContainer}>
+    <View className="flex-row items-center flex-1">
+      <View className="w-9 h-9 rounded-lg bg-[#F0F2FF] items-center justify-center mr-3">
         <Ionicons name={icon} size={20} color="#4461F2" />
       </View>
-      <Text style={styles.infoLabel}>{label}</Text>
+      <Text className="text-[15px] font-medium text-[#1F2937]">{label}</Text>
     </View>
-    <View style={styles.infoRight}>
-      <Text style={styles.infoValue}>{value}</Text>
+    <View className="flex-row items-center gap-2">
+      <Text className="text-sm text-[#6B7280]">{value}</Text>
       {onPress && <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />}
     </View>
   </TouchableOpacity>
@@ -45,15 +44,15 @@ interface LinkItemProps {
 
 const LinkItem: React.FC<LinkItemProps> = ({ icon, title, onPress }) => (
   <TouchableOpacity
-    style={styles.linkItem}
+    className="flex-row items-center justify-between py-3.5 px-4"
     onPress={onPress}
     activeOpacity={0.7}
   >
-    <View style={styles.linkLeft}>
-      <View style={styles.linkIconContainer}>
+    <View className="flex-row items-center flex-1">
+      <View className="w-9 h-9 rounded-lg bg-[#F0F2FF] items-center justify-center mr-3">
         <Ionicons name={icon} size={22} color="#4461F2" />
       </View>
-      <Text style={styles.linkTitle}>{title}</Text>
+      <Text className="text-[15px] font-medium text-[#1F2937]">{title}</Text>
     </View>
     <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
   </TouchableOpacity>
@@ -89,41 +88,49 @@ export default function About() {
   };
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-[#F9FAFB]">
       {/* Header */}
-      <View style={styles.header}>
+      <View className="flex-row items-center justify-between px-4 pt-[60px] pb-4 bg-white border-b border-[#F3F4F6]">
         <TouchableOpacity
-          style={styles.backButton}
+          className="w-10 h-10 items-center justify-center"
           onPress={() => router.back()}
         >
           <Ionicons name="arrow-back" size={24} color="#1F2937" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>About App</Text>
-        <View style={styles.backButton} />
+        <Text className="text-lg font-semibold text-[#1F2937]">About App</Text>
+        <View className="w-10 h-10" />
       </View>
 
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
         {/* App Logo and Name */}
-        <View style={styles.logoSection}>
-          <View style={styles.logoContainer}>
+        <View className="items-center py-10 bg-white mb-4">
+          <View className="w-24 h-24 rounded-3xl bg-[#EEF2FF] items-center justify-center mb-4 border-3 border-[#E0E7FF]">
             <Ionicons name="medical" size={48} color="#4461F2" />
           </View>
-          <Text style={styles.appName}>Vitala Health</Text>
-          <Text style={styles.appTagline}>Your Health, Our Priority</Text>
-          <View style={styles.versionBadge}>
-            <Text style={styles.versionText}>Version 1.0.0</Text>
+          <Text className="text-2xl font-bold text-[#1F2937] mb-1">
+            Vitala Health
+          </Text>
+          <Text className="text-sm text-[#6B7280] mb-4">
+            Your Health, Our Priority
+          </Text>
+          <View className="bg-[#EEF2FF] px-4 py-1.5 rounded-full">
+            <Text className="text-[13px] font-semibold text-[#4461F2]">
+              Version 1.0.0
+            </Text>
           </View>
         </View>
 
         {/* App Description */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
-          <View style={styles.descriptionCard}>
-            <Text style={styles.description}>
+        <View className="px-6 mt-6">
+          <Text className="text-sm font-semibold text-[#6B7280] mb-3 uppercase tracking-wider">
+            About
+          </Text>
+          <View className="bg-white rounded-xl p-4 shadow-sm">
+            <Text className="text-[15px] text-[#4B5563] leading-6">
               Vitala is a comprehensive healthcare platform that connects you
               with quality medical services. Book appointments, access emergency
               services, and manage your health records all in one place.
@@ -132,51 +139,51 @@ export default function About() {
         </View>
 
         {/* App Information */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Information</Text>
-          <View style={styles.infoCard}>
+        <View className="px-6 mt-6">
+          <Text className="text-sm font-semibold text-[#6B7280] mb-3 uppercase tracking-wider">
+            Information
+          </Text>
+          <View className="bg-white rounded-xl py-1 shadow-sm">
             <InfoItem
               icon="code-working-outline"
               label="Version"
               value="1.0.0"
             />
-            <View style={styles.divider} />
+            <View className="h-px bg-[#F3F4F6] ml-16" />
             <InfoItem
               icon="calendar-outline"
               label="Release Date"
               value="December 2024"
             />
-            <View style={styles.divider} />
+            <View className="h-px bg-[#F3F4F6] ml-16" />
             <InfoItem
               icon="document-text-outline"
               label="Build Number"
               value="100"
             />
-            <View style={styles.divider} />
-            <InfoItem
-              icon="resize-outline"
-              label="Size"
-              value="45.2 MB"
-            />
+            <View className="h-px bg-[#F3F4F6] ml-16" />
+            <InfoItem icon="resize-outline" label="Size" value="45.2 MB" />
           </View>
         </View>
 
         {/* Links */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Legal & More</Text>
-          <View style={styles.linkCard}>
+        <View className="px-6 mt-6">
+          <Text className="text-sm font-semibold text-[#6B7280] mb-3 uppercase tracking-wider">
+            Legal & More
+          </Text>
+          <View className="bg-white rounded-xl py-1 shadow-sm">
             <LinkItem
               icon="shield-checkmark-outline"
               title="Privacy Policy"
               onPress={handleOpenPrivacyPolicy}
             />
-            <View style={styles.divider} />
+            <View className="h-px bg-[#F3F4F6] ml-16" />
             <LinkItem
               icon="document-text-outline"
               title="Terms & Conditions"
               onPress={handleOpenTerms}
             />
-            <View style={styles.divider} />
+            <View className="h-px bg-[#F3F4F6] ml-16" />
             <LinkItem
               icon="code-slash-outline"
               title="Open Source Licenses"
@@ -186,15 +193,17 @@ export default function About() {
         </View>
 
         {/* Contact */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Contact</Text>
-          <View style={styles.linkCard}>
+        <View className="px-6 mt-6">
+          <Text className="text-sm font-semibold text-[#6B7280] mb-3 uppercase tracking-wider">
+            Contact
+          </Text>
+          <View className="bg-white rounded-xl py-1 shadow-sm">
             <LinkItem
               icon="globe-outline"
               title="Visit Website"
               onPress={handleOpenWebsite}
             />
-            <View style={styles.divider} />
+            <View className="h-px bg-[#F3F4F6] ml-16" />
             <LinkItem
               icon="mail-outline"
               title="Email Support"
@@ -204,15 +213,17 @@ export default function About() {
         </View>
 
         {/* Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support Us</Text>
-          <View style={styles.linkCard}>
+        <View className="px-6 mt-6">
+          <Text className="text-sm font-semibold text-[#6B7280] mb-3 uppercase tracking-wider">
+            Support Us
+          </Text>
+          <View className="bg-white rounded-xl py-1 shadow-sm">
             <LinkItem
               icon="star-outline"
               title="Rate App"
               onPress={handleRateApp}
             />
-            <View style={styles.divider} />
+            <View className="h-px bg-[#F3F4F6] ml-16" />
             <LinkItem
               icon="share-social-outline"
               title="Share App"
@@ -222,29 +233,31 @@ export default function About() {
         </View>
 
         {/* Social Media */}
-        <View style={styles.socialSection}>
-          <Text style={styles.socialTitle}>Follow Us</Text>
-          <View style={styles.socialContainer}>
+        <View className="px-6 mt-8 items-center">
+          <Text className="text-base font-semibold text-[#1F2937] mb-4">
+            Follow Us
+          </Text>
+          <View className="flex-row gap-4">
             <TouchableOpacity
-              style={styles.socialButton}
+              className="w-12 h-12 rounded-full bg-[#F0F2FF] items-center justify-center border border-[#E0E7FF]"
               onPress={() => Linking.openURL("https://facebook.com")}
             >
               <Ionicons name="logo-facebook" size={24} color="#4461F2" />
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.socialButton}
+              className="w-12 h-12 rounded-full bg-[#F0F2FF] items-center justify-center border border-[#E0E7FF]"
               onPress={() => Linking.openURL("https://twitter.com")}
             >
               <Ionicons name="logo-twitter" size={24} color="#4461F2" />
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.socialButton}
+              className="w-12 h-12 rounded-full bg-[#F0F2FF] items-center justify-center border border-[#E0E7FF]"
               onPress={() => Linking.openURL("https://instagram.com")}
             >
               <Ionicons name="logo-instagram" size={24} color="#4461F2" />
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.socialButton}
+              className="w-12 h-12 rounded-full bg-[#F0F2FF] items-center justify-center border border-[#E0E7FF]"
               onPress={() => Linking.openURL("https://linkedin.com")}
             >
               <Ionicons name="logo-linkedin" size={24} color="#4461F2" />
@@ -253,11 +266,11 @@ export default function About() {
         </View>
 
         {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
+        <View className="items-center py-8 px-6">
+          <Text className="text-sm text-[#6B7280] mb-2">
             Made with ❤️ for better healthcare
           </Text>
-          <Text style={styles.copyright}>
+          <Text className="text-xs text-[#9CA3AF]">
             © 2024 Vitala Health. All rights reserved.
           </Text>
         </View>
@@ -265,238 +278,3 @@ export default function About() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 16,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1F2937",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 32,
-  },
-  logoSection: {
-    alignItems: "center",
-    paddingVertical: 40,
-    backgroundColor: "#FFFFFF",
-    marginBottom: 16,
-  },
-  logoContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 24,
-    backgroundColor: "#EEF2FF",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-    borderWidth: 3,
-    borderColor: "#E0E7FF",
-  },
-  appName: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#1F2937",
-    marginBottom: 4,
-  },
-  appTagline: {
-    fontSize: 14,
-    color: "#6B7280",
-    marginBottom: 16,
-  },
-  versionBadge: {
-    backgroundColor: "#EEF2FF",
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  versionText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#4461F2",
-  },
-  section: {
-    paddingHorizontal: 24,
-    marginTop: 24,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#6B7280",
-    marginBottom: 12,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  descriptionCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  description: {
-    fontSize: 15,
-    color: "#4B5563",
-    lineHeight: 24,
-  },
-  infoCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingVertical: 4,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  infoItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-  },
-  infoLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: "#F0F2FF",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  infoLabel: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#1F2937",
-  },
-  infoRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  infoValue: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
-  linkCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingVertical: 4,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  linkItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-  },
-  linkLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  linkIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: "#F0F2FF",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  linkTitle: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#1F2937",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "#F3F4F6",
-    marginLeft: 64,
-  },
-  socialSection: {
-    paddingHorizontal: 24,
-    marginTop: 32,
-    alignItems: "center",
-  },
-  socialTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1F2937",
-    marginBottom: 16,
-  },
-  socialContainer: {
-    flexDirection: "row",
-    gap: 16,
-  },
-  socialButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#F0F2FF",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#E0E7FF",
-  },
-  footer: {
-    alignItems: "center",
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-  },
-  footerText: {
-    fontSize: 14,
-    color: "#6B7280",
-    marginBottom: 8,
-  },
-  copyright: {
-    fontSize: 12,
-    color: "#9CA3AF",
-  },
-});

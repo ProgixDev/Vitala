@@ -1,72 +1,77 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import React from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import IllustrationSvg from "../../assets/images/Group 92.svg";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import IllustrationSvg from "@/assets/images/schedule.svg";
 
 export default function Schedule() {
-  const router = useRouter();
-
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-gray-100">
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1 pt-10"
+        contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View className="px-5 mb-6">
           <View>
-            <Text style={styles.headerTitle}>Appointments</Text>
-            <Text style={styles.headerSubtitle}>
+            <Text className="text-[28px] font-bold text-[#2D3142] mb-1">
+              Appointments
+            </Text>
+            <Text className="text-sm text-[#9E9E9E]">
               Organize all your schedules
             </Text>
           </View>
         </View>
 
         {/* Upcoming Appointments Card */}
-        <TouchableOpacity style={styles.upcomingCard}>
-          <View style={styles.upcomingHeader}>
-            <Text style={styles.upcomingTitle}>Upcoming Appointments</Text>
+        <TouchableOpacity className="bg-[#4461F2] rounded-3xl mx-5 p-5 mb-5">
+          <View className="flex-row justify-between items-center mb-5">
+            <Text className="text-lg font-semibold text-white">
+              Upcoming Appointments
+            </Text>
             <Ionicons name="chevron-forward" size={24} color="#FFFFFF" />
           </View>
 
-          <View style={styles.appointmentDetails}>
-            <View style={styles.detailItem}>
-              <View style={styles.iconContainer}>
+          <View className="flex-row justify-between mb-5 gap-3">
+            <View className="flex-1 flex-row items-center gap-2.5">
+              <View className="w-10 h-10 bg-white/20 rounded-xl justify-center items-center">
                 <Ionicons name="calendar-outline" size={20} color="#FFFFFF" />
               </View>
               <View>
-                <Text style={styles.detailLabel}>Appointments Date</Text>
-                <Text style={styles.detailValue}>Sun, 10 Jan 2025</Text>
+                <Text className="text-[11px] text-white/80 mb-0.5">
+                  Appointments Date
+                </Text>
+                <Text className="text-[13px] font-semibold text-white">
+                  Sun, 10 Jan 2025
+                </Text>
               </View>
             </View>
 
-            <View style={styles.detailItem}>
-              <View style={styles.iconContainer}>
+            <View className="flex-1 flex-row items-center gap-2.5">
+              <View className="w-10 h-10 bg-white/20 rounded-xl justify-center items-center">
                 <Ionicons name="time-outline" size={20} color="#FFFFFF" />
               </View>
               <View>
-                <Text style={styles.detailLabel}>Appointment Time</Text>
-                <Text style={styles.detailValue}>08:00 - 12:00</Text>
+                <Text className="text-[11px] text-white/80 mb-0.5">
+                  Appointment Time
+                </Text>
+                <Text className="text-[13px] font-semibold text-white">
+                  08:00 - 12:00
+                </Text>
               </View>
             </View>
           </View>
 
           {/* Service Card */}
-          <View style={styles.serviceCard}>
-            <View style={styles.serviceIconWrapper}>
+          <View className="bg-white rounded-2xl p-4 flex-row items-center gap-3">
+            <View className="w-12 h-12 bg-[#E8EBFF] rounded-xl justify-center items-center">
               <Ionicons name="accessibility" size={24} color="#4461F2" />
             </View>
-            <View style={styles.serviceInfo}>
-              <Text style={styles.serviceName}>Rehabilitation Care</Text>
-              <Text style={styles.serviceDescription}>
+            <View className="flex-1">
+              <Text className="text-[15px] font-semibold text-[#2D3142] mb-1">
+                Rehabilitation Care
+              </Text>
+              <Text className="text-xs text-[#9E9E9E] leading-4">
                 personalized physiotherapy sessions.
               </Text>
             </View>
@@ -74,20 +79,26 @@ export default function Schedule() {
         </TouchableOpacity>
 
         {/* Stay Organized Card */}
-        <View style={styles.organizedCard}>
-          <Text style={styles.organizedBadge}>
+        <View className="bg-[#4461F2] rounded-3xl mx-5 p-6 pb-[140px] relative overflow-hidden">
+          <Text className="text-xs text-white mb-3 opacity-90">
             Trusted Nurses on your schedule 😊
           </Text>
-          <Text style={styles.organizedTitle}>Stay Organized,</Text>
-          <Text style={styles.organizedTitle}>Stay Ahead</Text>
+          <Text className="text-[26px] font-bold text-white leading-8">
+            Stay Organized,
+          </Text>
+          <Text className="text-[26px] font-bold text-white leading-8">
+            Stay Ahead
+          </Text>
 
-          <TouchableOpacity style={styles.calendarButton}>
+          <TouchableOpacity className="flex-row items-center bg-white/20 py-3 px-5 rounded-xl self-start mt-5 gap-2">
             <Ionicons name="calendar-outline" size={20} color="#FFFFFF" />
-            <Text style={styles.calendarButtonText}>Open Calendar</Text>
+            <Text className="text-sm font-semibold text-white">
+              Open Calendar
+            </Text>
           </TouchableOpacity>
 
           {/* Illustration */}
-          <View style={styles.illustrationContainer}>
+          <View className="absolute -bottom-5 -right-5 w-[200px] h-[200px]">
             <IllustrationSvg width={200} height={200} />
           </View>
         </View>
@@ -95,153 +106,3 @@ export default function Schedule() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F5F5F5",
-  },
-  scrollView: {
-    flex: 1,
-    paddingTop: 40,
-  },
-  scrollContent: {
-    paddingBottom: 100,
-  },
-  header: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#2D3142",
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: "#9E9E9E",
-  },
-  upcomingCard: {
-    backgroundColor: "#4461F2",
-    borderRadius: 24,
-    marginHorizontal: 20,
-    padding: 20,
-    marginBottom: 20,
-  },
-  upcomingHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  upcomingTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  appointmentDetails: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 20,
-    gap: 12,
-  },
-  detailItem: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  detailLabel: {
-    fontSize: 11,
-    color: "rgba(255, 255, 255, 0.8)",
-    marginBottom: 2,
-  },
-  detailValue: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  serviceCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  serviceIconWrapper: {
-    width: 48,
-    height: 48,
-    backgroundColor: "#E8EBFF",
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  serviceInfo: {
-    flex: 1,
-  },
-  serviceName: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#2D3142",
-    marginBottom: 4,
-  },
-  serviceDescription: {
-    fontSize: 12,
-    color: "#9E9E9E",
-    lineHeight: 16,
-  },
-  organizedCard: {
-    backgroundColor: "#4461F2",
-    borderRadius: 24,
-    marginHorizontal: 20,
-    padding: 24,
-    paddingBottom: 140,
-    position: "relative",
-    overflow: "hidden",
-  },
-  organizedBadge: {
-    fontSize: 12,
-    color: "#FFFFFF",
-    marginBottom: 12,
-    opacity: 0.9,
-  },
-  organizedTitle: {
-    fontSize: 26,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    lineHeight: 32,
-  },
-  calendarButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    alignSelf: "flex-start",
-    marginTop: 20,
-    gap: 8,
-  },
-  calendarButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  illustrationContainer: {
-    position: "absolute",
-    bottom: -20,
-    right: -20,
-    width: 200,
-    height: 200,
-  },
-});

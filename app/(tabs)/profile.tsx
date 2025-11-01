@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-} from "react-native";
+import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { authStorage } from "../../utils/auth";
@@ -25,13 +19,17 @@ const MenuItem: React.FC<MenuItemProps> = ({
   isLogout = false,
 }) => (
   <TouchableOpacity
-    style={[styles.menuItem, isLogout && styles.logoutMenuItem]}
+    className={`flex-row items-center justify-between py-4 px-4 rounded-xl mb-2 ${
+      isLogout ? "bg-[#FEF2F2] border border-[#FEE2E2]" : "bg-white"
+    }`}
     onPress={onPress}
     activeOpacity={0.7}
   >
-    <View style={styles.menuItemLeft}>
+    <View className="flex-row items-center gap-4">
       <View
-        style={[styles.iconContainer, isLogout && styles.logoutIconContainer]}
+        className={`w-10 h-10 rounded-lg justify-center items-center ${
+          isLogout ? "bg-[#FEE2E2]" : "bg-[#F9FAFB]"
+        }`}
       >
         <Ionicons
           name={icon}
@@ -39,7 +37,11 @@ const MenuItem: React.FC<MenuItemProps> = ({
           color={isLogout ? "#FF3B30" : "#6B7280"}
         />
       </View>
-      <Text style={[styles.menuItemText, isLogout && styles.logoutText]}>
+      <Text
+        className={`text-base font-medium ${
+          isLogout ? "text-[#FF3B30] font-semibold" : "text-[#374151]"
+        }`}
+      >
         {title}
       </Text>
     </View>
@@ -105,39 +107,41 @@ export default function Profile() {
   ];
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-white">
       {/* Header */}
-      <View style={styles.header}>
+      <View className="flex-row items-center justify-between px-4 pt-[60px] pb-4 bg-white">
         <TouchableOpacity
-          style={styles.backButton}
+          className="w-10 h-10 items-center justify-center"
           onPress={() => router.back()}
         >
           <Ionicons name="arrow-back" size={24} color="#1F2937" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Profile</Text>
-        <View style={styles.backButton} />
+        <Text className="text-lg font-semibold text-[#1F2937]">Profile</Text>
+        <View className="w-10 h-10" />
       </View>
 
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
         {/* User Info Section */}
         {currentUser && (
-          <View style={styles.userSection}>
-            <View style={styles.avatarContainer}>
-              <View style={styles.avatar}>
+          <View className="items-center py-6 px-6">
+            <View className="mb-4">
+              <View className="w-20 h-20 rounded-full bg-[#EEF2FF] items-center justify-center border-3 border-[#E0E7FF]">
                 <Ionicons name="person" size={40} color="#4461F2" />
               </View>
             </View>
-            <Text style={styles.userName}>{currentUser.fullName}</Text>
-            <Text style={styles.userEmail}>{currentUser.email}</Text>
+            <Text className="text-xl font-bold text-[#1F2937] mb-1">
+              {currentUser.fullName}
+            </Text>
+            <Text className="text-sm text-[#6B7280]">{currentUser.email}</Text>
           </View>
         )}
 
         {/* Menu Items */}
-        <View style={styles.menuContainer}>
+        <View className="px-6 gap-2">
           {menuItems.map((item, index) => (
             <MenuItem
               key={index}
@@ -149,7 +153,7 @@ export default function Profile() {
         </View>
 
         {/* Logout Button */}
-        <View style={styles.logoutContainer}>
+        <View className="px-6 mt-4">
           <MenuItem
             icon="log-out-outline"
             title="Logout"
@@ -161,112 +165,3 @@ export default function Profile() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 16,
-    backgroundColor: "#FFFFFF",
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1F2937",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 32,
-  },
-  userSection: {
-    alignItems: "center",
-    paddingVertical: 24,
-    paddingHorizontal: 24,
-  },
-  avatarContainer: {
-    marginBottom: 16,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#EEF2FF",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 3,
-    borderColor: "#E0E7FF",
-  },
-  userName: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#1F2937",
-    marginBottom: 4,
-  },
-  userEmail: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
-  menuContainer: {
-    paddingHorizontal: 24,
-    gap: 8,
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  menuItemLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: "#F9FAFB",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  menuItemText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#374151",
-  },
-  logoutContainer: {
-    paddingHorizontal: 24,
-    marginTop: 16,
-  },
-  logoutMenuItem: {
-    backgroundColor: "#FEF2F2",
-    borderWidth: 1,
-    borderColor: "#FEE2E2",
-  },
-  logoutIconContainer: {
-    backgroundColor: "#FEE2E2",
-  },
-  logoutText: {
-    color: "#FF3B30",
-    fontWeight: "600",
-  },
-});

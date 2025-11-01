@@ -2,18 +2,15 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   TouchableOpacity,
-  StyleSheet,
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   Text,
   BackHandler,
 } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { Ionicons } from "@expo/vector-icons";
+
 import { router } from "expo-router";
-import { authStorage, User } from "../../utils/auth";
+import { authStorage, User } from "@/utils/auth";
 import InfoStep from "./components/InfoStep";
 import PasswordStep from "./components/PasswordStep";
 import OTPStep from "./components/OTPStep";
@@ -24,22 +21,18 @@ export default function SignUp() {
   const [step, setStep] = useState<Step>("info");
 
   // Step 1: Info
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [fullName, setFullName] = useState("testing test");
+  const [email, setEmail] = useState("test@project.dev");
+  const [phoneNumber, setPhoneNumber] = useState("0600000000");
 
   // Step 2: Password
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("12345678");
+  const [confirmPassword, setConfirmPassword] = useState("12345678");
   const [showNewPassword, setShowNewPassword] = useState(false);
 
   // Step 3: OTP
-  const [otp, setOtp] = useState(["", "", "", ""]);
+  const [otp, setOtp] = useState(["1", "2", "3", "4"]);
   const [timer, setTimer] = useState(59);
-
-  useEffect(() => {
-    checkLoginStatus();
-  }, []);
 
   useEffect(() => {
     if (step === "otp" && timer > 0) {
@@ -50,12 +43,6 @@ export default function SignUp() {
     }
   }, [step, timer]);
 
-  const checkLoginStatus = async () => {
-    const isLoggedIn = await authStorage.isLoggedIn();
-    if (isLoggedIn) {
-      router.replace("/(tabs)");
-    }
-  };
   const handleBack = () => {
     if (step === "otp") {
       setStep("password");
@@ -65,7 +52,6 @@ export default function SignUp() {
       router.back();
     }
   };
-
   // Handle back button/swipe
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
@@ -161,7 +147,7 @@ export default function SignUp() {
   };
 
   const handleSignIn = () => {
-    router.push("/signin");
+    router.replace("/signin");
   };
 
   const renderStepContent = () => {
@@ -197,118 +183,40 @@ export default function SignUp() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      className="flex-1"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <StatusBar hidden />
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={{ flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Back Button */}
-        {(step === "password" || step === "otp") && (
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <Ionicons name="arrow-back" size={28} color="#2D3142" />
-          </TouchableOpacity>
-        )}
-
-        {/* Logo */}
-        <View style={styles.logoContainer}>
-          <Image
-            source={require("../../assets/images/Logo.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </View>
-
         {renderStepContent()}
 
         {/* Continue/Verify Button */}
         <TouchableOpacity
-          style={styles.continueButton}
+          className="bg-[#4461F2] rounded-[28px] h-14 justify-center items-center shadow-lg mb-8"
           onPress={handleContinue}
         >
-          <Text style={styles.continueButtonText}>
+          <Text className="text-lg font-semibold text-white">
             {step === "otp" ? "Verify" : "Continue"}
           </Text>
         </TouchableOpacity>
 
         {/* Sign In Link */}
-        <View style={styles.signInContainer}>
-          <Text style={styles.signInText}>
-            {step === "otp"
-              ? "Remembered password? "
-              : "Already have an account? "}
-          </Text>
-          <TouchableOpacity onPress={handleSignIn}>
-            <Text style={styles.signInLink}>Sign In</Text>
-          </TouchableOpacity>
-        </View>
+        {step === "info" && (
+          <View className="flex-row justify-center items-center">
+            <Text className="text-[15px] text-gray-500">
+              Already have an account?{" "}
+            </Text>
+            <TouchableOpacity onPress={handleSignIn}>
+              <Text className="text-[15px] text-[#2D3142] font-semibold">
+                Sign In
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F5F5F5",
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 40,
-  },
-  backButton: {
-    width: 48,
-    height: 48,
-    justifyContent: "center",
-    alignItems: "flex-start",
-    marginBottom: 20,
-  },
-  logoContainer: {
-    alignItems: "center",
-    marginBottom: 40,
-  },
-  logo: {
-    width: 200,
-    height: 140,
-  },
-  continueButton: {
-    backgroundColor: "#4461F2",
-    borderRadius: 28,
-    height: 56,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#4461F2",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-    marginBottom: 32,
-  },
-  continueButtonText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  signInContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  signInText: {
-    fontSize: 15,
-    color: "#757575",
-  },
-  signInLink: {
-    fontSize: 15,
-    color: "#2D3142",
-    fontWeight: "600",
-  },
-});

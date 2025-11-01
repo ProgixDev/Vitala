@@ -1,6 +1,6 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import PasswordInput from "../../../components/PasswordInput";
+import { View, Text } from "react-native";
+import PasswordInput from "@/components/PasswordInput";
 
 interface PasswordStepProps {
   newPassword: string;
@@ -26,9 +26,11 @@ export default function PasswordStep({
 
   return (
     <>
-      <Text style={styles.title}>Set Password</Text>
+      <Text className="text-4xl font-semibold text-[#2D3142] text-center my-[15%]">
+        Set Password
+      </Text>
 
-      <View style={[styles.inputContainer, styles.passwordInput]}>
+      <View className="mb-5">
         <PasswordInput
           value={newPassword}
           onChangeText={setNewPassword}
@@ -38,7 +40,7 @@ export default function PasswordStep({
         />
       </View>
 
-      <View style={styles.inputContainer}>
+      <View className="mb-5">
         <PasswordInput
           value={confirmPassword}
           onChangeText={setConfirmPassword}
@@ -51,19 +53,3 @@ export default function PasswordStep({
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  title: {
-    fontSize: 36,
-    fontWeight: "600",
-    color: "#2D3142",
-    textAlign: "center",
-    marginBottom: 60,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  passwordInput: {
-    marginTop: 60,
-  },
-});

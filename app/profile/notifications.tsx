@@ -1,11 +1,5 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  FlatList,
-} from "react-native";
+import { View, Text, TouchableOpacity, FlatList } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -105,12 +99,15 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
 
   return (
     <TouchableOpacity
-      style={[styles.notificationItem, !notification.read && styles.unreadItem]}
+      className={`flex-row bg-white rounded-xl p-4 mb-3 shadow-sm ${
+        !notification.read ? "bg-[#F0F9FF] border-l-3 border-l-[#4461F2]" : ""
+      }`}
       onPress={onPress}
       activeOpacity={0.7}
     >
       <View
-        style={[styles.iconContainer, { backgroundColor: `${iconColor}15` }]}
+        className="w-12 h-12 rounded-xl items-center justify-center mr-3"
+        style={{ backgroundColor: `${iconColor}15` }}
       >
         <Ionicons
           name={iconName as keyof typeof Ionicons.glyphMap}
@@ -118,15 +115,22 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
           color={iconColor}
         />
       </View>
-      <View style={styles.notificationContent}>
-        <View style={styles.notificationHeader}>
-          <Text style={styles.notificationTitle}>{notification.title}</Text>
-          {!notification.read && <View style={styles.unreadDot} />}
+      <View className="flex-1">
+        <View className="flex-row items-center mb-1">
+          <Text className="text-[15px] font-semibold text-[#1F2937] flex-1">
+            {notification.title}
+          </Text>
+          {!notification.read && (
+            <View className="w-2 h-2 rounded-full bg-[#4461F2] ml-2" />
+          )}
         </View>
-        <Text style={styles.notificationMessage} numberOfLines={2}>
+        <Text
+          className="text-sm text-[#6B7280] leading-5 mb-1.5"
+          numberOfLines={2}
+        >
           {notification.message}
         </Text>
-        <Text style={styles.notificationTime}>{notification.time}</Text>
+        <Text className="text-xs text-[#9CA3AF]">{notification.time}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -157,18 +161,20 @@ export default function Notifications() {
   };
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-[#F9FAFB]">
       {/* Header */}
-      <View style={styles.header}>
+      <View className="flex-row items-center justify-between px-4 pt-[60px] pb-4 bg-white border-b border-[#F3F4F6]">
         <TouchableOpacity
-          style={styles.backButton}
+          className="w-10 h-10 items-center justify-center"
           onPress={() => router.back()}
         >
           <Ionicons name="arrow-back" size={24} color="#1F2937" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
+        <Text className="text-lg font-semibold text-[#1F2937]">
+          Notifications
+        </Text>
         <TouchableOpacity
-          style={styles.moreButton}
+          className="w-10 h-10 items-center justify-center"
           onPress={() => console.log("More options")}
         >
           <Ionicons name="ellipsis-vertical" size={24} color="#1F2937" />
@@ -176,36 +182,32 @@ export default function Notifications() {
       </View>
 
       {/* Filter and Actions */}
-      <View style={styles.filterContainer}>
-        <View style={styles.filterButtons}>
+      <View className="bg-white px-6 py-4 border-b border-[#F3F4F6]">
+        <View className="flex-row gap-3 mb-3">
           <TouchableOpacity
-            style={[
-              styles.filterButton,
-              filter === "all" && styles.activeFilter,
-            ]}
+            className={`px-4 py-2 rounded-full ${
+              filter === "all" ? "bg-[#4461F2]" : "bg-[#F3F4F6]"
+            }`}
             onPress={() => setFilter("all")}
           >
             <Text
-              style={[
-                styles.filterButtonText,
-                filter === "all" && styles.activeFilterText,
-              ]}
+              className={`text-sm font-medium ${
+                filter === "all" ? "text-white" : "text-[#6B7280]"
+              }`}
             >
               All ({notifications.length})
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[
-              styles.filterButton,
-              filter === "unread" && styles.activeFilter,
-            ]}
+            className={`px-4 py-2 rounded-full ${
+              filter === "unread" ? "bg-[#4461F2]" : "bg-[#F3F4F6]"
+            }`}
             onPress={() => setFilter("unread")}
           >
             <Text
-              style={[
-                styles.filterButtonText,
-                filter === "unread" && styles.activeFilterText,
-              ]}
+              className={`text-sm font-medium ${
+                filter === "unread" ? "text-white" : "text-[#6B7280]"
+              }`}
             >
               Unread ({unreadCount})
             </Text>
@@ -213,20 +215,16 @@ export default function Notifications() {
         </View>
 
         {notifications.length > 0 && (
-          <View style={styles.actionButtons}>
+          <View className="flex-row gap-4">
             {unreadCount > 0 && (
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={handleMarkAllAsRead}
-              >
-                <Text style={styles.actionButtonText}>Mark all as read</Text>
+              <TouchableOpacity className="py-1" onPress={handleMarkAllAsRead}>
+                <Text className="text-[13px] font-medium text-[#4461F2]">
+                  Mark all as read
+                </Text>
               </TouchableOpacity>
             )}
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={handleClearAll}
-            >
-              <Text style={[styles.actionButtonText, styles.clearAllText]}>
+            <TouchableOpacity className="py-1" onPress={handleClearAll}>
+              <Text className="text-[13px] font-medium text-[#EF4444]">
                 Clear all
               </Text>
             </TouchableOpacity>
@@ -236,14 +234,16 @@ export default function Notifications() {
 
       {/* Notifications List */}
       {filteredNotifications.length === 0 ? (
-        <View style={styles.emptyContainer}>
+        <View className="flex-1 items-center justify-center px-12">
           <Ionicons
             name="notifications-off-outline"
             size={64}
             color="#D1D5DB"
           />
-          <Text style={styles.emptyTitle}>No Notifications</Text>
-          <Text style={styles.emptyMessage}>
+          <Text className="text-xl font-semibold text-[#1F2937] mt-4 mb-2">
+            No Notifications
+          </Text>
+          <Text className="text-sm text-[#6B7280] text-center leading-5">
             {filter === "unread"
               ? "You have no unread notifications"
               : "You're all caught up!"}
@@ -259,170 +259,10 @@ export default function Notifications() {
               onPress={() => handleNotificationPress(item.id)}
             />
           )}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={{ padding: 16 }}
           showsVerticalScrollIndicator={false}
         />
       )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 16,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1F2937",
-  },
-  moreButton: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  filterContainer: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  filterButtons: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 12,
-  },
-  filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "#F3F4F6",
-  },
-  activeFilter: {
-    backgroundColor: "#4461F2",
-  },
-  filterButtonText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#6B7280",
-  },
-  activeFilterText: {
-    color: "#FFFFFF",
-  },
-  actionButtons: {
-    flexDirection: "row",
-    gap: 16,
-  },
-  actionButton: {
-    paddingVertical: 4,
-  },
-  actionButtonText: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "#4461F2",
-  },
-  clearAllText: {
-    color: "#EF4444",
-  },
-  listContent: {
-    padding: 16,
-  },
-  notificationItem: {
-    flexDirection: "row",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  unreadItem: {
-    backgroundColor: "#F0F9FF",
-    borderLeftWidth: 3,
-    borderLeftColor: "#4461F2",
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  notificationContent: {
-    flex: 1,
-  },
-  notificationHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  notificationTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#1F2937",
-    flex: 1,
-  },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#4461F2",
-    marginLeft: 8,
-  },
-  notificationMessage: {
-    fontSize: 14,
-    color: "#6B7280",
-    lineHeight: 20,
-    marginBottom: 6,
-  },
-  notificationTime: {
-    fontSize: 12,
-    color: "#9CA3AF",
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 48,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#1F2937",
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyMessage: {
-    fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
-    lineHeight: 20,
-  },
-});

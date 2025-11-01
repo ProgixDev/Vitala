@@ -4,13 +4,12 @@ import React, { useState } from "react";
 import {
   Image,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import BookingComponent from "../../components/BookingComponent";
+import BookingComponent from "@/components/BookingComponent";
 
 const services = [
   {
@@ -88,13 +87,9 @@ export default function Home() {
   };
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 pt-6 px-4">
       <StatusBar hidden />
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {selectedService ? (
           <BookingComponent
             service={selectedService}
@@ -103,98 +98,118 @@ export default function Home() {
         ) : (
           <>
             {/* Header */}
-            <View style={styles.header}>
-              <View style={styles.headerLeft}>
+            <View className="flex-row justify-between items-center pb-5">
+              <View className="flex-row items-center gap-3">
                 <View>
-                  <Text style={styles.headerTitle}>Find a nurse</Text>
-                  <Text style={styles.headerSubtitle}>Welcome Back</Text>
+                  <Text className="text-xl font-semibold text-[#2D3142]">
+                    Find a nurse
+                  </Text>
+                  <Text className="text-sm text-[#9E9E9E] mt-0.5">
+                    Welcome Back
+                  </Text>
                 </View>
               </View>
               <Image
-                source={require("../../assets/images/Logo.png")}
-                style={styles.logo}
+                source={require("@/assets/images/Logo.png")}
+                className="w-[50px] h-[50px]"
                 resizeMode="contain"
               />
             </View>
 
             {/* Search Bar */}
-            <View style={styles.searchContainer}>
-              <View style={styles.searchBar}>
+            <View className="mb-[30px]">
+              <View className="flex-row items-center bg-white rounded-[25px] px-4 h-[60px] gap-2.5">
                 <Ionicons name="search" size={20} color="#9E9E9E" />
                 <TextInput
-                  style={styles.searchInput}
+                  className="flex-1 text-base text-[#2D3142]"
                   placeholder="Search"
                   placeholderTextColor="#9E9E9E"
                 />
-                <TouchableOpacity style={styles.filterButton}>
+                <TouchableOpacity className="w-9 h-9 bg-[#4461F2] rounded-[18px] justify-center items-center">
                   <Ionicons name="options" size={20} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* Services Section */}
-            <View style={styles.servicesSection}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Choose a service</Text>
+            <View className="mb-[30px]">
+              <View className="flex-row justify-between items-center mb-5">
+                <Text className="text-xl font-semibold text-[#2D3142]">
+                  Choose a service
+                </Text>
                 <TouchableOpacity>
-                  <Text style={styles.seeAllText}>See All</Text>
+                  <Text className="text-sm text-[#4461F2] font-medium">
+                    See All
+                  </Text>
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.servicesGrid}>
+              <View className="flex-row flex-wrap justify-between">
                 {services.map((service) => (
                   <TouchableOpacity
                     key={service.id}
-                    style={styles.serviceCard}
+                    className="w-[23%] items-center mb-4"
                     onPress={() => handleServicePress(service.id)}
                   >
-                    <View style={styles.serviceIconContainer}>
+                    <View className="w-full aspect-square bg-white rounded-full justify-center items-center mb-2 shadow-sm">
                       {service.icon}
                     </View>
-                    <Text style={styles.serviceName}>{service.name}</Text>
+                    <Text className="text-[10px] text-[#2D3142] text-center font-medium">
+                      {service.name}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
 
             {/* Consultation Banner */}
-            <TouchableOpacity style={styles.consultationBanner}>
-              <View style={styles.bannerContent}>
-                <Text style={styles.bannerBadge}>
+            <TouchableOpacity className="flex-row bg-[#4461F2] rounded-[20px] mb-5 p-5 overflow-hidden">
+              <View className="flex-1">
+                <Text className="text-xs text-white mb-3 opacity-90">
                   Trusted Nurses on your schedule 😊
                 </Text>
-                <Text style={styles.bannerTitle}>Consult A Nurse</Text>
-                <Text style={styles.bannerTitle}>— Book Today!</Text>
-                <View style={styles.patientsInfo}>
-                  <View style={styles.avatarsContainer}>
-                    <View style={[styles.avatar, styles.avatar1]} />
-                    <View style={[styles.avatar, styles.avatar2]} />
-                    <View style={[styles.avatar, styles.avatar3]} />
+                <Text className="text-2xl font-bold text-white leading-[30px]">
+                  Consult A Nurse
+                </Text>
+                <Text className="text-2xl font-bold text-white leading-[30px]">
+                  — Book Today!
+                </Text>
+                <View className="flex-row items-center mt-4 gap-3">
+                  <View className="flex-row -ml-2">
+                    <View className="w-8 h-8 rounded-full border-2 border-[#4461F2] bg-[#FFB800] -ml-2" />
+                    <View className="w-8 h-8 rounded-full border-2 border-[#4461F2] bg-[#FF6B6B] -ml-2" />
+                    <View className="w-8 h-8 rounded-full border-2 border-[#4461F2] bg-[#4ECDC4] -ml-2" />
                   </View>
                   <View>
-                    <Text style={styles.patientsCount}>30,000+</Text>
-                    <Text style={styles.patientsLabel}>Happy Patients</Text>
+                    <Text className="text-sm font-bold text-white">
+                      30,000+
+                    </Text>
+                    <Text className="text-xs text-white opacity-80">
+                      Happy Patients
+                    </Text>
                   </View>
                 </View>
               </View>
               <Image
                 source={require("../../assets/images/doctor.png")}
-                style={styles.doctorImage}
+                className="w-36 h-[180px] absolute right-0 bottom-0"
                 resizeMode="contain"
               />
             </TouchableOpacity>
 
             {/* Emergency Banner */}
-            <TouchableOpacity style={styles.emergencyBanner}>
-              <View style={styles.emergencyContent}>
-                <Text style={styles.bannerBadge}>Need Urgent Help?</Text>
-                <Text style={styles.bannerTitle}>
+            <TouchableOpacity className="flex-row bg-[#FF4B8C] rounded-[20px] p-5 pr-0 pb-0 overflow-hidden">
+              <View className="flex-1">
+                <Text className="text-xs text-white mb-3 opacity-90">
+                  Need Urgent Help?
+                </Text>
+                <Text className="text-2xl font-bold text-white leading-[30px]">
                   We&apos;re Here for You 24/7
                 </Text>
               </View>
               <Image
                 source={require("../../assets/images/nurse.png")}
-                style={styles.nurseImage}
+                className="h-[165px] relative -right-2.5 bottom-0"
                 resizeMode="contain"
               />
             </TouchableOpacity>
@@ -204,214 +219,3 @@ export default function Home() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-    paddingTop: 40,
-  },
-  scrollContent: {
-    paddingBottom: 100,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#2D3142",
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: "#9E9E9E",
-    marginTop: 2,
-  },
-  logo: {
-    width: 50,
-    height: 50,
-  },
-  searchContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 30,
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 25,
-    paddingHorizontal: 16,
-    height: 60,
-    gap: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: "#2D3142",
-  },
-  filterButton: {
-    width: 36,
-    height: 36,
-    backgroundColor: "#4461F2",
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  servicesSection: {
-    paddingHorizontal: 20,
-    marginBottom: 30,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#2D3142",
-  },
-  seeAllText: {
-    fontSize: 14,
-    color: "#4461F2",
-    fontWeight: "500",
-  },
-  servicesGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
-  serviceCard: {
-    width: "23%",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  serviceIconContainer: {
-    width: "100%",
-    aspectRatio: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 100,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 8,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  serviceName: {
-    fontSize: 10,
-    color: "#2D3142",
-    textAlign: "center",
-    fontWeight: "500",
-  },
-  consultationBanner: {
-    flexDirection: "row",
-    backgroundColor: "#4461F2",
-    borderRadius: 20,
-    marginHorizontal: 20,
-    marginBottom: 20,
-    padding: 20,
-    overflow: "hidden",
-  },
-  bannerContent: {
-    flex: 1,
-  },
-  bannerBadge: {
-    fontSize: 12,
-    color: "#FFFFFF",
-    marginBottom: 12,
-    opacity: 0.9,
-  },
-  bannerTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    lineHeight: 30,
-  },
-  patientsInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 16,
-    gap: 12,
-  },
-  avatarsContainer: {
-    flexDirection: "row",
-    marginLeft: -8,
-  },
-  avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "#4461F2",
-    marginLeft: -8,
-  },
-  avatar1: {
-    backgroundColor: "#FFB800",
-  },
-  avatar2: {
-    backgroundColor: "#FF6B6B",
-  },
-  avatar3: {
-    backgroundColor: "#4ECDC4",
-  },
-  patientsCount: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
-  patientsLabel: {
-    fontSize: 12,
-    color: "#FFFFFF",
-    opacity: 0.8,
-  },
-  doctorImage: {
-    width: 144,
-    height: 180,
-    position: "absolute",
-    right: 0,
-    bottom: 0,
-  },
-  emergencyBanner: {
-    flexDirection: "row",
-    backgroundColor: "#FF4B8C",
-    borderRadius: 20,
-    marginHorizontal: 20,
-    padding: 20,
-    paddingRight: 0,
-    paddingBottom: 0,
-    overflow: "hidden",
-  },
-  emergencyContent: {
-    flex: 1,
-  },
-  emergencyText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#FFFFFF",
-    lineHeight: 24,
-  },
-  nurseImage: {
-    height: 165,
-    position: "relative",
-    right: -10,
-    bottom: 0,
-  },
-});

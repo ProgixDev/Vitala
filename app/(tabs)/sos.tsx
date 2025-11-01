@@ -1,24 +1,10 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text } from "react-native";
 
 export default function SOS() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>SOS Page</Text>
+    <View className="flex-1 justify-center items-center bg-gray-100">
+      <Text className="text-2xl font-semibold text-[#2D3142]">SOS Page</Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F5F5F5",
-  },
-  text: {
-    fontSize: 24,
-    fontWeight: "600",
-    color: "#2D3142",
-  },
-});

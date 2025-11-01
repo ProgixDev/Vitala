@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   Image,
@@ -11,8 +10,8 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { authStorage, Appointment } from "../../utils/auth";
-import { useCurrentUser } from "../../hooks/useCurrentUser";
+import { authStorage, Appointment } from "@/utils/auth";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export default function AppointmentDetails() {
   const { id } = useLocalSearchParams();
@@ -47,7 +46,7 @@ export default function AppointmentDetails() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View className="flex-1 bg-gray-100 justify-center items-center">
         <ActivityIndicator size="large" color="#4461F2" />
       </View>
     );
@@ -55,221 +54,134 @@ export default function AppointmentDetails() {
 
   if (!appointment || !currentUser) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>Appointment not found</Text>
+      <View className="flex-1 bg-gray-100 justify-center items-center">
+        <Text className="text-base text-[#FF3B30] text-center">
+          Appointment not found
+        </Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 pt-6 px-4">
       <StatusBar hidden />
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
+        <View className="flex-row justify-between items-center">
+          <TouchableOpacity
+            className="w-10 h-10 justify-center items-center"
+            onPress={handleGoBack}
+          >
             <Ionicons name="chevron-back" size={24} color="#2D3142" />
           </TouchableOpacity>
-          <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle}>Payment Method</Text>
-            <Text style={styles.headerSubtitle}>Choose your method</Text>
+          <View className="flex-1 ml-3">
+            <Text className="text-xl font-semibold text-[#2D3142]">
+              Payment Method
+            </Text>
+            <Text className="text-sm text-[#9E9E9E] mt-0.5">
+              Choose your method
+            </Text>
           </View>
           <Image
-            source={require("../../assets/images/Logo.png")}
-            style={styles.logo}
+            source={require("@/assets/images/Logo.png")}
+            className="w-[50px] h-[50px]"
             resizeMode="contain"
           />
         </View>
 
         {/* About the Service */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About the service</Text>
-          <View style={styles.card}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Service:</Text>
-              <Text style={styles.infoValue}>{appointment.serviceName}</Text>
+        <View className="mb-6 px-5">
+          <Text className="text-lg font-semibold text-[#2D3142] mb-4">
+            About the service
+          </Text>
+          <View className="bg-white rounded-2xl p-5 shadow-sm">
+            <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
+              <Text className="text-[15px] text-[#9E9E9E]">Service:</Text>
+              <Text className="text-[15px] font-semibold text-[#2D3142]">
+                {appointment.serviceName}
+              </Text>
             </View>
           </View>
         </View>
 
         {/* Schedule Appointment */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Schedule appointment</Text>
+        <View className="mb-6 px-5">
+          <View className="flex-row justify-between items-center mb-4">
+            <Text className="text-lg font-semibold text-[#2D3142]">
+              Schedule appointment
+            </Text>
             <TouchableOpacity>
               <Ionicons name="create-outline" size={24} color="#9E9E9E" />
             </TouchableOpacity>
           </View>
-          <View style={styles.card}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Date:</Text>
-              <Text style={styles.infoValue}>{appointment.date}</Text>
+          <View className="bg-white rounded-2xl p-5 shadow-sm">
+            <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
+              <Text className="text-[15px] text-[#9E9E9E]">Date:</Text>
+              <Text className="text-[15px] font-semibold text-[#2D3142]">
+                {appointment.date}
+              </Text>
             </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Time:</Text>
-              <Text style={styles.infoValue}>{appointment.time}</Text>
+            <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
+              <Text className="text-[15px] text-[#9E9E9E]">Time:</Text>
+              <Text className="text-[15px] font-semibold text-[#2D3142]">
+                {appointment.time}
+              </Text>
             </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Duration:</Text>
-              <Text style={styles.infoValue}>30Min</Text>
+            <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
+              <Text className="text-[15px] text-[#9E9E9E]">Duration:</Text>
+              <Text className="text-[15px] font-semibold text-[#2D3142]">
+                30Min
+              </Text>
             </View>
           </View>
         </View>
 
         {/* Patient Information */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Patient Informations</Text>
+        <View className="mb-6 px-5">
+          <View className="flex-row justify-between items-center mb-4">
+            <Text className="text-lg font-semibold text-[#2D3142]">
+              Patient Informations
+            </Text>
             <TouchableOpacity>
               <Ionicons name="create-outline" size={24} color="#9E9E9E" />
             </TouchableOpacity>
           </View>
-          <View style={styles.card}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Name:</Text>
-              <Text style={styles.infoValue}>{currentUser.fullName}</Text>
+          <View className="bg-white rounded-2xl p-5 shadow-sm">
+            <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
+              <Text className="text-[15px] text-[#9E9E9E]">Name:</Text>
+              <Text className="text-[15px] font-semibold text-[#2D3142]">
+                {currentUser.fullName}
+              </Text>
             </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Gender:</Text>
-              <Text style={styles.infoValue}>Not specified</Text>
+            <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
+              <Text className="text-[15px] text-[#9E9E9E]">Gender:</Text>
+              <Text className="text-[15px] font-semibold text-[#2D3142]">
+                Not specified
+              </Text>
             </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Age:</Text>
-              <Text style={styles.infoValue}>Not specified</Text>
+            <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
+              <Text className="text-[15px] text-[#9E9E9E]">Age:</Text>
+              <Text className="text-[15px] font-semibold text-[#2D3142]">
+                Not specified
+              </Text>
             </View>
           </View>
         </View>
 
         {/* Book Button */}
         <TouchableOpacity
-          style={styles.bookButton}
+          className="bg-[#4461F2] mx-5 py-4 rounded-[28px] justify-center items-center shadow-lg mt-5"
           onPress={handleConfirmBooking}
         >
-          <Text style={styles.bookButtonText}>Book Appointment</Text>
+          <Text className="text-lg font-semibold text-white">
+            Book Appointment
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F5F5F5",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerCenter: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#2D3142",
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: "#9E9E9E",
-    marginTop: 2,
-  },
-  logo: {
-    width: 50,
-    height: 50,
-  },
-  section: {
-    marginBottom: 24,
-    paddingHorizontal: 20,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#2D3142",
-    marginBottom: 16,
-  },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F5F5F5",
-  },
-  infoLabel: {
-    fontSize: 15,
-    color: "#9E9E9E",
-  },
-  infoValue: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#2D3142",
-  },
-  bookButton: {
-    backgroundColor: "#4461F2",
-    marginHorizontal: 20,
-    paddingVertical: 16,
-    borderRadius: 28,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#4461F2",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-    marginTop: 20,
-  },
-  bookButtonText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  errorText: {
-    fontSize: 16,
-    color: "#FF3B30",
-    textAlign: "center",
-  },
-});
