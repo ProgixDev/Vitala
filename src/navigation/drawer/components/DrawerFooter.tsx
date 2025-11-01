@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 interface DrawerFooterProps {
   onLogout: () => void;
@@ -9,7 +9,7 @@ interface DrawerFooterProps {
 
 export const DrawerFooter: React.FC<DrawerFooterProps> = ({
   onLogout,
-  appVersion = '1.0.0',
+  appVersion = "1.0.0",
 }) => {
   return (
     <View style={styles.container}>
@@ -42,27 +42,26 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   logoutContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   iconContainer: {
     width: 32,
     height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 16,
   },
   logoutText: {
     fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: '600',
+    color: "#FFFFFF",
+    fontWeight: "600",
   },
   versionContainer: {
     paddingLeft: 48,
   },
   versionText: {
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.6)',
+    color: "rgba(255, 255, 255, 0.6)",
   },
 });
-

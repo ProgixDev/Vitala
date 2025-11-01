@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { slides } from '../constants/slides';
+import { useState } from "react";
+import { slides } from "../constants/slides";
 
 export const useOnboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -40,4 +40,3 @@ export const useOnboarding = () => {
     totalSteps: slides.length,
   };
 };
-

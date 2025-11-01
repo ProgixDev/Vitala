@@ -1,14 +1,17 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { OnboardingSlide } from '../components/OnboardingSlide';
-import { slides } from '../constants/slides';
+import React from "react";
+import { View, StyleSheet } from "react-native";
+import { OnboardingSlide } from "../components/OnboardingSlide";
+import { slides } from "../constants/slides";
 
 interface Onboarding3Props {
   onCreateAccount: () => void;
   onLogin: () => void;
 }
 
-export const Onboarding3: React.FC<Onboarding3Props> = ({ onCreateAccount, onLogin }) => {
+export const Onboarding3: React.FC<Onboarding3Props> = ({
+  onCreateAccount,
+  onLogin,
+}) => {
   return (
     <View style={styles.container}>
       <OnboardingSlide
@@ -24,7 +27,6 @@ export const Onboarding3: React.FC<Onboarding3Props> = ({ onCreateAccount, onLog
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
 });
-

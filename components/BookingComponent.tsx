@@ -6,6 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Image,
+  BackHandler,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -38,16 +40,25 @@ const timeSlots = [
   { time: "4:00 PM", available: true },
 ];
 
-const generateWeekDates = (startDate: Date): DateOption[] => {
+const generateMonthDates = (year: number, month: number): DateOption[] => {
   const dates: DateOption[] = [];
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(startDate);
-    date.setDate(startDate.getDate() + i);
+  // Get the number of days in the month
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
 
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month, day);
     const dayOfWeek = date.getDay();
     const isSunday = dayOfWeek === 0;
+    const isPast = date < today;
+
+    // Skip days that have already passed
+    if (isPast) {
+      continue;
+    }
 
     dates.push({
       day: dayNames[dayOfWeek],
@@ -60,7 +71,8 @@ const generateWeekDates = (startDate: Date): DateOption[] => {
   return dates;
 };
 
-const getMonthName = (date: Date): string => {
+const getMonthName = (year: number, month: number): string => {
+  const date = new Date(year, month, 1);
   return date.toLocaleString("default", { month: "long" });
 };
 
@@ -70,13 +82,11 @@ export default function BookingComponent({
   type = "normal",
 }: BookingComponentProps) {
   const { currentUser } = useCurrentUser();
-  const [weekStartDate, setWeekStartDate] = useState<Date>(() => {
-    const today = new Date();
-    const dayOfWeek = today.getDay();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - dayOfWeek);
-    return startOfWeek;
-  });
+  const today = new Date();
+  const [currentYear, setCurrentYear] = useState<number>(today.getFullYear());
+  const [currentMonthIndex, setCurrentMonthIndex] = useState<number>(
+    today.getMonth(),
+  );
 
   const [dates, setDates] = useState<DateOption[]>([]);
   const [selectedDate, setSelectedDate] = useState(1);
@@ -84,16 +94,29 @@ export default function BookingComponent({
   const [currentMonth, setCurrentMonth] = useState("");
 
   useEffect(() => {
-    const weekDates = generateWeekDates(weekStartDate);
-    setDates(weekDates);
-    setCurrentMonth(getMonthName(weekStartDate));
+    const monthDates = generateMonthDates(currentYear, currentMonthIndex);
+    setDates(monthDates);
+    setCurrentMonth(getMonthName(currentYear, currentMonthIndex));
 
     // Find first available date (not Sunday) and select it
-    const firstAvailable = weekDates.findIndex((d) => d.available);
+    const firstAvailable = monthDates.findIndex((d) => d.available);
     if (firstAvailable !== -1) {
       setSelectedDate(firstAvailable);
     }
-  }, [weekStartDate]);
+  }, [currentYear, currentMonthIndex]);
+
+  // Handle back button/swipe
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        onBack();
+        return true;
+      },
+    );
+
+    return () => backHandler.remove();
+  }, [onBack]);
 
   const handleBookAppointment = async () => {
     if (!currentUser) {
@@ -122,7 +145,7 @@ export default function BookingComponent({
         },
       );
 
-      const appointments = await authStorage.getAppointments();
+      await authStorage.getAppointments();
 
       await authStorage.saveAppointment({
         userEmail: currentUser.email,
@@ -151,28 +174,60 @@ export default function BookingComponent({
     // Handle add location logic
   };
 
-  const handlePreviousWeek = () => {
-    setWeekStartDate((prev) => {
-      const newDate = new Date(prev);
-      newDate.setDate(prev.getDate() - 7);
-      return newDate;
-    });
+  const handlePreviousMonth = () => {
+    const today = new Date();
+    const todayYear = today.getFullYear();
+    const todayMonth = today.getMonth();
+
+    // Don't allow navigation to previous months that have passed
+    if (currentYear === todayYear && currentMonthIndex === todayMonth) {
+      return;
+    }
+
+    if (currentMonthIndex === 0) {
+      const newYear = currentYear - 1;
+      // Don't go to previous year if it's before current year
+      if (newYear < todayYear) {
+        return;
+      }
+      setCurrentYear(newYear);
+      setCurrentMonthIndex(11);
+    } else {
+      const newMonth = currentMonthIndex - 1;
+      // Don't go to previous month if it's before current month in current year
+      if (currentYear === todayYear && newMonth < todayMonth) {
+        return;
+      }
+      setCurrentMonthIndex(newMonth);
+    }
   };
 
-  const handleNextWeek = () => {
-    setWeekStartDate((prev) => {
-      const newDate = new Date(prev);
-      newDate.setDate(prev.getDate() + 7);
-      return newDate;
-    });
+  const handleNextMonth = () => {
+    if (currentMonthIndex === 11) {
+      setCurrentYear(currentYear + 1);
+      setCurrentMonthIndex(0);
+    } else {
+      setCurrentMonthIndex(currentMonthIndex + 1);
+    }
   };
 
   return (
     <>
-      {/* Back Button */}
-      <TouchableOpacity style={styles.backButton} onPress={onBack}>
-        <Ionicons name="arrow-back" size={24} color="#2D3142" />
-      </TouchableOpacity>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={onBack}>
+          <Ionicons name="arrow-back" size={24} color="#2D3142" />
+        </TouchableOpacity>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Book your nurse</Text>
+          <Text style={styles.headerSubtitle}>Welcome Back</Text>
+        </View>
+        <Image
+          source={require("../assets/images/Logo.png")}
+          style={styles.logoContainer}
+          resizeMode="contain"
+        />
+      </View>
 
       {/* Service Title */}
       <Text style={styles.serviceTitle}>{service.name}</Text>
@@ -182,17 +237,34 @@ export default function BookingComponent({
 
       {/* Date Selection */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Select Date</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Select Date</Text>
 
-        {/* Week Navigation */}
-        <View style={styles.monthNavigation}>
-          <TouchableOpacity onPress={handlePreviousWeek}>
-            <Ionicons name="chevron-back" size={24} color="#2D3142" />
-          </TouchableOpacity>
-          <Text style={styles.monthText}>{currentMonth}</Text>
-          <TouchableOpacity onPress={handleNextWeek}>
-            <Ionicons name="chevron-forward" size={24} color="#2D3142" />
-          </TouchableOpacity>
+          {/* Month Navigation */}
+          <View style={styles.monthNavigation}>
+            <TouchableOpacity
+              onPress={handlePreviousMonth}
+              disabled={
+                currentYear === today.getFullYear() &&
+                currentMonthIndex === today.getMonth()
+              }
+            >
+              <Ionicons
+                name="chevron-back"
+                size={20}
+                color={
+                  currentYear === today.getFullYear() &&
+                  currentMonthIndex === today.getMonth()
+                    ? "#B8B8B8"
+                    : "#2D3142"
+                }
+              />
+            </TouchableOpacity>
+            <Text style={styles.monthText}>{currentMonth}</Text>
+            <TouchableOpacity onPress={handleNextMonth}>
+              <Ionicons name="chevron-forward" size={20} color="#2D3142" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Date Selector */}
@@ -278,9 +350,7 @@ export default function BookingComponent({
 
         {/* Saved Location */}
         <View style={styles.locationCard}>
-          <View style={styles.locationIconContainer}>
-            <Ionicons name="location" size={24} color="#4461F2" />
-          </View>
+          <Ionicons name="location-outline" size={20} color="#000000" />
           <Text style={styles.locationText}>
             931 2nd Street, Rivers, Manitoba, R0K 1X0.
           </Text>
@@ -292,7 +362,7 @@ export default function BookingComponent({
         style={styles.bookButton}
         onPress={handleBookAppointment}
       >
-        <Ionicons name="calendar-outline" size={24} color="#FFFFFF" />
+        <Ionicons name="calendar-outline" size={20} color="#FFFFFF" />
         <Text style={styles.bookButtonText}>Book Appointment</Text>
       </TouchableOpacity>
     </>
@@ -306,145 +376,160 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 100,
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    marginBottom: 20,
+  },
   backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#000000",
+    marginBottom: 2,
+  },
+  headerSubtitle: {
+    fontSize: 13,
+    color: "#666666",
+  },
+  logoContainer: {
     width: 48,
     height: 48,
     justifyContent: "center",
-    alignItems: "flex-start",
-    marginBottom: 20,
-    marginLeft: 20,
+    alignItems: "center",
   },
   serviceTitle: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: "700",
-    color: "#2D3142",
+    color: "#000000",
     paddingHorizontal: 20,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   serviceDescription: {
-    fontSize: 15,
-    color: "#757575",
-    lineHeight: 22,
+    fontSize: 14,
+    color: "#666666",
+    lineHeight: 20,
     paddingHorizontal: 20,
-    marginBottom: 30,
+    marginBottom: 24,
   },
   section: {
-    marginBottom: 30,
+    marginBottom: 24,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#2D3142",
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  monthNavigation: {
+  sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    marginBottom: 20,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000000",
+  },
+  monthNavigation: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   monthText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
-    color: "#2D3142",
+    color: "#000000",
   },
   dateScroll: {
     paddingLeft: 20,
   },
   dateScrollContent: {
-    gap: 12,
+    gap: 8,
     paddingRight: 20,
   },
   dateCard: {
-    width: 70,
-    height: 85,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 35,
+    width: 60,
+    height: 60,
+    backgroundColor: "#E8E8E8",
+    borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    elevation: 2,
   },
   dateCardActive: {
     backgroundColor: "#4461F2",
   },
   dateCardDisabled: {
-    backgroundColor: "#E8E8E8",
+    backgroundColor: "#F5F5F5",
   },
   dateDay: {
-    fontSize: 14,
-    color: "#2D3142",
-    marginBottom: 4,
+    fontSize: 12,
+    color: "#000000",
+    marginBottom: 2,
   },
   dateDayActive: {
     color: "#FFFFFF",
   },
   dateNumber: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "700",
-    color: "#2D3142",
+    color: "#000000",
   },
   dateNumberActive: {
     color: "#FFFFFF",
   },
   dateTextDisabled: {
-    color: "#B8B8B8",
+    color: "#CCCCCC",
   },
   timeScroll: {
     paddingLeft: 20,
-    marginBottom: 30,
+    marginBottom: 24,
   },
   timeContainer: {
     flexDirection: "row",
-    gap: 12,
+    gap: 8,
     paddingRight: 20,
   },
   timeSlot: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    backgroundColor: "#E8E8E8",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     borderRadius: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
   },
   timeSlotActive: {
     backgroundColor: "#4461F2",
   },
   timeSlotDisabled: {
-    backgroundColor: "#E8E8E8",
+    backgroundColor: "#F5F5F5",
   },
   timeText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
-    color: "#2D3142",
+    color: "#000000",
   },
   timeTextActive: {
     color: "#FFFFFF",
   },
   timeTextDisabled: {
-    color: "#B8B8B8",
+    color: "#CCCCCC",
   },
   locationHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   addLocationText: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#4461F2",
     fontWeight: "500",
   },
@@ -454,31 +539,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     marginHorizontal: 20,
     padding: 16,
-    borderRadius: 16,
+    borderRadius: 12,
     gap: 12,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  locationIconContainer: {
-    width: 40,
-    height: 40,
-    backgroundColor: "#F0F2FF",
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E8E8E8",
   },
   locationText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
-    color: "#2D3142",
-    lineHeight: 20,
+    color: "#000000",
+    lineHeight: 18,
   },
   bookButton: {
     flexDirection: "row",
@@ -486,20 +557,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#4461F2",
     marginHorizontal: 20,
-    paddingVertical: 16,
-    borderRadius: 28,
-    gap: 12,
-    shadowColor: "#4461F2",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    paddingVertical: 14,
+    borderRadius: 25,
+    gap: 8,
   },
   bookButtonText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#FFFFFF",
   },

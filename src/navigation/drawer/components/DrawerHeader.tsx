@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React from "react";
+import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 interface DrawerHeaderProps {
   userName?: string;
@@ -10,8 +10,8 @@ interface DrawerHeaderProps {
 }
 
 export const DrawerHeader: React.FC<DrawerHeaderProps> = ({
-  userName = 'User Name',
-  userID = 'UID000 000 000',
+  userName = "User Name",
+  userID = "UID000 000 000",
   userAvatar,
   onClose,
 }) => {
@@ -43,16 +43,16 @@ export const DrawerHeader: React.FC<DrawerHeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 24,
-    backgroundColor: '#2D59F0',
+    backgroundColor: "#2D59F0",
   },
   userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   avatarContainer: {
@@ -64,26 +64,25 @@ const styles = StyleSheet.create({
     borderRadius: 28,
   },
   avatarPlaceholder: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   textContainer: {
     flex: 1,
   },
   userName: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    fontWeight: "600",
+    color: "#FFFFFF",
     marginBottom: 4,
   },
   userID: {
     fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: "rgba(255, 255, 255, 0.8)",
   },
   closeButton: {
     padding: 8,
     marginLeft: 8,
   },
 });
-

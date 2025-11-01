@@ -1,8 +1,15 @@
-import React from 'react';
-import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SlideData } from '../constants/slides';
+import React from "react";
+import {
+  Dimensions,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SlideData } from "../constants/slides";
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
 
 interface OnboardingSlideProps {
   slide: SlideData;
@@ -28,7 +35,7 @@ export const OnboardingSlide: React.FC<OnboardingSlideProps> = ({
       {showLogo ? (
         <View style={styles.logoContainer}>
           <Image
-            source={require('../../../assets/images/Logo.png')}
+            source={require("../../../assets/images/Logo.png")}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -70,8 +77,13 @@ export const OnboardingSlide: React.FC<OnboardingSlideProps> = ({
 
         {/* Secondary Button or Skip */}
         {slide.secondaryButton && onSecondaryPress && (
-          <TouchableOpacity style={styles.secondaryButton} onPress={onSecondaryPress}>
-            <Text style={styles.secondaryButtonText}>{slide.secondaryButton}</Text>
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={onSecondaryPress}
+          >
+            <Text style={styles.secondaryButtonText}>
+              {slide.secondaryButton}
+            </Text>
           </TouchableOpacity>
         )}
 
@@ -88,10 +100,10 @@ export const OnboardingSlide: React.FC<OnboardingSlideProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   logoContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 50,
     marginBottom: 10,
   },
@@ -104,17 +116,17 @@ const styles = StyleSheet.create({
   },
   illustrationContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
     marginVertical: 20,
   },
   backgroundWrapper: {
-    position: 'absolute',
+    position: "absolute",
     width: width * 0.9,
     height: height * 0.4,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   backgroundImage: {
     opacity: 1,
@@ -122,8 +134,8 @@ const styles = StyleSheet.create({
   illustrationWrapper: {
     width: width * 0.8,
     height: height * 0.35,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 1,
   },
   illustrationImage: {
@@ -132,33 +144,33 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 30,
     paddingBottom: 50,
-    alignItems: 'center',
+    alignItems: "center",
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#000000',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#000000",
+    textAlign: "center",
     marginBottom: 12,
     lineHeight: 36,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666666',
-    textAlign: 'center',
+    color: "#666666",
+    textAlign: "center",
     marginBottom: 30,
     lineHeight: 24,
     paddingHorizontal: 10,
   },
   primaryButton: {
-    backgroundColor: '#2D59F0',
+    backgroundColor: "#2D59F0",
     paddingVertical: 16,
     paddingHorizontal: 40,
     borderRadius: 30,
-    width: '100%',
-    alignItems: 'center',
+    width: "100%",
+    alignItems: "center",
     marginBottom: 8,
-    shadowColor: '#2D59F0',
+    shadowColor: "#2D59F0",
     shadowOffset: {
       width: 0,
       height: 4,
@@ -168,9 +180,9 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   primaryButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   secondaryButton: {
     paddingVertical: 10,
@@ -178,9 +190,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   secondaryButtonText: {
-    color: '#000000',
+    color: "#000000",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   skipButton: {
     paddingVertical: 10,
@@ -188,9 +200,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   skipButtonText: {
-    color: '#666666',
+    color: "#666666",
     fontSize: 14,
-    fontWeight: '400',
+    fontWeight: "400",
   },
 });
-
