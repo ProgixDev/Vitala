@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from "react";
 import {
   Modal,
   StyleSheet,
@@ -6,10 +6,10 @@ import {
   View,
   Animated,
   Dimensions,
-} from 'react-native';
-import { DrawerContent } from './DrawerContent';
+} from "react-native";
+import { DrawerContent } from "./DrawerContent";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 const DRAWER_WIDTH = width * 0.85;
 
 interface DrawerContextType {
@@ -66,7 +66,9 @@ export const DrawerProvider: React.FC<DrawerProviderProps> = ({
   };
 
   return (
-    <DrawerContext.Provider value={{ isOpen, openDrawer, closeDrawer, toggleDrawer }}>
+    <DrawerContext.Provider
+      value={{ isOpen, openDrawer, closeDrawer, toggleDrawer }}
+    >
       {children}
       <Modal
         visible={isOpen}
@@ -106,7 +108,7 @@ export const DrawerProvider: React.FC<DrawerProviderProps> = ({
 export const useDrawer = () => {
   const context = useContext(DrawerContext);
   if (!context) {
-    throw new Error('useDrawer must be used within a DrawerProvider');
+    throw new Error("useDrawer must be used within a DrawerProvider");
   }
   return context;
 };
@@ -114,20 +116,20 @@ export const useDrawer = () => {
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   drawer: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     top: 0,
     bottom: 0,
     width: DRAWER_WIDTH,
-    backgroundColor: '#2D59F0',
-    shadowColor: '#000',
+    backgroundColor: "#2D59F0",
+    shadowColor: "#000",
     shadowOffset: {
       width: 2,
       height: 0,
@@ -137,4 +139,3 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
 });
-

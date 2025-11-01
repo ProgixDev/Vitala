@@ -1,7 +1,7 @@
-import React from 'react';
-import { TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useDrawer } from '../drawer/DrawerProvider';
+import React from "react";
+import { TouchableOpacity, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useDrawer } from "../drawer/DrawerProvider";
 
 interface DrawerToggleButtonProps {
   color?: string;
@@ -9,7 +9,7 @@ interface DrawerToggleButtonProps {
 }
 
 export const DrawerToggleButton: React.FC<DrawerToggleButtonProps> = ({
-  color = '#2D59F0',
+  color = "#2D59F0",
   size = 28,
 }) => {
   const { toggleDrawer } = useDrawer();
@@ -30,4 +30,3 @@ const styles = StyleSheet.create({
     padding: 8,
   },
 });
-

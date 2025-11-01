@@ -8,8 +8,10 @@ import {
   Platform,
   ScrollView,
   Text,
+  BackHandler,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { authStorage, User } from "../../utils/auth";
 import InfoStep from "./components/InfoStep";
@@ -54,6 +56,28 @@ export default function SignUp() {
       router.replace("/(tabs)");
     }
   };
+  const handleBack = () => {
+    if (step === "otp") {
+      setStep("password");
+    } else if (step === "password") {
+      setStep("info");
+    } else {
+      router.back();
+    }
+  };
+
+  // Handle back button/swipe
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        handleBack();
+        return true;
+      },
+    );
+
+    return () => backHandler.remove();
+  }, [step]);
 
   const handleContinue = async () => {
     if (step === "info") {
@@ -182,6 +206,13 @@ export default function SignUp() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+        {/* Back Button */}
+        {(step === "password" || step === "otp") && (
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <Ionicons name="arrow-back" size={28} color="#2D3142" />
+          </TouchableOpacity>
+        )}
+
         {/* Logo */}
         <View style={styles.logoContainer}>
           <Image
@@ -229,6 +260,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 40,
+  },
+  backButton: {
+    width: 48,
+    height: 48,
+    justifyContent: "center",
+    alignItems: "flex-start",
+    marginBottom: 20,
   },
   logoContainer: {
     alignItems: "center",

@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 interface DrawerItemProps {
   label: string;
@@ -23,47 +23,46 @@ export const DrawerItem: React.FC<DrawerItemProps> = ({
     >
       <View style={styles.leftContent}>
         <View style={styles.iconContainer}>
-          <Ionicons
-            name={icon as any}
-            size={24}
-            color="#FFFFFF"
-          />
+          <Ionicons name={icon as any} size={24} color="#FFFFFF" />
         </View>
         <Text style={styles.label}>{label}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={20} color="rgba(255, 255, 255, 0.8)" />
+      <Ionicons
+        name="chevron-forward"
+        size={20}
+        color="rgba(255, 255, 255, 0.8)"
+      />
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: 16,
     paddingHorizontal: 20,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   activeContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
   },
   leftContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   iconContainer: {
     width: 32,
     height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 16,
   },
   label: {
     fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: '500',
+    color: "#FFFFFF",
+    fontWeight: "500",
   },
 });
-

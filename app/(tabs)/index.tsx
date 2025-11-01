@@ -107,7 +107,10 @@ export default function Home() {
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.headerLeft}>
-                <TouchableOpacity style={styles.menuButton}>
+                <TouchableOpacity
+                  style={styles.menuButton}
+                  onPress={toggleDrawer}
+                >
                   <Ionicons name="menu" size={24} color="#2D3142" />
                 </TouchableOpacity>
                 <View>
@@ -216,7 +219,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    paddingTop: 60,
+    paddingTop: 40,
   },
   scrollContent: {
     paddingBottom: 100,

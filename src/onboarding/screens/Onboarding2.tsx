@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { OnboardingSlide } from '../components/OnboardingSlide';
-import { slides } from '../constants/slides';
+import React from "react";
+import { View, StyleSheet } from "react-native";
+import { OnboardingSlide } from "../components/OnboardingSlide";
+import { slides } from "../constants/slides";
 
 interface Onboarding2Props {
   onNext: () => void;
@@ -24,7 +24,6 @@ export const Onboarding2: React.FC<Onboarding2Props> = ({ onNext, onSkip }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
 });
-

@@ -1,10 +1,10 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { DrawerContentComponentProps } from '@react-navigation/drawer';
-import { DrawerHeader } from './components/DrawerHeader';
-import { DrawerItem } from './components/DrawerItem';
-import { DrawerFooter } from './components/DrawerFooter';
-import { useDrawerMenu } from './hooks/useDrawerMenu';
+import React from "react";
+import { View, StyleSheet, ScrollView } from "react-native";
+import { DrawerContentComponentProps } from "@react-navigation/drawer";
+import { DrawerHeader } from "./components/DrawerHeader";
+import { DrawerItem } from "./components/DrawerItem";
+import { DrawerFooter } from "./components/DrawerFooter";
+import { useDrawerMenu } from "./hooks/useDrawerMenu";
 
 interface CustomDrawerContentProps {
   onClose?: () => void;
@@ -19,7 +19,8 @@ export const DrawerContent: React.FC<CustomDrawerContentProps> = ({
   userID,
   userAvatar,
 }) => {
-  const { menuItems, handleMenuItemPress, handleLogout, isMenuItemActive } = useDrawerMenu();
+  const { menuItems, handleMenuItemPress, handleLogout, isMenuItemActive } =
+    useDrawerMenu();
 
   return (
     <View style={styles.container}>
@@ -57,7 +58,7 @@ export const DrawerContent: React.FC<CustomDrawerContentProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#2D59F0',
+    backgroundColor: "#2D59F0",
   },
   menuContainer: {
     flex: 1,
@@ -66,4 +67,3 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
 });
-

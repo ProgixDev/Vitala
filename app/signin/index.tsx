@@ -75,10 +75,6 @@ export default function SignIn() {
     router.push("/signup");
   };
 
-  const handleGoBack = () => {
-    router.back();
-  };
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -90,11 +86,6 @@ export default function SignIn() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Back Button */}
-        <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-          <Ionicons name="arrow-back" size={28} color="#2D3142" />
-        </TouchableOpacity>
-
         {/* Logo */}
         <View style={styles.logoContainer}>
           <Image
@@ -179,13 +170,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 40,
-  },
-  backButton: {
-    width: 48,
-    height: 48,
-    justifyContent: "center",
-    alignItems: "flex-start",
-    marginBottom: 20,
   },
   logoContainer: {
     alignItems: "center",

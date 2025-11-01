@@ -1,12 +1,15 @@
-import React from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import React from "react";
+import { View, StyleSheet, Animated } from "react-native";
 
 interface PaginationDotsProps {
   total: number;
   current: number;
 }
 
-export const PaginationDots: React.FC<PaginationDotsProps> = ({ total, current }) => {
+export const PaginationDots: React.FC<PaginationDotsProps> = ({
+  total,
+  current,
+}) => {
   return (
     <View style={styles.container}>
       {Array.from({ length: total }).map((_, index) => (
@@ -24,9 +27,9 @@ export const PaginationDots: React.FC<PaginationDotsProps> = ({ total, current }
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginVertical: 15,
   },
   dot: {
@@ -36,11 +39,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   activeDot: {
-    backgroundColor: '#2D59F0',
+    backgroundColor: "#2D59F0",
     width: 24,
   },
   inactiveDot: {
-    backgroundColor: '#D1D5DB',
+    backgroundColor: "#D1D5DB",
   },
 });
-
