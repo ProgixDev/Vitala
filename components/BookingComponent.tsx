@@ -493,9 +493,6 @@ export default function BookingComponent({
                   {location.address}
                 </Text>
               </View>
-              {selectedLocation === index && (
-                <Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
-              )}
             </TouchableOpacity>
           ))}
         </View>
@@ -503,7 +500,7 @@ export default function BookingComponent({
 
       {/* Book Button */}
       <TouchableOpacity
-        className="flex-row items-center justify-center bg-[#4461F2] py-4 rounded-[28px] gap-3"
+        className="flex-row items-center justify-center bg-[#4461F2] py-4 rounded-[28px] gap-3 mb-5"
         onPress={handleBookAppointment}
       >
         <Ionicons name="calendar-outline" size={22} color="#FFFFFF" />

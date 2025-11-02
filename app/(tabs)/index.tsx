@@ -172,7 +172,7 @@ export default function Home() {
   return (
     <View className="flex-1 pt-6 px-4">
       <StatusBar hidden />
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1 " showsVerticalScrollIndicator={false}>
         {selectedService ? (
           <BookingComponent
             service={selectedService}
@@ -228,7 +228,7 @@ export default function Home() {
                   </TouchableOpacity>
                 </View>
 
-                <View className="flex-row flex-wrap gap-2">
+                <View className="flex-row flex-wrap gap-2 justify-center">
                   {(showAllServices ? services : services.slice(0, 8)).map(
                     (service) => (
                       <TouchableOpacity
@@ -341,7 +341,7 @@ export default function Home() {
 
             {/* Emergency Banner */}
             {searchQuery.length === 0 && (
-              <TouchableOpacity className="flex-row bg-[#FF4B8C] rounded-[20px] p-5 pr-0 pb-0 overflow-hidden">
+              <TouchableOpacity className="flex-row bg-[#FF4B8C] rounded-[20px] p-5 pr-0 pb-0 overflow-hidden mb-5">
                 <View className="flex-1">
                   <Text className="text-xs text-white mb-3 opacity-90">
                     Need Urgent Help?

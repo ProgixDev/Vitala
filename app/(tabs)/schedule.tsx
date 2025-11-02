@@ -262,7 +262,7 @@ export default function Schedule() {
         )}
 
         {/* Stay Organized Card */}
-        <View className="bg-[#4461F2] rounded-3xl p-6 pb-[140px] relative overflow-hidden">
+        <View className="bg-[#4461F2] rounded-3xl p-6 pb-[140px] relative overflow-hidden mb-5">
           <Text className="text-xs text-white mb-3 opacity-90">
             Trusted Nurses on your schedule 😊
           </Text>
