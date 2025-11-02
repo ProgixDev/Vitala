@@ -1,3 +1,4 @@
+import BookingComponent from "@/components/BookingComponent";
 import { FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
@@ -9,7 +10,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import BookingComponent from "@/components/BookingComponent";
 
 const services = [
   {
@@ -243,7 +243,7 @@ export default function Home() {
                           {service.name}
                         </Text>
                       </TouchableOpacity>
-                    ),
+                    )
                   )}
                 </View>
               </View>
