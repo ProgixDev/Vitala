@@ -117,6 +117,193 @@ export default function MyProfile() {
           </View>
         </View>
 
+        {/* Medical Information */}
+        {currentUser.medicalProfile && (
+          <View className="px-6 mb-6">
+            <Text className="text-base font-semibold text-[#1F2937] mb-3">
+              Medical Information
+            </Text>
+
+            <View className="bg-white rounded-2xl p-5 shadow-sm">
+              {/* Gender */}
+              {currentUser.medicalProfile.gender && (
+                <>
+                  <View className="flex-row items-center">
+                    <View className="w-11 h-11 rounded-xl bg-[#F0F2FF] items-center justify-center mr-4">
+                      <Ionicons
+                        name="male-female-outline"
+                        size={22}
+                        color="#4461F2"
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-[13px] text-[#6B7280] mb-1">
+                        Gender
+                      </Text>
+                      <Text className="text-base font-semibold text-[#1F2937] capitalize">
+                        {currentUser.medicalProfile.gender}
+                      </Text>
+                    </View>
+                  </View>
+                  <View className="h-px bg-[#F3F4F6] my-4" />
+                </>
+              )}
+
+              {/* Date of Birth */}
+              {currentUser.medicalProfile.dateOfBirth && (
+                <>
+                  <View className="flex-row items-center">
+                    <View className="w-11 h-11 rounded-xl bg-[#F0F2FF] items-center justify-center mr-4">
+                      <Ionicons
+                        name="calendar-outline"
+                        size={22}
+                        color="#4461F2"
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-[13px] text-[#6B7280] mb-1">
+                        Date of Birth
+                      </Text>
+                      <Text className="text-base font-semibold text-[#1F2937]">
+                        {currentUser.medicalProfile.dateOfBirth}
+                      </Text>
+                    </View>
+                  </View>
+                  <View className="h-px bg-[#F3F4F6] my-4" />
+                </>
+              )}
+
+              {/* Blood Type */}
+              {currentUser.medicalProfile.bloodType && (
+                <>
+                  <View className="flex-row items-center">
+                    <View className="w-11 h-11 rounded-xl bg-[#F0F2FF] items-center justify-center mr-4">
+                      <Ionicons name="water" size={22} color="#4461F2" />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-[13px] text-[#6B7280] mb-1">
+                        Blood Type
+                      </Text>
+                      <Text className="text-base font-semibold text-[#1F2937]">
+                        {currentUser.medicalProfile.bloodType}
+                      </Text>
+                    </View>
+                  </View>
+                  <View className="h-px bg-[#F3F4F6] my-4" />
+                </>
+              )}
+
+              {/* Height & Weight */}
+              {(currentUser.medicalProfile.height ||
+                currentUser.medicalProfile.weight) && (
+                <>
+                  <View className="flex-row items-center">
+                    <View className="w-11 h-11 rounded-xl bg-[#F0F2FF] items-center justify-center mr-4">
+                      <Ionicons
+                        name="resize-outline"
+                        size={22}
+                        color="#4461F2"
+                      />
+                    </View>
+                    <View className="flex-1 flex-row justify-between">
+                      {currentUser.medicalProfile.height && (
+                        <View>
+                          <Text className="text-[13px] text-[#6B7280] mb-1">
+                            Height
+                          </Text>
+                          <Text className="text-base font-semibold text-[#1F2937]">
+                            {currentUser.medicalProfile.height} cm
+                          </Text>
+                        </View>
+                      )}
+                      {currentUser.medicalProfile.weight && (
+                        <View>
+                          <Text className="text-[13px] text-[#6B7280] mb-1">
+                            Weight
+                          </Text>
+                          <Text className="text-base font-semibold text-[#1F2937]">
+                            {currentUser.medicalProfile.weight} kg
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                  <View className="h-px bg-[#F3F4F6] my-4" />
+                </>
+              )}
+
+              {/* Allergies */}
+              {currentUser.medicalProfile.allergies &&
+                currentUser.medicalProfile.allergies.length > 0 && (
+                  <>
+                    <View className="flex-row items-start">
+                      <View className="w-11 h-11 rounded-xl bg-[#F0F2FF] items-center justify-center mr-4">
+                        <Ionicons
+                          name="warning-outline"
+                          size={22}
+                          color="#4461F2"
+                        />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-[13px] text-[#6B7280] mb-2">
+                          Allergies
+                        </Text>
+                        <View className="flex-row flex-wrap gap-2">
+                          {currentUser.medicalProfile.allergies.map(
+                            (allergy, index) => (
+                              <View
+                                key={index}
+                                className="bg-[#FEF2F2] px-3 py-1.5 rounded-full border border-[#FEE2E2]"
+                              >
+                                <Text className="text-sm text-[#DC2626]">
+                                  {allergy}
+                                </Text>
+                              </View>
+                            ),
+                          )}
+                        </View>
+                      </View>
+                    </View>
+                    <View className="h-px bg-[#F3F4F6] my-4" />
+                  </>
+                )}
+
+              {/* Chronic Illnesses */}
+              {currentUser.medicalProfile.chronicIllnesses &&
+                currentUser.medicalProfile.chronicIllnesses.length > 0 && (
+                  <View className="flex-row items-start">
+                    <View className="w-11 h-11 rounded-xl bg-[#F0F2FF] items-center justify-center mr-4">
+                      <Ionicons
+                        name="medical-outline"
+                        size={22}
+                        color="#4461F2"
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-[13px] text-[#6B7280] mb-2">
+                        Chronic Conditions
+                      </Text>
+                      <View className="flex-row flex-wrap gap-2">
+                        {currentUser.medicalProfile.chronicIllnesses.map(
+                          (illness, index) => (
+                            <View
+                              key={index}
+                              className="bg-[#EFF6FF] px-3 py-1.5 rounded-full border border-[#DBEAFE]"
+                            >
+                              <Text className="text-sm text-[#1D4ED8]">
+                                {illness}
+                              </Text>
+                            </View>
+                          ),
+                        )}
+                      </View>
+                    </View>
+                  </View>
+                )}
+            </View>
+          </View>
+        )}
+
         {/* Action Buttons */}
         <View className="px-6">
           <TouchableOpacity className="flex-row items-center bg-white rounded-xl p-4 mb-3 shadow-sm">
