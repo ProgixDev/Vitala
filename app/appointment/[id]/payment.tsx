@@ -10,7 +10,8 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { authStorage, Appointment, Payment } from "@/utils/auth";
+
+import { appointmentStorage, Appointment, Payment } from "@/utils/appointments";
 
 type PaymentMethodType = "credit_card" | "paypal" | null;
 
@@ -23,7 +24,7 @@ export default function PaymentPage() {
 
   const loadAppointment = useCallback(async () => {
     try {
-      const appointments = await authStorage.getAppointments();
+      const appointments = await appointmentStorage.getAppointments();
       const found = appointments.find((appt) => appt.id === id);
       setAppointment(found || null);
       if (found?.payment.method) {
@@ -72,7 +73,7 @@ export default function PaymentPage() {
               : undefined,
         };
 
-        await authStorage.updateAppointmentPayment(
+        await appointmentStorage.updateAppointmentPayment(
           appointment.id,
           updatedPayment,
         );

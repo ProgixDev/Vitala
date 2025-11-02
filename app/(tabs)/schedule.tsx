@@ -1,6 +1,6 @@
 import IllustrationSvg from "@/assets/images/schedule.svg";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { Appointment, authStorage } from "@/utils/auth";
+import { Appointment, appointmentStorage } from "@/utils/appointments";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -23,7 +23,7 @@ export default function Schedule() {
 
   const loadAppointments = async () => {
     try {
-      const allAppointments = await authStorage.getAppointments();
+      const allAppointments = await appointmentStorage.getAppointments();
       // Filter appointments for current user
       const userAppointments = currentUser
         ? allAppointments.filter((appt) => appt.userEmail === currentUser.email)
@@ -64,7 +64,7 @@ export default function Schedule() {
 
   const handleDeleteAll = async () => {
     try {
-      await authStorage.clearAppointments();
+      await appointmentStorage.clearAppointments();
       setAppointments([]);
     } catch (error) {
       console.error("Error deleting appointments:", error);

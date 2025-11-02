@@ -9,7 +9,7 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { authStorage, Appointment } from "@/utils/auth";
+import { Appointment, appointmentStorage } from "@/utils/appointments";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export default function AppointmentDetails() {
@@ -20,7 +20,7 @@ export default function AppointmentDetails() {
 
   const loadAppointment = useCallback(async () => {
     try {
-      const appointments = await authStorage.getAppointments();
+      const appointments = await appointmentStorage.getAppointments();
       const found = appointments.find((appt) => appt.id === id);
       setAppointment(found || null);
     } catch (error) {

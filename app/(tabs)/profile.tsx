@@ -2,8 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { useCurrentUser } from "../../hooks/useCurrentUser";
-import { authStorage } from "../../utils/auth";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { authStorage } from "@/utils/auth";
 
 interface MenuItemProps {
   icon: keyof typeof Ionicons.glyphMap;

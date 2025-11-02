@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView, Switch, Text, TouchableOpacity, View } from "react-native";
 import Toast from "react-native-toast-message";
-import { authStorage } from "../../utils/auth";
+import { authStorage } from "@/utils/auth";
 import { resetOnboardingStatus } from "../onboarding";
 
 interface SettingItemProps {
