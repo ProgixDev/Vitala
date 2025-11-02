@@ -313,7 +313,7 @@ export default function BookingComponent({
   return (
     <>
       {/* Header */}
-      <View className="mb-8">
+      <View className="pt-5 pb-1">
         <View className="flex-row items-center mb-4">
           <TouchableOpacity
             className="w-12 h-12 -ml-3 justify-center items-center"
@@ -322,7 +322,7 @@ export default function BookingComponent({
             <Ionicons name="arrow-back" size={24} color="#2D3142" />
           </TouchableOpacity>
           <View className="flex-1">
-            <Text className="text-[28px] font-bold text-[#2D3142] mb-1">
+            <Text className="text-3xl font-semibold text-[#2D3142]">
               {type === "emergency" ? "Emergency Booking" : "Book your nurse"}
             </Text>
           </View>
@@ -398,7 +398,7 @@ export default function BookingComponent({
 
                 <View className="flex-1">
                   <Text className="text-sm text-[#9E9E9E] mb-2">Age:</Text>
-                  <Text className="text-base text-[#2D3142] bg-[#F5F6FA] p-2 rounded-lg">
+                  <Text className="text-base text-[#2D3142] bg-[#F5F6FA] p-2 rounded-lg text-center">
                     {patientInfo.age}
                   </Text>
                 </View>
