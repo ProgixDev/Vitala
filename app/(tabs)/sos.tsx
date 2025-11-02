@@ -1,15 +1,9 @@
 import AlertFamilySvg from "@/assets/images/AlertFamilly.svg";
 import AmbulenceSvg from "@/assets/images/Ambulence.svg";
 import EmergencyNurseAlertSvg from "@/assets/images/EmergencyNurseAlert.svg";
-import React from "react";
-import {
-  Alert,
-  Dimensions,
-  Linking,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import BookingComponent from "@/components/BookingComponent";
+import React, { useState } from "react";
+import { Dimensions, Text, TouchableOpacity, View } from "react-native";
 import Animated, {
   Extrapolate,
   interpolate,
@@ -24,6 +18,37 @@ const SCROLLVIEW_WIDTH = SCREEN_WIDTH - 32; // Accounting for px-4 (16*2) on par
 const CARD_WIDTH = SCROLLVIEW_WIDTH * 0.85;
 const CARD_SPACING = 20;
 
+interface EmergencyService {
+  id: number;
+  name: string;
+  description: string;
+  tags: string[];
+}
+
+const emergencyServices: EmergencyService[] = [
+  {
+    id: 1,
+    name: "Emergency Nurse Alert",
+    description:
+      "Call medical emergency helpline for immediate nursing assistance and medical emergency response.",
+    tags: ["emergency", "nurse", "urgent", "medical"],
+  },
+  {
+    id: 2,
+    name: "Ambulance Service",
+    description:
+      "Request ambulance from nearby hospitals for emergency medical transportation and care.",
+    tags: ["ambulance", "emergency", "transport", "hospital"],
+  },
+  {
+    id: 3,
+    name: "Family Alert",
+    description:
+      "Send emergency alerts to all your emergency contacts for immediate family notification.",
+    tags: ["alert", "family", "emergency", "contacts"],
+  },
+];
+
 interface EmergencyCard {
   id: number;
   title: string;
@@ -35,12 +60,18 @@ interface EmergencyCard {
 
 export default function SOS() {
   const scrollX = useSharedValue(0);
+  const [selectedEmergencyService, setSelectedEmergencyService] =
+    useState<EmergencyService | null>(null);
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       scrollX.value = event.contentOffset.x;
     },
   });
+
+  const handleBackToSOS = () => {
+    setSelectedEmergencyService(null);
+  };
 
   const emergencyCards: EmergencyCard[] = [
     {
@@ -50,20 +81,8 @@ export default function SOS() {
       backgroundColor: "#ff4b93",
       illustration: EmergencyNurseAlertSvg,
       action: () => {
-        Alert.alert(
-          "Emergency Nurse Alert",
-          "Do you want to call the emergency helpline?",
-          [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Call",
-              onPress: () => {
-                // Replace with your emergency number
-                Linking.openURL("tel:911");
-              },
-            },
-          ]
-        );
+        const service = emergencyServices.find((s) => s.id === 1);
+        if (service) setSelectedEmergencyService(service);
       },
     },
     {
@@ -73,11 +92,8 @@ export default function SOS() {
       backgroundColor: "#ff5b5b",
       illustration: AmbulenceSvg,
       action: () => {
-        Alert.alert(
-          "Ambulance Request",
-          "Requesting ambulance from nearby hospitals...",
-          [{ text: "OK" }]
-        );
+        const service = emergencyServices.find((s) => s.id === 2);
+        if (service) setSelectedEmergencyService(service);
       },
     },
     {
@@ -87,66 +103,73 @@ export default function SOS() {
       backgroundColor: "#00b4b4",
       illustration: AlertFamilySvg,
       action: () => {
-        Alert.alert(
-          "Alert Family",
-          "Sending emergency alerts to all your contacts...",
-          [{ text: "OK" }]
-        );
+        const service = emergencyServices.find((s) => s.id === 3);
+        if (service) setSelectedEmergencyService(service);
       },
     },
   ];
 
   return (
     <View className="flex-1 pt-6 px-4">
-      {/* Header */}
-      <View className="py-5">
-        <View>
-          <Text className="text-[28px] font-bold text-[#2D3142] mb-1">
-            Emergency
-          </Text>
-          <Text className="text-sm text-[#9E9E9E]">
-            Organize all your schedules
-          </Text>
-        </View>
-      </View>
+      {selectedEmergencyService ? (
+        <BookingComponent
+          service={selectedEmergencyService}
+          onBack={handleBackToSOS}
+          type="emergency"
+        />
+      ) : (
+        <>
+          {/* Header */}
+          <View className="py-5">
+            <View>
+              <Text className="text-[28px] font-bold text-[#2D3142] mb-1">
+                Emergency
+              </Text>
+              <Text className="text-sm text-[#9E9E9E]">
+                Organize all your schedules
+              </Text>
+            </View>
+          </View>
 
-      {/* Main Title */}
-      <View className="mt-8">
-        <Text className="text-3xl font-semibold text-[#2D3142]">
-          Emergency Assistance at Home
-        </Text>
-      </View>
+          {/* Main Title */}
+          <View className="mt-8">
+            <Text className="text-3xl font-semibold text-[#2D3142]">
+              Emergency Assistance at Home
+            </Text>
+          </View>
 
-      {/* Horizontal Scroll Section */}
-      <View className="flex-1 justify-center">
-        <Animated.ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          snapToInterval={SCROLLVIEW_WIDTH}
-          decelerationRate="fast"
-          contentContainerStyle={{
-            alignItems: "center",
-          }}
-          onScroll={scrollHandler}
-          scrollEventThrottle={16}
-        >
-          {emergencyCards.map((card, index) => (
-            <EmergencyCardComponent
-              key={card.id}
-              card={card}
-              index={index}
-              scrollX={scrollX}
-            />
-          ))}
-        </Animated.ScrollView>
+          {/* Horizontal Scroll Section */}
+          <View className="flex-1 justify-center">
+            <Animated.ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={SCROLLVIEW_WIDTH}
+              decelerationRate="fast"
+              contentContainerStyle={{
+                alignItems: "center",
+              }}
+              onScroll={scrollHandler}
+              scrollEventThrottle={16}
+            >
+              {emergencyCards.map((card, index) => (
+                <EmergencyCardComponent
+                  key={card.id}
+                  card={card}
+                  index={index}
+                  scrollX={scrollX}
+                />
+              ))}
+            </Animated.ScrollView>
 
-        {/* Pagination Dots */}
-        <View className="flex-row justify-center items-center py-6 absolute bottom-0 left-0 right-0">
-          {emergencyCards.map((_, index) => (
-            <PaginationDot key={index} index={index} scrollX={scrollX} />
-          ))}
-        </View>
-      </View>
+            {/* Pagination Dots */}
+            <View className="flex-row justify-center items-center py-6 absolute bottom-0 left-0 right-0">
+              {emergencyCards.map((_, index) => (
+                <PaginationDot key={index} index={index} scrollX={scrollX} />
+              ))}
+            </View>
+          </View>
+        </>
+      )}
     </View>
   );
 }
