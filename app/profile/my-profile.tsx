@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useCurrentUser } from "../../hooks/useCurrentUser";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export default function MyProfile() {
   const { currentUser } = useCurrentUser();

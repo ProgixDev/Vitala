@@ -12,12 +12,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SvgProps } from "react-native-svg";
 
 // Import SVG files as components
-import BackgroundPageOne from "../../assets/images/OnBoardingPages/BackgroundPageOne.svg";
-import BackgroundPageThree from "../../assets/images/OnBoardingPages/BackgroundPageThree.svg";
-import BackgroundPageTwo from "../../assets/images/OnBoardingPages/BackgroundPageTwo.svg";
-import OnBoardingPageOne from "../../assets/images/OnBoardingPages/OnBoardingPageOne.svg";
-import OnBoardingPageThree from "../../assets/images/OnBoardingPages/OnBoardingPageThree.svg";
-import OnBoardingPageTwo from "../../assets/images/OnBoardingPages/OnBoardingPageTwo.svg";
+import BackgroundPageOne from "@/assets/images/OnBoardingPages/BackgroundPageOne.svg";
+import BackgroundPageThree from "@/assets/images/OnBoardingPages/BackgroundPageThree.svg";
+import BackgroundPageTwo from "@/assets/images/OnBoardingPages/BackgroundPageTwo.svg";
+import OnBoardingPageOne from "@/assets/images/OnBoardingPages/OnBoardingPageOne.svg";
+import OnBoardingPageThree from "@/assets/images/OnBoardingPages/OnBoardingPageThree.svg";
+import OnBoardingPageTwo from "@/assets/images/OnBoardingPages/OnBoardingPageTwo.svg";
 
 const { width, height } = Dimensions.get("window");
 
@@ -172,7 +172,7 @@ const OnboardingSlide: React.FC<OnboardingSlideProps> = ({
       {showLogo ? (
         <View style={styles.logoContainer}>
           <Image
-            source={require("../../assets/images/Logo.png")}
+            source={require("@/assets/images/Logo.png")}
             style={styles.logo}
             resizeMode="contain"
           />

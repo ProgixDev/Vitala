@@ -3,7 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { View, Text } from "react-native";
 import { useEffect } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { authStorage } from "../../utils/auth";
+import { authStorage } from "@/utils/auth";
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();

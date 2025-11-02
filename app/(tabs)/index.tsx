@@ -332,7 +332,7 @@ export default function Home() {
                   </View>
                 </View>
                 <Image
-                  source={require("../../assets/images/doctor.png")}
+                  source={require("@/assets/images/doctor.png")}
                   className="w-36 h-[180px] absolute right-0 bottom-0"
                   resizeMode="contain"
                 />
@@ -351,7 +351,7 @@ export default function Home() {
                   </Text>
                 </View>
                 <Image
-                  source={require("../../assets/images/nurse.png")}
+                  source={require("@/assets/images/nurse.png")}
                   className="h-[165px] relative -right-2.5 bottom-0"
                   resizeMode="contain"
                 />

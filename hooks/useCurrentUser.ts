@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { authStorage, CurrentUser } from "../utils/auth";
+import { authStorage, CurrentUser } from "@/utils/auth";
 
 export function useCurrentUser() {
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);

@@ -10,7 +10,7 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { authStorage, Appointment } from "@/utils/auth";
+import { appointmentStorage, Appointment } from "@/utils/appointments";
 
 const statusSteps = [
   {
@@ -57,7 +57,7 @@ export default function AppointmentStatus() {
 
   const loadAppointment = React.useCallback(async () => {
     try {
-      const appointments = await authStorage.getAppointments();
+      const appointments = await appointmentStorage.getAppointments();
       const found = appointments.find((appt) => appt.id === id);
       setAppointment(found || null);
     } catch (error) {
@@ -91,12 +91,12 @@ export default function AppointmentStatus() {
       const newStatus = statusOrder[currentIndex + 1];
 
       try {
-        const appointments = await authStorage.getAppointments();
+        const appointments = await appointmentStorage.getAppointments();
         const updatedAppointments = appointments.map((appt) =>
           appt.id === appointment.id ? { ...appt, status: newStatus } : appt,
         );
 
-        await authStorage.saveAppointments(updatedAppointments);
+        await appointmentStorage.saveAppointments(updatedAppointments);
         setAppointment({ ...appointment, status: newStatus });
       } catch (error) {
         console.error("Error updating appointment status:", error);

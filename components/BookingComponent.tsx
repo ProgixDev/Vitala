@@ -9,8 +9,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
-import { authStorage } from "../utils/auth";
-import { useCurrentUser } from "../hooks/useCurrentUser";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { appointmentStorage } from "@/utils/appointments";
 
 interface Service {
   id: number;
@@ -180,9 +180,9 @@ export default function BookingComponent({
         },
       );
 
-      await authStorage.getAppointments();
+      await appointmentStorage.getAppointments();
 
-      await authStorage.saveAppointment({
+      await appointmentStorage.saveAppointment({
         userEmail: currentUser.email,
         serviceName: service.name,
         date: formattedDate,
@@ -195,7 +195,7 @@ export default function BookingComponent({
       });
 
       // Get the newly created appointment ID (it's the last one added)
-      const updatedAppointments = await authStorage.getAppointments();
+      const updatedAppointments = await appointmentStorage.getAppointments();
       const newAppointment =
         updatedAppointments[updatedAppointments.length - 1];
 

@@ -154,7 +154,7 @@ export default function Payment() {
       prev.map((card) => ({
         ...card,
         isDefault: card.id === cardId,
-      }))
+      })),
     );
   };
 
