@@ -1,9 +1,9 @@
-import React from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
-import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { authStorage } from "../../utils/auth";
+import { router } from "expo-router";
+import React from "react";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
+import { authStorage } from "../../utils/auth";
 
 interface MenuItemProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -107,27 +107,21 @@ export default function Profile() {
   ];
 
   return (
-    <View className="flex-1 bg-white">
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-4 pt-[60px] pb-4 bg-white">
-        <TouchableOpacity
-          className="w-10 h-10 items-center justify-center"
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color="#1F2937" />
-        </TouchableOpacity>
-        <Text className="text-lg font-semibold text-[#1F2937]">Profile</Text>
-        <View className="w-10 h-10" />
-      </View>
+    <View className="flex-1 pt-6 px-4">
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View className="py-5">
+          <View>
+            <Text className="text-[28px] font-bold text-[#2D3142] mb-1">
+              Profile
+            </Text>
+            <Text className="text-sm text-[#9E9E9E]">Manage your account</Text>
+          </View>
+        </View>
 
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 32 }}
-        showsVerticalScrollIndicator={false}
-      >
         {/* User Info Section */}
         {currentUser && (
-          <View className="items-center py-6 px-6">
+          <View className="bg-white rounded-[20px] p-6 mb-[30px] items-center">
             <View className="mb-4">
               <View className="w-20 h-20 rounded-full bg-[#EEF2FF] items-center justify-center border-3 border-[#E0E7FF]">
                 <Ionicons name="person" size={40} color="#4461F2" />
@@ -141,19 +135,24 @@ export default function Profile() {
         )}
 
         {/* Menu Items */}
-        <View className="px-6 gap-2">
-          {menuItems.map((item, index) => (
-            <MenuItem
-              key={index}
-              icon={item.icon}
-              title={item.title}
-              onPress={item.onPress}
-            />
-          ))}
+        <View className="mb-[30px]">
+          <Text className="text-xl font-semibold text-[#2D3142] mb-5">
+            Account Settings
+          </Text>
+          <View className="gap-2">
+            {menuItems.map((item, index) => (
+              <MenuItem
+                key={index}
+                icon={item.icon}
+                title={item.title}
+                onPress={item.onPress}
+              />
+            ))}
+          </View>
         </View>
 
         {/* Logout Button */}
-        <View className="px-6 mt-4">
+        <View className="mb-[30px]">
           <MenuItem
             icon="log-out-outline"
             title="Logout"

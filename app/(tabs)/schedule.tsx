@@ -1,16 +1,16 @@
+import IllustrationSvg from "@/assets/images/schedule.svg";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { Appointment, authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState, useEffect } from "react";
+import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
-  ActivityIndicator,
 } from "react-native";
-import IllustrationSvg from "@/assets/images/schedule.svg";
-import { authStorage, Appointment } from "@/utils/auth";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { router } from "expo-router";
 
 export default function Schedule() {
   const { currentUser } = useCurrentUser();
@@ -114,14 +114,10 @@ export default function Schedule() {
   }
 
   return (
-    <View className="flex-1 bg-gray-100 pt-6 px-4">
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 100 }}
-        showsVerticalScrollIndicator={false}
-      >
+    <View className="flex-1 pt-6 px-4">
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View className="pb-5">
+        <View className="py-5">
           <View>
             <Text className="text-[28px] font-bold text-[#2D3142] mb-1">
               Appointments
@@ -134,8 +130,8 @@ export default function Schedule() {
 
         {/* Appointments List */}
         {appointments.length > 0 ? (
-          <View className="mb-6">
-            <View className="flex-row justify-between items-center mb-4">
+          <View className="mb-[30px]">
+            <View className="flex-row justify-between items-center mb-5">
               <Text className="text-xl font-semibold text-[#2D3142]">
                 Your Appointments
               </Text>
@@ -254,7 +250,7 @@ export default function Schedule() {
             </View>
           </View>
         ) : (
-          <View className="bg-white rounded-[20px] p-8 mb-6 items-center">
+          <View className="bg-white rounded-[20px] p-8 mb-[30px] items-center">
             <Ionicons name="calendar-outline" size={48} color="#9E9E9E" />
             <Text className="text-base text-[#2D3142] font-semibold mt-4 mb-2">
               No appointments yet

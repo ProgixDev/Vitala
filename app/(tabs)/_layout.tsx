@@ -54,7 +54,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="search"
+        name="schedule"
         options={{
           tabBarIcon: ({ focused }) => (
             <View
@@ -64,7 +64,7 @@ export default function TabLayout() {
                   : "bg-transparent border-2 border-gray-600"
               }`}
             >
-              <Ionicons name="search-outline" size={22} color="#FFFFFF" />
+              <Ionicons name="calendar-outline" size={22} color="#FFFFFF" />
             </View>
           ),
         }}
@@ -89,7 +89,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="schedule"
+        name="payment"
         options={{
           tabBarIcon: ({ focused }) => (
             <View
@@ -99,7 +99,7 @@ export default function TabLayout() {
                   : "bg-transparent border-2 border-gray-600"
               }`}
             >
-              <Ionicons name="calendar-outline" size={22} color="#FFFFFF" />
+              <Ionicons name="card-outline" size={22} color="#FFFFFF" />
             </View>
           ),
         }}
