@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   TouchableOpacity,
@@ -11,12 +11,13 @@ import {
 
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
-import { authStorage, User } from "@/utils/auth";
+import { authStorage, User, MedicalProfile } from "@/utils/auth";
 import InfoStep from "./components/InfoStep";
 import PasswordStep from "./components/PasswordStep";
 import OTPStep from "./components/OTPStep";
+import MedicalProfileStep from "./components/MedicalProfileStep";
 
-type Step = "info" | "password" | "otp";
+type Step = "info" | "password" | "medical" | "otp";
 
 export default function SignUp() {
   const [step, setStep] = useState<Step>("info");
@@ -31,7 +32,20 @@ export default function SignUp() {
   const [confirmPassword, setConfirmPassword] = useState("12345678");
   const [showNewPassword, setShowNewPassword] = useState(false);
 
-  // Step 3: OTP
+  // Step 3: Medical Profile
+  const [gender, setGender] = useState<"male" | "female" | "other" | null>(
+    null,
+  );
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [bloodType, setBloodType] = useState<
+    "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-" | null
+  >(null);
+  const [chronicIllnesses, setChronicIllnesses] = useState<string[]>([]);
+  const [allergies, setAllergies] = useState<string[]>([]);
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
+
+  // Step 4: OTP
   const [otp, setOtp] = useState(["1", "2", "3", "4"]);
   const [timer, setTimer] = useState(59);
 
@@ -44,15 +58,17 @@ export default function SignUp() {
     }
   }, [step, timer]);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     if (step === "otp") {
+      setStep("medical");
+    } else if (step === "medical") {
       setStep("password");
     } else if (step === "password") {
       setStep("info");
     } else {
       router.back();
     }
-  };
+  }, [step]);
   // Handle back button/swipe
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
@@ -64,7 +80,7 @@ export default function SignUp() {
     );
 
     return () => backHandler.remove();
-  }, [step]);
+  }, [step, handleBack]);
 
   const handleContinue = async () => {
     if (step === "info") {
@@ -112,15 +128,16 @@ export default function SignUp() {
 
       setStep("password");
     } else if (step === "password") {
-      // Validate password
+      // Validate password fields
       if (!newPassword || !confirmPassword) {
         Toast.show({
           type: "error",
           text1: "Error",
-          text2: "Please fill in both password fields",
+          text2: "Please fill in all fields",
         });
         return;
       }
+
       if (newPassword.length < 8) {
         Toast.show({
           type: "error",
@@ -129,6 +146,7 @@ export default function SignUp() {
         });
         return;
       }
+
       if (newPassword !== confirmPassword) {
         Toast.show({
           type: "error",
@@ -137,10 +155,25 @@ export default function SignUp() {
         });
         return;
       }
+
+      setStep("medical");
+    } else if (step === "medical") {
+      // Medical profile is optional, so we can continue without validation
+      setTimer(59);
       setStep("otp");
-    } else {
-      // Handle final OTP verification and save user
+    } else if (step === "otp") {
       try {
+        // Create medical profile
+        const medicalProfile: MedicalProfile = {
+          gender,
+          dateOfBirth: dateOfBirth || null,
+          bloodType,
+          chronicIllnesses,
+          allergies,
+          height: height ? parseFloat(height) : null,
+          weight: weight ? parseFloat(weight) : null,
+        };
+
         // Create user object
         const user: User = {
           fullName,
@@ -148,6 +181,7 @@ export default function SignUp() {
           phoneNumber,
           password: newPassword,
           userType: "patient", // Default to patient for new signups
+          medicalProfile,
         };
 
         // Save user to storage
@@ -159,6 +193,7 @@ export default function SignUp() {
           email,
           phoneNumber,
           userType: "patient", // Default to patient for new signups
+          medicalProfile,
         });
 
         // Set logged in status
@@ -215,6 +250,27 @@ export default function SignUp() {
           />
         );
 
+      case "medical":
+        return (
+          <MedicalProfileStep
+            gender={gender}
+            setGender={setGender}
+            dateOfBirth={dateOfBirth}
+            setDateOfBirth={setDateOfBirth}
+            bloodType={bloodType}
+            setBloodType={setBloodType}
+            chronicIllnesses={chronicIllnesses}
+            setChronicIllnesses={setChronicIllnesses}
+            allergies={allergies}
+            setAllergies={setAllergies}
+            height={height}
+            setHeight={setHeight}
+            weight={weight}
+            setWeight={setWeight}
+            onNext={handleContinue}
+          />
+        );
+
       case "otp":
         return <OTPStep otp={otp} setOtp={setOtp} timer={timer} />;
     }
@@ -232,15 +288,17 @@ export default function SignUp() {
       >
         {renderStepContent()}
 
-        {/* Continue/Verify Button */}
-        <TouchableOpacity
-          className="bg-[#4461F2] rounded-[28px] h-14 justify-center items-center shadow-lg mb-8"
-          onPress={handleContinue}
-        >
-          <Text className="text-lg font-semibold text-white">
-            {step === "otp" ? "Verify" : "Continue"}
-          </Text>
-        </TouchableOpacity>
+        {/* Continue/Verify Button - Hide for medical step as it has its own button */}
+        {step !== "medical" && (
+          <TouchableOpacity
+            className="bg-[#4461F2] rounded-[28px] h-14 justify-center items-center shadow-lg mb-8"
+            onPress={handleContinue}
+          >
+            <Text className="text-lg font-semibold text-white">
+              {step === "otp" ? "Verify" : "Continue"}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         {/* Sign In Link */}
         {step === "info" && (

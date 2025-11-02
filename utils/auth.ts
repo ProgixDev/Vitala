@@ -4,12 +4,23 @@ const LOGGED_IN_KEY = "loggedIn";
 const USERS_KEY = "users";
 const CURRENT_USER_KEY = "currentUser";
 
+export interface MedicalProfile {
+  gender: "male" | "female" | "other" | null;
+  dateOfBirth: string | null;
+  bloodType: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-" | null;
+  chronicIllnesses: string[];
+  allergies: string[];
+  height: number | null; // in cm
+  weight: number | null; // in kg
+}
+
 export interface User {
   fullName: string;
   email: string;
   phoneNumber: string;
   password: string;
   userType: "patient" | "nurse";
+  medicalProfile?: MedicalProfile;
 }
 
 export interface CurrentUser {
@@ -17,6 +28,7 @@ export interface CurrentUser {
   email: string;
   phoneNumber: string;
   userType: "patient" | "nurse";
+  medicalProfile?: MedicalProfile;
 }
 
 export const authStorage = {
