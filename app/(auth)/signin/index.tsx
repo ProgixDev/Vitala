@@ -48,6 +48,7 @@ export default function SignIn() {
         fullName: user.fullName,
         email: user.email,
         phoneNumber: user.phoneNumber,
+        userType: user.userType || "patient", // Default to patient if not set
       };
       await authStorage.setCurrentUser(currentUser);
 

@@ -9,12 +9,14 @@ export interface User {
   email: string;
   phoneNumber: string;
   password: string;
+  userType: "patient" | "nurse";
 }
 
 export interface CurrentUser {
   fullName: string;
   email: string;
   phoneNumber: string;
+  userType: "patient" | "nurse";
 }
 
 export const authStorage = {
@@ -159,6 +161,32 @@ export const authStorage = {
     } catch (error) {
       console.error("Error getting current user:", error);
       return null;
+    }
+  },
+
+  /**
+   * Toggle user type between patient and nurse
+   * @returns Promise<void>
+   */
+  toggleUserType: async (): Promise<void> => {
+    try {
+      const currentUser = await authStorage.getCurrentUser();
+      if (!currentUser) {
+        throw new Error("No current user found");
+      }
+
+      const newUserType: "patient" | "nurse" =
+        currentUser.userType === "patient" ? "nurse" : "patient";
+
+      const updatedUser: CurrentUser = {
+        ...currentUser,
+        userType: newUserType,
+      };
+
+      await AsyncStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
+    } catch (error) {
+      console.error("Error toggling user type:", error);
+      throw error;
     }
   },
 };

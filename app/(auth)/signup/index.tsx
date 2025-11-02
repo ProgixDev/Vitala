@@ -147,6 +147,7 @@ export default function SignUp() {
           email,
           phoneNumber,
           password: newPassword,
+          userType: "patient", // Default to patient for new signups
         };
 
         // Save user to storage
@@ -157,6 +158,7 @@ export default function SignUp() {
           fullName,
           email,
           phoneNumber,
+          userType: "patient", // Default to patient for new signups
         });
 
         // Set logged in status
