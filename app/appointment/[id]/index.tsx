@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -18,11 +18,7 @@ export default function AppointmentDetails() {
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadAppointment();
-  }, [id]);
-
-  const loadAppointment = async () => {
+  const loadAppointment = useCallback(async () => {
     try {
       const appointments = await authStorage.getAppointments();
       const found = appointments.find((appt) => appt.id === id);
@@ -32,15 +28,19 @@ export default function AppointmentDetails() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    loadAppointment();
+  }, [loadAppointment]);
 
   const handleGoBack = () => {
     router.back();
   };
 
   const handleConfirmBooking = () => {
-    // Handle payment/confirmation
-    router.replace("/(tabs)");
+    // Navigate to payment page
+    router.push(`/appointment/${id}/payment`);
   };
 
   if (loading) {
@@ -175,15 +175,84 @@ export default function AppointmentDetails() {
           </View>
         </View>
 
-        {/* Book Button */}
-        <TouchableOpacity
-          className="bg-[#4461F2] py-4 rounded-[28px] justify-center items-center shadow-lg mt-5"
-          onPress={handleConfirmBooking}
-        >
-          <Text className="text-lg font-semibold text-white">
-            Book Appointment
+        {/* Payment Summary */}
+        <View className="mb-6">
+          <Text className="text-lg font-semibold text-[#2D3142] mb-4">
+            Payment Details
           </Text>
-        </TouchableOpacity>
+          <View className="bg-white rounded-2xl p-5 shadow-sm">
+            <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
+              <Text className="text-[15px] text-[#9E9E9E]">Service Fee:</Text>
+              <Text className="text-[15px] font-semibold text-[#2D3142]">
+                {appointment.payment.amount}
+                {appointment.payment.currency === "USD" ? "$" : "€"}
+              </Text>
+            </View>
+            <View className="flex-row justify-between items-center py-3">
+              <Text className="text-[15px] text-[#9E9E9E]">
+                Payment Status:
+              </Text>
+              <View
+                className={`px-3 py-1 rounded-full ${
+                  appointment.payment.status === "completed"
+                    ? "bg-[#32CD32]/10"
+                    : appointment.payment.status === "pending"
+                      ? "bg-[#FFA500]/10"
+                      : appointment.payment.status === "failed"
+                        ? "bg-[#FF3B30]/10"
+                        : "bg-[#4461F2]/10"
+                }`}
+              >
+                <Text
+                  className={`text-xs font-semibold ${
+                    appointment.payment.status === "completed"
+                      ? "text-[#32CD32]"
+                      : appointment.payment.status === "pending"
+                        ? "text-[#FFA500]"
+                        : appointment.payment.status === "failed"
+                          ? "text-[#FF3B30]"
+                          : "text-[#4461F2]"
+                  }`}
+                >
+                  {appointment.payment.status === "completed"
+                    ? "Paid"
+                    : appointment.payment.status === "pending"
+                      ? "Payment Pending"
+                      : appointment.payment.status === "failed"
+                        ? "Payment Failed"
+                        : "Processing"}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Continue to Payment Button - Only show if not paid */}
+        {appointment.payment.status !== "completed" && (
+          <TouchableOpacity
+            className="bg-[#4461F2] py-4 rounded-[28px] justify-center items-center shadow-lg mt-5"
+            onPress={handleConfirmBooking}
+          >
+            <Text className="text-lg font-semibold text-white">
+              Continue to Payment
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* View Receipt Button - Only show if paid */}
+        {appointment.payment.status === "completed" && (
+          <TouchableOpacity
+            className="bg-[#32CD32] py-4 rounded-[28px] justify-center items-center shadow-lg mt-5"
+            onPress={handleConfirmBooking}
+          >
+            <View className="flex-row items-center gap-2">
+              <Ionicons name="receipt-outline" size={20} color="white" />
+              <Text className="text-lg font-semibold text-white">
+                View Receipt
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </View>
   );

@@ -18,6 +18,21 @@ export interface CurrentUser {
   phoneNumber: string;
 }
 
+export interface Payment {
+  id: string;
+  status: "pending" | "processing" | "completed" | "failed";
+  amount: number;
+  currency: string;
+  method: "credit_card" | "paypal" | null;
+  reference: string;
+  transactionDate: string | null;
+  cardDetails?: {
+    cardNumber: string;
+    cardHolder: string;
+    expiryDate: string;
+  };
+}
+
 export interface Appointment {
   id: string;
   userEmail: string;
@@ -30,6 +45,7 @@ export interface Appointment {
   locationLabel: string;
   status: "pending" | "confirmed" | "on-the-way" | "in-progress" | "completed";
   createdAt: string;
+  payment: Payment;
 }
 
 export const authStorage = {
@@ -213,15 +229,29 @@ export const authStorage = {
    * @returns Promise<void>
    */
   saveAppointment: async (
-    appointment: Omit<Appointment, "id" | "createdAt">,
+    appointment: Omit<Appointment, "id" | "createdAt" | "payment">,
   ): Promise<void> => {
     try {
       const appointments = await authStorage.getAppointments();
 
+      const appointmentId = Date.now().toString();
+      const paymentReference = `PAY${appointmentId}`;
+
+      const newPayment: Payment = {
+        id: `payment_${appointmentId}`,
+        status: "pending",
+        amount: 200, // Default amount, can be customized
+        currency: "USD",
+        method: null,
+        reference: paymentReference,
+        transactionDate: null,
+      };
+
       const newAppointment: Appointment = {
         ...appointment,
-        id: Date.now().toString(),
+        id: appointmentId,
         createdAt: new Date().toISOString(),
+        payment: newPayment,
       };
 
       appointments.push(newAppointment);
@@ -231,6 +261,37 @@ export const authStorage = {
       );
     } catch (error) {
       console.error("Error saving appointment:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update appointment payment
+   * @param appointmentId ID of appointment to update
+   * @param payment Payment data to update
+   * @returns Promise<void>
+   */
+  updateAppointmentPayment: async (
+    appointmentId: string,
+    payment: Payment,
+  ): Promise<void> => {
+    try {
+      const appointments = await authStorage.getAppointments();
+      const appointmentIndex = appointments.findIndex(
+        (appt) => appt.id === appointmentId,
+      );
+
+      if (appointmentIndex === -1) {
+        throw new Error("Appointment not found");
+      }
+
+      appointments[appointmentIndex].payment = payment;
+      await AsyncStorage.setItem(
+        APPOINTMENTS_KEY,
+        JSON.stringify(appointments),
+      );
+    } catch (error) {
+      console.error("Error updating appointment payment:", error);
       throw error;
     }
   },

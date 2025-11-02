@@ -105,6 +105,61 @@ export default function Schedule() {
     }
   };
 
+  const getPaymentStatusLabel = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "Payment Pending";
+      case "processing":
+        return "Processing";
+      case "completed":
+        return "Paid";
+      case "failed":
+        return "Payment Failed";
+      default:
+        return "Unknown";
+    }
+  };
+
+  const getPaymentStatusColor = (status: string) => {
+    switch (status) {
+      case "pending":
+        return {
+          bg: "bg-[#FFA500]/20",
+          text: "text-[#FFA500]",
+          iconColor: "#FFA500",
+          icon: "time-outline",
+        };
+      case "processing":
+        return {
+          bg: "bg-[#4461F2]/20",
+          text: "text-[#4461F2]",
+          iconColor: "#4461F2",
+          icon: "sync-outline",
+        };
+      case "completed":
+        return {
+          bg: "bg-[#32CD32]/20",
+          text: "text-[#32CD32]",
+          iconColor: "#32CD32",
+          icon: "checkmark-circle-outline",
+        };
+      case "failed":
+        return {
+          bg: "bg-[#FF3B30]/20",
+          text: "text-[#FF3B30]",
+          iconColor: "#FF3B30",
+          icon: "close-circle-outline",
+        };
+      default:
+        return {
+          bg: "bg-gray-100",
+          text: "text-gray-600",
+          iconColor: "#6B7280",
+          icon: "help-circle-outline",
+        };
+    }
+  };
+
   if (loading) {
     return (
       <View className="flex-1 bg-gray-100 justify-center items-center">
@@ -152,11 +207,47 @@ export default function Schedule() {
                   onPress={() => handleAppointmentPress(appointment.id)}
                 >
                   {/* Header with Status Badges */}
-                  <View className="flex-row justify-between items-center mb-5">
-                    <Text className="text-lg font-semibold text-white">
-                      Upcoming Appointment
-                    </Text>
-                    <View className="flex-row gap-2">
+                  <View className="flex-row justify-between items-start mb-5">
+                    <View className="flex-1">
+                      <Text className="text-lg font-semibold text-white mb-2">
+                        Upcoming Appointment
+                      </Text>
+                      {/* Payment Status Badge */}
+                      <View className="flex-row items-center gap-2">
+                        <View
+                          className={`px-3 py-1 rounded-full flex-row items-center gap-1 ${
+                            getPaymentStatusColor(appointment?.payment?.status)
+                              ?.bg
+                          }`}
+                        >
+                          <Ionicons
+                            name={
+                              getPaymentStatusColor(
+                                appointment?.payment?.status,
+                              )?.icon as any
+                            }
+                            size={14}
+                            color={
+                              getPaymentStatusColor(
+                                appointment?.payment?.status,
+                              )?.iconColor
+                            }
+                          />
+                          <Text
+                            className={`text-xs font-semibold ${
+                              getPaymentStatusColor(
+                                appointment?.payment?.status,
+                              )?.text
+                            }`}
+                          >
+                            {getPaymentStatusLabel(
+                              appointment?.payment?.status,
+                            )}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                    <View className="flex-row gap-2 items-center">
                       {appointment.type === "emergency" && (
                         <View className="bg-[#FF4B8C] px-3 py-1 rounded-full">
                           <Text className="text-xs font-semibold text-white">
@@ -230,17 +321,23 @@ export default function Schedule() {
                           {appointment.locationLabel}
                         </Text>
                       </View>
-                      <View
-                        className={`px-2 py-0.5 rounded-full self-start ${
-                          getStatusColor(appointment.status).bg
-                        }`}
-                      >
-                        <Text
-                          className={`text-[10px] font-semibold ${
-                            getStatusColor(appointment.status).text
+                      <View className="flex-row gap-2 items-center mt-1">
+                        <View
+                          className={`px-2 py-0.5 rounded-full ${
+                            getStatusColor(appointment.status).bg
                           }`}
                         >
-                          {getStatusLabel(appointment.status)}
+                          <Text
+                            className={`text-[10px] font-semibold ${
+                              getStatusColor(appointment.status).text
+                            }`}
+                          >
+                            {getStatusLabel(appointment.status)}
+                          </Text>
+                        </View>
+                        <Text className="text-xs text-[#9E9E9E]">
+                          • {appointment?.payment?.amount}
+                          {appointment?.payment?.currency === "USD" ? "$" : "€"}
                         </Text>
                       </View>
                     </View>
