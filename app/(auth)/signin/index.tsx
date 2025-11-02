@@ -12,7 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
-import { authStorage, CurrentUser } from "@/utils/auth";
+import { authStorage } from "@/utils/auth";
 import PasswordInput from "@/components/PasswordInput";
 
 export default function SignIn() {

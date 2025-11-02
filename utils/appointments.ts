@@ -2,36 +2,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const APPOINTMENTS_KEY = "appointments";
 
-export interface Payment {
-  id: string;
-  status: "pending" | "processing" | "completed" | "failed";
-  amount: number;
-  currency: string;
-  method: "credit_card" | "paypal" | null;
-  reference: string;
-  transactionDate: string | null;
-  cardDetails?: {
-    cardNumber: string;
-    cardHolder: string;
-    expiryDate: string;
-  };
-}
-
-export interface Appointment {
-  id: string;
-  userEmail: string;
-  serviceName: string;
-  date: string;
-  time: string;
-  duration: string;
-  type: "normal" | "emergency";
-  location: string;
-  locationLabel: string;
-  status: "pending" | "confirmed" | "on-the-way" | "in-progress" | "completed";
-  createdAt: string;
-  payment: Payment;
-}
-
 export const appointmentStorage = {
   /**
    * Get all appointments

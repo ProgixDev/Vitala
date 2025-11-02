@@ -1,11 +1,14 @@
 import IllustrationSvg from "@/assets/images/schedule.svg";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { Appointment, appointmentStorage } from "@/utils/appointments";
+import { appointmentStorage } from "@/utils/appointments";
+import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -13,21 +16,42 @@ import {
 } from "react-native";
 
 export default function Schedule() {
-  const { currentUser } = useCurrentUser();
+  const { currentUser, refreshUser } = useCurrentUser();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadAppointments();
   });
 
+  useFocusEffect(() => {
+    handleRefresh();
+  });
+
+  const handleRefresh = async () => {
+    await refreshUser();
+  };
+
   const loadAppointments = async () => {
     try {
       const allAppointments = await appointmentStorage.getAppointments();
-      // Filter appointments for current user
-      const userAppointments = currentUser
-        ? allAppointments.filter((appt) => appt.userEmail === currentUser.email)
-        : [];
+      const allUsers = await authStorage.getUsers();
+      setUsers(allUsers);
+
+      // Filter appointments based on user type
+      let userAppointments: Appointment[] = [];
+      if (currentUser) {
+        if (currentUser.userType === "patient") {
+          userAppointments = allAppointments.filter(
+            (appt) => appt.userEmail === currentUser.email,
+          );
+        } else if (currentUser.userType === "nurse") {
+          userAppointments = allAppointments.filter(
+            (appt) => appt.nurseEmail === currentUser.email,
+          );
+        }
+      }
       setAppointments(userAppointments);
     } catch (error) {
       console.error("Error loading appointments:", error);
@@ -167,6 +191,33 @@ export default function Schedule() {
       </View>
     );
   }
+
+  const getUserInfo = (appointment: Appointment) => {
+    if (currentUser?.userType === "patient") {
+      // Show nurse info for patients
+      if (appointment.nurseEmail) {
+        const nurse = users.find((u) => u.email === appointment.nurseEmail);
+        return nurse
+          ? {
+              name: nurse.fullName,
+              role: "Nurse",
+              email: nurse.email,
+            }
+          : null;
+      }
+    } else if (currentUser?.userType === "nurse") {
+      // Show patient info for nurses
+      const patient = users.find((u) => u.email === appointment.userEmail);
+      return patient
+        ? {
+            name: patient.fullName,
+            role: "Patient",
+            email: patient.email,
+          }
+        : null;
+    }
+    return null;
+  };
 
   return (
     <View className="flex-1 pt-6 px-4">
@@ -342,6 +393,33 @@ export default function Schedule() {
                       </View>
                     </View>
                   </View>
+
+                  {/* Nurse/Patient Info */}
+                  {getUserInfo(appointment) && (
+                    <View className="bg-white rounded-2xl p-4 flex-row items-center gap-3 mt-3">
+                      <Image
+                        source={{
+                          uri: `https://i.pravatar.cc/150?u=${
+                            getUserInfo(appointment)?.email
+                          }`,
+                        }}
+                        className="w-12 h-12 rounded-full"
+                      />
+                      <View className="flex-1">
+                        <Text className="text-[15px] font-semibold text-[#2D3142] mb-1">
+                          {getUserInfo(appointment)?.name}
+                        </Text>
+                        <Text className="text-xs text-[#9E9E9E]">
+                          {getUserInfo(appointment)?.role}
+                        </Text>
+                      </View>
+                      <Ionicons
+                        name="person-circle-outline"
+                        size={24}
+                        color="#4461F2"
+                      />
+                    </View>
+                  )}
                 </TouchableOpacity>
               ))}
             </View>

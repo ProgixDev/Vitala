@@ -1,36 +1,170 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Image,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from "react-native";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { appointmentStorage } from "@/utils/appointments";
+import { authStorage } from "@/utils/auth";
+import { router } from "expo-router";
 
-// Mock data for nurse UI
-const mockNextPatient = {
-  name: "Cody Fisher",
-  role: "Patient",
-  date: "Mon, 11 June 2024",
-  time: "08:00AM",
-  image: "https://i.pravatar.cc/150?img=12",
+type RequestItem = {
+  id: string;
+  name: string;
+  role: string;
+  date: string;
+  time: string;
+  image: string;
+  serviceName: string;
+  userEmail: string;
 };
 
-const mockRequests = [
-  {
-    id: 1,
-    name: "Jenny Wilson",
-    role: "Patient",
-    time: "12:00",
-    rating: 5.0,
-    status: "pending",
-  },
-];
+type AppointmentItem = {
+  id: string;
+  name: string;
+  role: string;
+  date: string;
+  time: string;
+  image: string;
+  serviceName: string;
+  userEmail: string;
+};
 
 export default function NurseHomeUI() {
   const { currentUser } = useCurrentUser();
+  const [upcomingAppointments, setUpcomingAppointments] = useState<
+    AppointmentItem[]
+  >([]);
+  const [requests, setRequests] = useState<RequestItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [requestsLoading, setRequestsLoading] = useState(true);
+
+  const loadUpcomingAppointments = useCallback(async () => {
+    try {
+      setLoading(true);
+      const allAppointments = await appointmentStorage.getAppointments();
+
+      // Filter for appointments assigned to this nurse that are confirmed
+      const sortedAppointments = allAppointments
+        .filter((appt) => {
+          return (
+            appt.status === "confirmed" &&
+            appt.nurseEmail === currentUser?.email
+          );
+        })
+        .sort((a, b) => {
+          const dateA = new Date(`${a.date} ${a.time}`);
+          const dateB = new Date(`${b.date} ${b.time}`);
+          return dateA.getTime() - dateB.getTime();
+        });
+
+      const users = await authStorage.getUsers();
+
+      const appointmentItems: AppointmentItem[] = sortedAppointments.map(
+        (appt) => {
+          const patient = users.find((user) => user.email === appt.userEmail);
+          return {
+            id: appt.id,
+            name: patient?.fullName || "Unknown Patient",
+            role: "Patient",
+            date: appt.date,
+            time: appt.time,
+            image: `https://i.pravatar.cc/150?u=${appt.userEmail}`,
+            serviceName: appt.serviceName,
+            userEmail: appt.userEmail,
+          };
+        },
+      );
+
+      setUpcomingAppointments(appointmentItems);
+    } catch (error) {
+      console.error("Error loading upcoming appointments:", error);
+      setUpcomingAppointments([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser?.email]);
+
+  const loadRequests = useCallback(async () => {
+    try {
+      setRequestsLoading(true);
+      const allAppointments = await appointmentStorage.getAppointments();
+
+      // Filter for pending appointments without a nurse assigned
+      const pendingAppointments = allAppointments
+        .filter((appt) => appt.status === "pending" && !appt.nurseEmail)
+        .sort((a, b) => {
+          const dateA = new Date(`${a.date} ${a.time}`);
+          const dateB = new Date(`${b.date} ${b.time}`);
+          return dateA.getTime() - dateB.getTime();
+        });
+
+      const users = await authStorage.getUsers();
+
+      const requestItems: RequestItem[] = pendingAppointments.map((appt) => {
+        const patient = users.find((user) => user.email === appt.userEmail);
+        return {
+          id: appt.id,
+          name: patient?.fullName || "Unknown Patient",
+          role: "Patient",
+          date: appt.date,
+          time: appt.time,
+          image: `https://i.pravatar.cc/150?u=${appt.userEmail}`,
+          serviceName: appt.serviceName,
+          userEmail: appt.userEmail,
+        };
+      });
+
+      setRequests(requestItems);
+    } catch (error) {
+      console.error("Error loading requests:", error);
+      setRequests([]);
+    } finally {
+      setRequestsLoading(false);
+    }
+  }, []);
+
+  const loadData = useCallback(async () => {
+    await Promise.all([loadUpcomingAppointments(), loadRequests()]);
+  }, [loadUpcomingAppointments, loadRequests]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleAcceptRequest = async (appointmentId: string) => {
+    try {
+      const allAppointments = await appointmentStorage.getAppointments();
+      const appointmentIndex = allAppointments.findIndex(
+        (appt) => appt.id === appointmentId,
+      );
+
+      if (appointmentIndex !== -1) {
+        allAppointments[appointmentIndex].status = "confirmed";
+        allAppointments[appointmentIndex].nurseEmail = currentUser?.email;
+        await appointmentStorage.saveAppointments(allAppointments);
+
+        // Reload data
+        await loadData();
+      }
+    } catch (error) {
+      console.error("Error accepting request:", error);
+    }
+  };
+
+  const handleDeclineRequest = async (appointmentId: string) => {
+    try {
+      await appointmentStorage.deleteAppointment(appointmentId);
+      await loadRequests();
+    } catch (error) {
+      console.error("Error declining request:", error);
+    }
+  };
 
   return (
     <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
@@ -55,45 +189,69 @@ export default function NurseHomeUI() {
         </View>
       </View>
 
-      {/* Your Next Patient */}
+      {/* Upcoming Appointments */}
       <View className="mb-[30px]">
         <View className="flex-row justify-between items-center mb-4">
           <Text className="text-xl font-semibold text-[#2D3142]">
-            Your next patient
+            Upcoming Appointments
           </Text>
-          <TouchableOpacity>
-            <Text className="text-sm text-[#4461F2] font-medium">
-              See All
-            </Text>
+          <TouchableOpacity onPress={() => router.push("/schedule")}>
+            <Text className="text-sm text-[#4461F2] font-medium">See All</Text>
           </TouchableOpacity>
         </View>
 
-        <View className="bg-white rounded-[20px] p-4 shadow-sm">
-          <View className="flex-row items-center gap-3">
-            <Image
-              source={{ uri: mockNextPatient.image }}
-              className="w-12 h-12 rounded-full"
-            />
-            <View className="flex-1">
-              <Text className="text-base font-semibold text-[#2D3142] mb-0.5">
-                {mockNextPatient.name}
-              </Text>
-              <Text className="text-xs text-[#9E9E9E]">
-                {mockNextPatient.role}
-              </Text>
-            </View>
+        {loading ? (
+          <View className="bg-white rounded-[20px] p-4 shadow-sm items-center justify-center h-32">
+            <ActivityIndicator size="large" color="#4461F2" />
           </View>
-          <View className="flex-row justify-between mt-3 pt-3 border-t border-gray-100">
-            <View>
-              <Text className="text-sm font-semibold text-[#4461F2] mb-0.5">
-                {mockNextPatient.date}
-              </Text>
-            </View>
-            <Text className="text-base font-bold text-[#2D3142]">
-              {mockNextPatient.time}
+        ) : upcomingAppointments.length > 0 ? (
+          <View className="gap-3">
+            {upcomingAppointments.map((appointment) => (
+              <View
+                key={appointment.id}
+                className="bg-white rounded-[20px] p-4 shadow-sm"
+              >
+                <View className="flex-row items-center gap-3">
+                  <Image
+                    source={{ uri: appointment.image }}
+                    className="w-12 h-12 rounded-full"
+                  />
+                  <View className="flex-1">
+                    <Text className="text-base font-semibold text-[#2D3142] mb-0.5">
+                      {appointment.name}
+                    </Text>
+                    <Text className="text-xs text-[#9E9E9E]">
+                      {appointment.role}
+                    </Text>
+                  </View>
+                </View>
+                <View className="mt-3 pt-3 border-t border-gray-100">
+                  <Text className="text-xs text-[#9E9E9E] mb-1">Service</Text>
+                  <Text className="text-sm font-medium text-[#2D3142] mb-3">
+                    {appointment.serviceName}
+                  </Text>
+                  <View className="flex-row justify-between">
+                    <View>
+                      <Text className="text-sm font-semibold text-[#4461F2] mb-0.5">
+                        {appointment.date}
+                      </Text>
+                    </View>
+                    <Text className="text-base font-bold text-[#2D3142]">
+                      {appointment.time}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View className="bg-white rounded-[20px] p-4 shadow-sm items-center justify-center h-32">
+            <Ionicons name="calendar-outline" size={32} color="#9E9E9E" />
+            <Text className="text-sm text-[#9E9E9E] mt-2">
+              No upcoming appointments
             </Text>
           </View>
-        </View>
+        )}
       </View>
 
       {/* Motivational Banner */}
@@ -145,62 +303,74 @@ export default function NurseHomeUI() {
             Your Requests
           </Text>
           <TouchableOpacity>
-            <Text className="text-sm text-[#4461F2] font-medium">
-              See All
-            </Text>
+            <Text className="text-sm text-[#4461F2] font-medium">See All</Text>
           </TouchableOpacity>
         </View>
 
-        {mockRequests.map((request) => (
-          <View
-            key={request.id}
-            className="bg-white rounded-[20px] p-4 shadow-sm mb-3"
-          >
-            <View className="flex-row items-center justify-between mb-3">
-              <View className="flex-row items-center gap-3">
-                <Image
-                  source={{
-                    uri: `https://i.pravatar.cc/150?img=${request.id + 5}`,
-                  }}
-                  className="w-12 h-12 rounded-full"
-                />
-                <View>
-                  <Text className="text-base font-semibold text-[#2D3142] mb-0.5">
-                    {request.name}
-                  </Text>
-                  <Text className="text-xs text-[#9E9E9E]">
-                    {request.role}
-                  </Text>
+        {requestsLoading ? (
+          <View className="bg-white rounded-[20px] p-4 shadow-sm items-center justify-center h-32">
+            <ActivityIndicator size="large" color="#4461F2" />
+          </View>
+        ) : requests.length > 0 ? (
+          requests.map((request) => (
+            <View
+              key={request.id}
+              className="bg-white rounded-[20px] p-4 shadow-sm mb-3"
+            >
+              <View className="flex-row items-center justify-between mb-3">
+                <View className="flex-row items-center gap-3">
+                  <Image
+                    source={{ uri: request.image }}
+                    className="w-12 h-12 rounded-full"
+                  />
+                  <View>
+                    <Text className="text-base font-semibold text-[#2D3142] mb-0.5">
+                      {request.name}
+                    </Text>
+                    <Text className="text-xs text-[#9E9E9E]">
+                      {request.serviceName}
+                    </Text>
+                  </View>
                 </View>
               </View>
-              <View className="bg-[#6B7280] rounded-full px-3 py-1 flex-row items-center gap-1">
-                <Ionicons name="star" size={12} color="#FFFFFF" />
-                <Text className="text-white text-xs font-semibold">
-                  {request.rating.toFixed(1)}
-                </Text>
-              </View>
-            </View>
 
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center gap-3">
-                <TouchableOpacity className="w-10 h-10 bg-[#FEE2E2] rounded-full items-center justify-center">
-                  <Ionicons name="close" size={20} color="#FF3B30" />
-                </TouchableOpacity>
-                <Text className="text-base font-semibold text-[#2D3142]">
-                  {request.time}
+              <View className="mb-3">
+                <Text className="text-sm text-[#9E9E9E]">
+                  {request.date} • {request.time}
                 </Text>
-                <TouchableOpacity className="w-10 h-10 bg-[#D1FAE5] rounded-full items-center justify-center">
-                  <Ionicons name="checkmark" size={20} color="#10B981" />
+              </View>
+
+              <View className="flex-row items-center justify-between">
+                <View className="flex-row items-center gap-3">
+                  <TouchableOpacity
+                    onPress={() => handleDeclineRequest(request.id)}
+                    className="w-10 h-10 bg-[#FEE2E2] rounded-full items-center justify-center"
+                  >
+                    <Ionicons name="close" size={20} color="#FF3B30" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => handleAcceptRequest(request.id)}
+                    className="w-10 h-10 bg-[#D1FAE5] rounded-full items-center justify-center"
+                  >
+                    <Ionicons name="checkmark" size={20} color="#10B981" />
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity>
+                  <Text className="text-sm text-[#4461F2] font-medium">
+                    See Profile
+                  </Text>
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity>
-                <Text className="text-sm text-[#4461F2] font-medium">
-                  See Profile
-                </Text>
-              </TouchableOpacity>
             </View>
+          ))
+        ) : (
+          <View className="bg-white rounded-[20px] p-4 shadow-sm items-center justify-center h-32">
+            <Ionicons name="notifications-outline" size={32} color="#9E9E9E" />
+            <Text className="text-sm text-[#9E9E9E] mt-2">
+              No pending requests
+            </Text>
           </View>
-        ))}
+        )}
       </View>
     </ScrollView>
   );

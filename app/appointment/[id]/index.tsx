@@ -9,7 +9,7 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { Appointment, appointmentStorage } from "@/utils/appointments";
+import { appointmentStorage } from "@/utils/appointments";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export default function AppointmentDetails() {

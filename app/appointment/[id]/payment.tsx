@@ -11,7 +11,7 @@ import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 
-import { appointmentStorage, Appointment, Payment } from "@/utils/appointments";
+import { appointmentStorage } from "@/utils/appointments";
 
 type PaymentMethodType = "credit_card" | "paypal" | null;
 
