@@ -11,6 +11,8 @@ import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { appointmentStorage } from "@/utils/appointments";
+import { authStorage } from "@/utils/auth";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const statusSteps = [
   {
@@ -52,14 +54,23 @@ const statusSteps = [
 
 export default function AppointmentStatus() {
   const { id } = useLocalSearchParams();
+  const { currentUser } = useCurrentUser();
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [loading, setLoading] = useState(true);
+  const [nurse, setNurse] = useState<User | null>(null);
 
   const loadAppointment = React.useCallback(async () => {
     try {
       const appointments = await appointmentStorage.getAppointments();
       const found = appointments.find((appt) => appt.id === id);
       setAppointment(found || null);
+
+      // Load nurse info if appointment is confirmed and has a nurse assigned
+      if (found && found.nurseEmail) {
+        const users = await authStorage.getUsers();
+        const nurseUser = users.find((user) => user.email === found.nurseEmail);
+        setNurse(nurseUser || null);
+      }
     } catch (error) {
       console.error("Error loading appointment:", error);
     } finally {
@@ -124,6 +135,12 @@ export default function AppointmentStatus() {
       "completed",
     ];
     return statusOrder.indexOf(appointment.status) + 1;
+  };
+
+  const handleNurseProfilePress = () => {
+    if (nurse) {
+      router.push(`/profile/${nurse.email}`);
+    }
   };
 
   if (loading) {
@@ -222,6 +239,45 @@ export default function AppointmentStatus() {
             />
           ))}
         </View>
+
+        {/* Nurse Info Card - Only show when confirmed and nurse is assigned */}
+        {currentUser?.userType === "patient" &&
+          appointment.status === "confirmed" &&
+          nurse && (
+            <TouchableOpacity
+              className="bg-white rounded-[20px] p-5 mb-6 shadow-sm"
+              onPress={handleNurseProfilePress}
+            >
+              <Text className="text-lg font-semibold text-[#2D3142] mb-4">
+                Your Nurse
+              </Text>
+              <View className="flex-row items-center gap-3">
+                <Image
+                  source={{ uri: `https://i.pravatar.cc/150?u=${nurse.email}` }}
+                  className="w-16 h-16 rounded-full"
+                />
+                <View className="flex-1">
+                  <Text className="text-base font-semibold text-[#2D3142] mb-1">
+                    {nurse.fullName}
+                  </Text>
+                  <Text className="text-sm text-[#9E9E9E] mb-2">
+                    Professional Nurse
+                  </Text>
+                  <View className="flex-row items-center gap-1">
+                    <Ionicons name="star" size={14} color="#FFD700" />
+                    <Text className="text-sm font-semibold text-[#2D3142]">
+                      4.9
+                    </Text>
+                    <Text className="text-sm text-[#9E9E9E]">
+                      {" "}
+                      • {nurse.phoneNumber}
+                    </Text>
+                  </View>
+                </View>
+                <Ionicons name="chevron-forward" size={24} color="#9E9E9E" />
+              </View>
+            </TouchableOpacity>
+          )}
 
         {/* Appointment Details Card */}
         <View className="bg-white rounded-[20px] p-5 mb-6 shadow-sm">

@@ -10,6 +10,7 @@ import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { appointmentStorage } from "@/utils/appointments";
+import { authStorage } from "@/utils/auth";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export default function AppointmentDetails() {
@@ -17,12 +18,52 @@ export default function AppointmentDetails() {
   const { currentUser } = useCurrentUser();
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [loading, setLoading] = useState(true);
+  const [patientDetails, setPatientDetails] = useState<{
+    fullName: string;
+    gender: string | null;
+    age: string | null;
+    medicalProfile: {
+      bloodType: string | null;
+      chronicIllnesses: string[];
+      allergies: string[];
+      height: number | null;
+      weight: number | null;
+    } | null;
+  } | null>(null);
 
   const loadAppointment = useCallback(async () => {
     try {
       const appointments = await appointmentStorage.getAppointments();
       const found = appointments.find((appt) => appt.id === id);
-      setAppointment(found || null);
+      if (found) {
+        setAppointment(found);
+        const users = await authStorage.getUsers();
+        const patient = users.find((user) => user.email === found.userEmail);
+        if (patient) {
+          const gender = patient.medicalProfile?.gender || "Not specified";
+          const dateOfBirth = patient.medicalProfile?.dateOfBirth;
+          const age = dateOfBirth
+            ? `${new Date().getFullYear() - new Date(dateOfBirth).getFullYear()}`
+            : "Not specified";
+          setPatientDetails({
+            fullName: patient.fullName,
+            gender,
+            age,
+            medicalProfile: {
+              bloodType: patient.medicalProfile?.bloodType || null,
+              chronicIllnesses: patient.medicalProfile?.chronicIllnesses || [],
+              allergies: patient.medicalProfile?.allergies || [],
+              height: patient.medicalProfile?.height || null,
+              weight: patient.medicalProfile?.weight || null,
+            },
+          });
+        } else {
+          setPatientDetails(null);
+        }
+      } else {
+        setAppointment(null);
+        setPatientDetails(null);
+      }
     } catch (error) {
       console.error("Error loading appointment:", error);
     } finally {
@@ -51,7 +92,11 @@ export default function AppointmentDetails() {
     );
   }
 
-  if (!appointment || !currentUser) {
+  if (
+    !appointment ||
+    !currentUser ||
+    appointment.nurseEmail !== currentUser.email
+  ) {
     return (
       <View className="flex-1 bg-gray-100 justify-center items-center">
         <Text className="text-base text-[#FF3B30] text-center">
@@ -79,9 +124,8 @@ export default function AppointmentDetails() {
           </TouchableOpacity>
           <View>
             <Text className="text-[28px] font-bold text-[#2D3142] mb-1">
-              Payment Method
+              Appointment Details
             </Text>
-            <Text className="text-sm text-[#9E9E9E]">Choose your method</Text>
           </View>
         </View>
 
@@ -157,19 +201,94 @@ export default function AppointmentDetails() {
             <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
               <Text className="text-[15px] text-[#9E9E9E]">Name:</Text>
               <Text className="text-[15px] font-semibold text-[#2D3142]">
-                {currentUser.fullName}
+                {patientDetails?.fullName || "Not specified"}
               </Text>
             </View>
             <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
               <Text className="text-[15px] text-[#9E9E9E]">Gender:</Text>
               <Text className="text-[15px] font-semibold text-[#2D3142]">
-                Not specified
+                {patientDetails?.gender || "Not specified"}
               </Text>
             </View>
             <View className="flex-row justify-between items-center py-3">
               <Text className="text-[15px] text-[#9E9E9E]">Age:</Text>
               <Text className="text-[15px] font-semibold text-[#2D3142]">
-                Not specified
+                {patientDetails?.age || "Not specified"}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Medical Information */}
+        <View className="mb-6">
+          <View className="flex-row justify-between items-center mb-4">
+            <Text className="text-lg font-semibold text-[#2D3142]">
+              Medical Information
+            </Text>
+          </View>
+          <View className="bg-white rounded-2xl p-5 shadow-sm">
+            <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
+              <Text className="text-[15px] text-[#9E9E9E]">Blood Type:</Text>
+              <Text className="text-[15px] font-semibold text-[#2D3142]">
+                {patientDetails?.medicalProfile?.bloodType || "Not specified"}
+              </Text>
+            </View>
+            <View className="py-3 border-b border-gray-100">
+              <Text className="text-[15px] text-[#9E9E9E] mb-2">
+                Chronic Illnesses:
+              </Text>
+              {patientDetails?.medicalProfile?.chronicIllnesses.length ? (
+                patientDetails.medicalProfile.chronicIllnesses.map(
+                  (illness, index) => (
+                    <Text
+                      key={index}
+                      className="text-[15px] font-semibold text-[#2D3142]"
+                    >
+                      - {illness}
+                    </Text>
+                  ),
+                )
+              ) : (
+                <Text className="text-[15px] font-semibold text-[#2D3142]">
+                  None
+                </Text>
+              )}
+            </View>
+            <View className="py-3 border-b border-gray-100">
+              <Text className="text-[15px] text-[#9E9E9E] mb-2">
+                Allergies:
+              </Text>
+              {patientDetails?.medicalProfile?.allergies.length ? (
+                patientDetails.medicalProfile.allergies.map(
+                  (allergy, index) => (
+                    <Text
+                      key={index}
+                      className="text-[15px] font-semibold text-[#2D3142]"
+                    >
+                      - {allergy}
+                    </Text>
+                  ),
+                )
+              ) : (
+                <Text className="text-[15px] font-semibold text-[#2D3142]">
+                  None
+                </Text>
+              )}
+            </View>
+            <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
+              <Text className="text-[15px] text-[#9E9E9E]">Height:</Text>
+              <Text className="text-[15px] font-semibold text-[#2D3142]">
+                {patientDetails?.medicalProfile?.height
+                  ? `${patientDetails.medicalProfile.height} cm`
+                  : "Not specified"}
+              </Text>
+            </View>
+            <View className="flex-row justify-between items-center py-3">
+              <Text className="text-[15px] text-[#9E9E9E]">Weight:</Text>
+              <Text className="text-[15px] font-semibold text-[#2D3142]">
+                {patientDetails?.medicalProfile?.weight
+                  ? `${patientDetails.medicalProfile.weight} kg`
+                  : "Not specified"}
               </Text>
             </View>
           </View>
@@ -228,31 +347,33 @@ export default function AppointmentDetails() {
         </View>
 
         {/* Continue to Payment Button - Only show if not paid */}
-        {appointment.payment.status !== "completed" && (
-          <TouchableOpacity
-            className="bg-[#4461F2] py-4 rounded-[28px] justify-center items-center shadow-lg mt-5"
-            onPress={handleConfirmBooking}
-          >
-            <Text className="text-lg font-semibold text-white">
-              Continue to Payment
-            </Text>
-          </TouchableOpacity>
-        )}
+        {appointment.payment.status !== "completed" &&
+          currentUser.userType === "patient" && (
+            <TouchableOpacity
+              className="bg-[#4461F2] py-4 rounded-[28px] justify-center items-center shadow-lg mt-5"
+              onPress={handleConfirmBooking}
+            >
+              <Text className="text-lg font-semibold text-white">
+                Continue to Payment
+              </Text>
+            </TouchableOpacity>
+          )}
 
         {/* View Receipt Button - Only show if paid */}
-        {appointment.payment.status === "completed" && (
-          <TouchableOpacity
-            className="bg-[#32CD32] py-4 rounded-[28px] justify-center items-center shadow-lg mt-5"
-            onPress={handleConfirmBooking}
-          >
-            <View className="flex-row items-center gap-2">
-              <Ionicons name="receipt-outline" size={20} color="white" />
-              <Text className="text-lg font-semibold text-white">
-                View Receipt
-              </Text>
-            </View>
-          </TouchableOpacity>
-        )}
+        {appointment.payment.status === "completed" &&
+          currentUser.userType === "patient" && (
+            <TouchableOpacity
+              className="bg-[#32CD32] py-4 rounded-[28px] justify-center items-center shadow-lg mt-5"
+              onPress={handleConfirmBooking}
+            >
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="receipt-outline" size={20} color="white" />
+                <Text className="text-lg font-semibold text-white">
+                  View Receipt
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
       </ScrollView>
     </View>
   );

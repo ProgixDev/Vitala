@@ -83,7 +83,11 @@ export default function Schedule() {
   };
 
   const handleAppointmentPress = (appointmentId: string) => {
-    router.push(`/appointment/${appointmentId}/status`);
+    if (currentUser.userType === "patient") {
+      router.push(`/appointment/${appointmentId}/status`);
+    } else {
+      router.push(`/appointment/${appointmentId}`);
+    }
   };
 
   const handleDeleteAll = async () => {
