@@ -1,3 +1,5 @@
+import { LatLng } from "react-native-maps";
+
 declare global {
   type Payment = {
     id: string;
@@ -23,8 +25,7 @@ declare global {
     time: string;
     duration: string;
     type: "normal" | "emergency";
-    location: string;
-    locationLabel: string;
+    location: UserLocation;
     status:
       | "pending"
       | "confirmed"
@@ -52,6 +53,13 @@ declare global {
     password: string;
     userType: "patient" | "nurse";
     medicalProfile?: MedicalProfile;
+    locations?: UserLocation[];
+  };
+
+  type UserLocation = {
+    coordinate: LatLng;
+    address: string;
+    label: string;
   };
 
   type CurrentUser = Omit<User, "password">;

@@ -171,10 +171,7 @@ export default function PatientHomeUI() {
   return (
     <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
       {selectedService ? (
-        <BookingComponent
-          service={selectedService}
-          onBack={handleBackToHome}
-        />
+        <BookingComponent service={selectedService} onBack={handleBackToHome} />
       ) : (
         <>
           {/* Header */}

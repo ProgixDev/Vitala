@@ -174,4 +174,30 @@ export const authStorage = {
       throw error;
     }
   },
+  /**
+   * Add a location to user's locations
+   * @param location Location object to add
+   * @returns Promise<void>
+   */
+  addUserLocation: async (location: UserLocation): Promise<void> => {
+    try {
+      const currentUser = await authStorage.getCurrentUser();
+      if (!currentUser) {
+        throw new Error("No current user found");
+      }
+
+      const locations = currentUser.locations || [];
+      locations.push(location);
+
+      const updatedUser: CurrentUser = {
+        ...currentUser,
+        locations,
+      };
+
+      await AsyncStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
+    } catch (error) {
+      console.error("Error adding user location:", error);
+      throw error;
+    }
+  },
 };

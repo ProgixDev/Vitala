@@ -47,21 +47,6 @@ const durationOptions = [
   { label: "2 hours", value: 120 },
 ];
 
-const locationOptions = [
-  {
-    label: "Home",
-    address: "931 2nd Street, Rivers, Manitoba, R0K 1X0.",
-  },
-  {
-    label: "Grandma's Home",
-    address: "123 Main Street, Winnipeg, Manitoba, R3C 1A5.",
-  },
-  {
-    label: "Work",
-    address: "456 Oak Avenue, Brandon, Manitoba, R7A 0K4.",
-  },
-];
-
 const generateMonthDates = (year: number, month: number): DateOption[] => {
   const dates: DateOption[] = [];
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -107,7 +92,7 @@ export default function BookingComponent({
   const today = new Date();
   const [currentYear, setCurrentYear] = useState<number>(today.getFullYear());
   const [currentMonthIndex, setCurrentMonthIndex] = useState<number>(
-    today.getMonth()
+    today.getMonth(),
   );
 
   const [dates, setDates] = useState<DateOption[]>([]);
@@ -116,6 +101,12 @@ export default function BookingComponent({
   const [selectedDuration, setSelectedDuration] = useState(0);
   const [selectedLocation, setSelectedLocation] = useState(0);
   const [currentMonth, setCurrentMonth] = useState("");
+
+  // Get user locations or provide default
+  const locationOptions =
+    currentUser?.locations && currentUser.locations.length > 0
+      ? currentUser.locations
+      : [];
 
   useEffect(() => {
     const monthDates = generateMonthDates(currentYear, currentMonthIndex);
@@ -136,7 +127,7 @@ export default function BookingComponent({
       () => {
         onBack();
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -187,8 +178,7 @@ export default function BookingComponent({
       let formattedDate: string;
       let time: string;
       let duration: string;
-      let location: string;
-      let locationLabel: string;
+      let location: UserLocation;
       let patientInfo = {};
 
       if (type === "emergency") {
@@ -205,8 +195,7 @@ export default function BookingComponent({
           hour12: true,
         });
         duration = "Immediate";
-        location = locationOptions[selectedLocation].address;
-        locationLabel = locationOptions[selectedLocation].label;
+        location = locationOptions[selectedLocation];
         patientInfo = {
           name: "Amelia Selma",
           age: "30",
@@ -223,11 +212,8 @@ export default function BookingComponent({
         });
         time = timeSlots[selectedTime].time;
         duration = durationOptions[selectedDuration].label;
-        location = locationOptions[selectedLocation].address;
-        locationLabel = locationOptions[selectedLocation].label;
+        location = locationOptions[selectedLocation];
       }
-
-      await appointmentStorage.getAppointments();
 
       await appointmentStorage.saveAppointment({
         userEmail: currentUser.email,
@@ -237,7 +223,6 @@ export default function BookingComponent({
         duration: duration,
         type: type,
         location: location,
-        locationLabel: locationLabel,
         status: "pending",
         ...patientInfo,
       });
@@ -261,6 +246,7 @@ export default function BookingComponent({
 
   const handleAddLocation = () => {
     console.log("Add new location");
+    router.push("/map");
     // Handle add location logic
   };
 
@@ -615,48 +601,73 @@ export default function BookingComponent({
 
             {/* Location Options */}
             <View className="gap-3">
-              {locationOptions.map((location, index) => (
-                <TouchableOpacity
-                  key={index}
-                  className={`flex-row items-center p-5 rounded-xl gap-4 ${
-                    selectedLocation === index
-                      ? "bg-[#4461F2] border-2 border-[#4461F2]"
-                      : "bg-white border border-[#E8E8E8]"
-                  }`}
-                  onPress={() => setSelectedLocation(index)}
-                >
-                  <Ionicons
-                    name="location-outline"
-                    size={24}
-                    color={selectedLocation === index ? "#FFFFFF" : "#000000"}
-                  />
-                  <View className="flex-1">
-                    <Text
-                      className={`text-base font-semibold mb-1 ${
-                        selectedLocation === index ? "text-white" : "text-black"
-                      }`}
-                    >
-                      {location.label}
+              {locationOptions.length > 0 ? (
+                locationOptions.map((location, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    className={`flex-row items-center p-5 rounded-xl gap-4 ${
+                      selectedLocation === index
+                        ? "bg-[#4461F2] border-2 border-[#4461F2]"
+                        : "bg-white border border-[#E8E8E8]"
+                    }`}
+                    onPress={() => setSelectedLocation(index)}
+                  >
+                    <Ionicons
+                      name="location-outline"
+                      size={24}
+                      color={selectedLocation === index ? "#FFFFFF" : "#000000"}
+                    />
+                    <View className="flex-1">
+                      <Text
+                        className={`text-base font-semibold mb-1 ${
+                          selectedLocation === index
+                            ? "text-white"
+                            : "text-black"
+                        }`}
+                      >
+                        {location.label}
+                      </Text>
+                      <Text
+                        className={`text-sm leading-5 ${
+                          selectedLocation === index
+                            ? "text-white/80"
+                            : "text-[#9E9E9E]"
+                        }`}
+                      >
+                        {location.address}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <View className="bg-white border border-[#E8E8E8] rounded-xl p-8 items-center">
+                  <Ionicons name="location-outline" size={48} color="#9E9E9E" />
+                  <Text className="text-base font-semibold text-[#2D3142] mt-4 mb-2">
+                    No locations saved
+                  </Text>
+                  <Text className="text-sm text-[#9E9E9E] text-center mb-4">
+                    Add a location to continue with your booking
+                  </Text>
+                  <TouchableOpacity
+                    className="bg-[#4461F2] px-6 py-3 rounded-full"
+                    onPress={handleAddLocation}
+                  >
+                    <Text className="text-sm font-semibold text-white">
+                      Add Location
                     </Text>
-                    <Text
-                      className={`text-sm leading-5 ${
-                        selectedLocation === index
-                          ? "text-white/80"
-                          : "text-[#9E9E9E]"
-                      }`}
-                    >
-                      {location.address}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           </View>
 
           {/* Book Button */}
           <TouchableOpacity
-            className="flex-row items-center justify-center bg-[#4461F2] py-4 rounded-[28px] gap-3 mb-5"
+            className={`flex-row items-center justify-center py-4 rounded-[28px] gap-3 mb-5 ${
+              locationOptions.length === 0 ? "bg-[#CCCCCC]" : "bg-[#4461F2]"
+            }`}
             onPress={handleBookAppointment}
+            disabled={locationOptions.length === 0}
           >
             <Ionicons name="calendar-outline" size={22} color="#FFFFFF" />
             <Text className="text-lg font-semibold text-white">

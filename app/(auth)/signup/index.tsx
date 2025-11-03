@@ -11,7 +11,7 @@ import {
 
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
-import { authStorage, User, MedicalProfile } from "@/utils/auth";
+import { authStorage } from "@/utils/auth";
 import InfoStep from "./components/InfoStep";
 import PasswordStep from "./components/PasswordStep";
 import OTPStep from "./components/OTPStep";

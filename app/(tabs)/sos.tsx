@@ -196,14 +196,14 @@ function EmergencyCardComponent({
       scrollX.value,
       inputRange,
       [0.9, 1, 0.9],
-      Extrapolate.CLAMP
+      Extrapolate.CLAMP,
     );
 
     const opacity = interpolate(
       scrollX.value,
       inputRange,
       [0.5, 1, 0.5],
-      Extrapolate.CLAMP
+      Extrapolate.CLAMP,
     );
 
     return {
@@ -276,14 +276,14 @@ function PaginationDot({ index, scrollX }: PaginationDotProps) {
       scrollX.value,
       inputRange,
       [8, 24, 8],
-      Extrapolate.CLAMP
+      Extrapolate.CLAMP,
     );
 
     const opacity = interpolate(
       scrollX.value,
       inputRange,
       [0.3, 1, 0.3],
-      Extrapolate.CLAMP
+      Extrapolate.CLAMP,
     );
 
     return {

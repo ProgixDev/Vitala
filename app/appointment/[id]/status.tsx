@@ -313,10 +313,10 @@ export default function AppointmentStatus() {
               <Text className="text-sm text-[#9E9E9E]">Location:</Text>
               <View className="flex-1 items-end ml-2">
                 <Text className="text-sm font-semibold text-[#2D3142] mb-1">
-                  {appointment.locationLabel}
+                  {appointment.location.label}
                 </Text>
                 <Text className="text-xs text-[#9E9E9E] text-right">
-                  {appointment.location}
+                  {appointment.location.address}
                 </Text>
               </View>
             </View>

@@ -83,7 +83,7 @@ export default function Schedule() {
   };
 
   const handleAppointmentPress = (appointmentId: string) => {
-    if (currentUser.userType === "patient") {
+    if (currentUser?.userType === "patient") {
       router.push(`/appointment/${appointmentId}/status`);
     } else {
       router.push(`/appointment/${appointmentId}`);
@@ -373,7 +373,7 @@ export default function Schedule() {
                           color="#9E9E9E"
                         />
                         <Text className="text-xs text-[#9E9E9E]">
-                          {appointment.locationLabel}
+                          {appointment.location.label}
                         </Text>
                       </View>
                       <View className="flex-row gap-2 items-center mt-1">
