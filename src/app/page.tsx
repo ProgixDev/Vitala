@@ -57,6 +57,9 @@ export default function Home() {
                   <span className="font-medium">Email:</span> {user.email}
                 </p>
                 <p className="text-gray-600 dark:text-gray-400">
+                  <span className="font-medium">Role:</span> User
+                </p>
+                <p className="text-gray-600 dark:text-gray-400">
                   <span className="font-medium">ID:</span> {user.id}
                 </p>
               </div>

@@ -10,4 +10,19 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  user: {
+    additionalFields: {
+      lastName: {
+        type: "string",
+        required: false,
+        input: true,
+      },
+      role: {
+        type: "string",
+        required: false,
+        defaultValue: "patient",
+        input: false, // don't allow user to set role directly
+      },
+    },
+  },
 });

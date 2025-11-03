@@ -10,6 +10,7 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -35,6 +36,7 @@ export default function SignUpPage() {
         email,
         password,
         name,
+        lastName,
       });
 
       if (error) {
@@ -74,7 +76,7 @@ export default function SignUpPage() {
               htmlFor="name"
               className="block text-sm font-medium text-foreground mb-2"
             >
-              Name
+              First Name
             </label>
             <input
               id="name"
@@ -83,7 +85,25 @@ export default function SignUpPage() {
               onChange={(e) => setName(e.target.value)}
               required
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-foreground"
-              placeholder="John Doe"
+              placeholder="John"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="lastName"
+              className="block text-sm font-medium text-foreground mb-2"
+            >
+              Last Name
+            </label>
+            <input
+              id="lastName"
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              required
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-foreground"
+              placeholder="Doe"
             />
           </div>
 
