@@ -113,7 +113,12 @@ export default function AppointmentStatus() {
         console.error("Error updating appointment status:", error);
       }
     } else {
-      router.replace("/(tabs)/schedule");
+      if (
+        appointment.payment.status === "pending" ||
+        appointment.payment.status === "failed"
+      )
+        router.replace(`/appointment/${appointment.id}/payment`);
+      else router.replace("/(tabs)");
     }
   };
 
@@ -330,7 +335,15 @@ export default function AppointmentStatus() {
             onPress={handleContinue}
           >
             <Text className="text-lg font-semibold text-white">
-              {currentStep.step} Continue
+              {currentStep.key !== "completed" ? (
+                "Continue"
+              ) : (
+                <>
+                  {appointment.payment.status === "completed"
+                    ? "Done"
+                    : "Pay Now"}
+                </>
+              )}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity className="w-14 h-14 bg-white rounded-[28px] justify-center items-center border border-[#E0E0E0]">

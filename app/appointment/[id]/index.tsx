@@ -92,11 +92,7 @@ export default function AppointmentDetails() {
     );
   }
 
-  if (
-    !appointment ||
-    !currentUser ||
-    appointment.nurseEmail !== currentUser.email
-  ) {
+  if (!appointment || !currentUser) {
     return (
       <View className="flex-1 bg-gray-100 justify-center items-center">
         <Text className="text-base text-[#FF3B30] text-center">
@@ -304,7 +300,7 @@ export default function AppointmentDetails() {
               <Text className="text-[15px] text-[#9E9E9E]">Service Fee:</Text>
               <Text className="text-[15px] font-semibold text-[#2D3142]">
                 {appointment.payment.amount}
-                {appointment.payment.currency === "USD" ? "$" : "€"}
+                {appointment.payment.currency === "USD" ? "$" : "?"}
               </Text>
             </View>
             <View className="flex-row justify-between items-center py-3">
@@ -345,6 +341,16 @@ export default function AppointmentDetails() {
             </View>
           </View>
         </View>
+
+        {/* Go to Schedule Button - placed above payment button */}
+        <TouchableOpacity
+          className="bg-white border border-[#4461F2] py-4 rounded-[28px] justify-center items-center shadow-sm mt-2"
+          onPress={() => router.push("/(tabs)/schedule")}
+        >
+          <View className="flex-row items-center gap-2">
+            <Text className="text-lg font-semibold text-[#4461F2]">Done</Text>
+          </View>
+        </TouchableOpacity>
 
         {/* Continue to Payment Button - Only show if not paid */}
         {appointment.payment.status !== "completed" &&

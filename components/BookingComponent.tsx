@@ -2,7 +2,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { appointmentStorage } from "@/utils/appointments";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   BackHandler,
   ScrollView,
@@ -10,6 +10,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -88,7 +89,7 @@ export default function BookingComponent({
   onBack,
   type = "normal",
 }: BookingComponentProps) {
-  const { currentUser } = useCurrentUser();
+  const { currentUser, loading: userLoading } = useCurrentUser();
   const today = new Date();
   const [currentYear, setCurrentYear] = useState<number>(today.getFullYear());
   const [currentMonthIndex, setCurrentMonthIndex] = useState<number>(
@@ -119,6 +120,17 @@ export default function BookingComponent({
       setSelectedDate(firstAvailable);
     }
   }, [currentYear, currentMonthIndex]);
+
+  const isDatesReady = useMemo(
+    () => dates.length > 0 && currentMonth !== "",
+    [dates.length, currentMonth],
+  );
+  const isReadyToRender = useMemo(() => {
+    // Emergency flow doesn't depend on dates/time/location selections to render
+    if (type === "emergency") return !userLoading;
+    // Normal flow: wait for user load and dates generation
+    return !userLoading && isDatesReady;
+  }, [type, userLoading, isDatesReady]);
 
   // Handle back button/swipe
   useEffect(() => {
@@ -231,6 +243,7 @@ export default function BookingComponent({
       const updatedAppointments = await appointmentStorage.getAppointments();
       const newAppointment =
         updatedAppointments[updatedAppointments.length - 1];
+      console.log(newAppointment.id);
 
       // Navigate to appointment details page
       router.push(`/appointment/${newAppointment.id}`);
@@ -315,365 +328,392 @@ export default function BookingComponent({
         </View>
       </View>
 
-      {type === "emergency" ? (
-        /* Emergency Booking UI */
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Type of Service Section */}
-          <View className="mb-6">
-            <Text className="text-lg font-semibold text-[#2D3142] mb-4">
-              Type of service
-            </Text>
-            <View className="bg-white rounded-xl p-4">
-              <View className="flex-row justify-between items-center">
-                <Text className="text-base text-[#2D3142]">Service:</Text>
-                <Text className="text-base text-[#4461F2] font-medium">
-                  {service.name}
+      {!isReadyToRender && (
+        <View className="flex-1 items-center justify-center py-16">
+          <ActivityIndicator size="large" color="#4461F2" />
+          <Text className="mt-3 text-[#9E9E9E]">Preparing booking?</Text>
+        </View>
+      )}
+
+      {isReadyToRender && (
+        <>
+          {type === "emergency" ? (
+            /* Emergency Booking UI */
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* Type of Service Section */}
+              <View className="mb-6">
+                <Text className="text-lg font-semibold text-[#2D3142] mb-4">
+                  Type of service
                 </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* About the Service Section */}
-          <View className="mb-6">
-            <Text className="text-lg font-semibold text-[#2D3142] mb-4">
-              About the service
-            </Text>
-            <View className="bg-white rounded-xl p-4">
-              <TextInput
-                className="h-[100px] text-base text-[#2D3142]"
-                placeholder="Describe the emergency"
-                multiline
-                textAlignVertical="top"
-                value={emergencyDescription}
-                onChangeText={setEmergencyDescription}
-              />
-            </View>
-          </View>
-
-          {/* Patient Information Section */}
-          <View className="mb-6">
-            <View className="flex-row justify-between items-center mb-4">
-              <Text className="text-lg font-semibold text-[#2D3142]">
-                Patient Informations
-              </Text>
-              <TouchableOpacity>
-                <Ionicons name="pencil" size={20} color="#4461F2" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Patient Form */}
-            <View className="bg-white rounded-xl p-4 gap-4">
-              {/* Name Input */}
-              <View>
-                <Text className="text-sm text-[#9E9E9E] mb-2">Name:</Text>
-                <Text className="text-base text-[#2D3142]">
-                  {patientInfo.name}
-                </Text>
-              </View>
-
-              {/* Gender and Age Row */}
-              <View className="flex-row gap-4">
-                <View className="flex-1">
-                  <Text className="text-sm text-[#9E9E9E] mb-2">Gender:</Text>
-                  <View className="bg-[#F5F6FA] py-2 rounded-lg">
-                    <Text className="text-base text-[#2D3142] text-center">
-                      {patientInfo.gender}
+                <View className="bg-white rounded-xl p-4">
+                  <View className="flex-row justify-between items-center">
+                    <Text className="text-base text-[#2D3142]">Service:</Text>
+                    <Text className="text-base text-[#4461F2] font-medium">
+                      {service.name}
                     </Text>
                   </View>
                 </View>
-
-                <View className="flex-1">
-                  <Text className="text-sm text-[#9E9E9E] mb-2">Age:</Text>
-                  <Text className="text-base text-[#2D3142] bg-[#F5F6FA] p-2 rounded-lg text-center">
-                    {patientInfo.age}
-                  </Text>
-                </View>
               </View>
-            </View>
-          </View>
 
-          {/* Emergency Book Button */}
-          <TouchableOpacity
-            className="flex-row items-center justify-center bg-[#4461F2] py-4 rounded-[28px] gap-3 mb-5"
-            onPress={handleBookAppointment}
-          >
-            <Text className="text-lg font-semibold text-white">
-              Book Appointment
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
-      ) : (
-        /* Normal Booking UI */
-        <>
-          {/* Service Card */}
-          <View className="bg-white rounded-[20px] p-5 mb-8 shadow-sm">
-            <Text className="text-2xl font-bold text-[#2D3142] mb-3">
-              {service.name}
-            </Text>
-            <Text className="text-base text-[#9E9E9E] leading-6 mb-3">
-              {service.description}
-            </Text>
-            <View className="flex-row flex-wrap gap-2">
-              {service.tags.map((tag, index) => (
-                <View
-                  key={index}
-                  className="bg-[#F5F6FA] px-3 py-1.5 rounded-full"
-                >
-                  <Text className="text-xs text-[#4461F2] font-medium">
-                    {tag}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          {/* Date Selection */}
-          <View className="mb-8">
-            <View className="flex-row justify-between items-center mb-5">
-              <Text className="text-lg font-semibold text-black">
-                Select Date
-              </Text>
-
-              {/* Month Navigation */}
-              <View className="flex-row items-center gap-3">
-                <TouchableOpacity
-                  onPress={handlePreviousMonth}
-                  disabled={
-                    currentYear === today.getFullYear() &&
-                    currentMonthIndex === today.getMonth()
-                  }
-                >
-                  <Ionicons
-                    name="chevron-back"
-                    size={20}
-                    color={
-                      currentYear === today.getFullYear() &&
-                      currentMonthIndex === today.getMonth()
-                        ? "#B8B8B8"
-                        : "#2D3142"
-                    }
-                  />
-                </TouchableOpacity>
-                <Text className="text-lg font-semibold text-black">
-                  {currentMonth}
+              {/* About the Service Section */}
+              <View className="mb-6">
+                <Text className="text-lg font-semibold text-[#2D3142] mb-4">
+                  About the service
                 </Text>
-                <TouchableOpacity onPress={handleNextMonth}>
-                  <Ionicons name="chevron-forward" size={20} color="#2D3142" />
-                </TouchableOpacity>
+                <View className="bg-white rounded-xl p-4">
+                  <TextInput
+                    className="h-[100px] text-base text-[#2D3142]"
+                    placeholder="Describe the emergency"
+                    multiline
+                    textAlignVertical="top"
+                    value={emergencyDescription}
+                    onChangeText={setEmergencyDescription}
+                  />
+                </View>
               </View>
-            </View>
 
-            {/* Date Selector */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 12, paddingRight: 20 }}
-            >
-              {dates.map((date, index) => (
-                <TouchableOpacity
-                  key={index}
-                  className={`w-[70px] h-[70px] rounded-full justify-center items-center ${
-                    selectedDate === index
-                      ? "bg-[#4461F2]"
-                      : !date.available
-                        ? "bg-[#F5F5F5]"
-                        : "bg-[#E8E8E8]"
-                  }`}
-                  onPress={() => date.available && setSelectedDate(index)}
-                  disabled={!date.available}
-                >
-                  <Text
-                    className={`text-sm mb-1 ${
-                      selectedDate === index
-                        ? "text-white"
-                        : !date.available
-                          ? "text-[#CCCCCC]"
-                          : "text-black"
-                    }`}
-                  >
-                    {date.day}
+              {/* Patient Information Section */}
+              <View className="mb-6">
+                <View className="flex-row justify-between items-center mb-4">
+                  <Text className="text-lg font-semibold text-[#2D3142]">
+                    Patient Informations
                   </Text>
-                  <Text
-                    className={`text-xl font-bold ${
-                      selectedDate === index
-                        ? "text-white"
-                        : !date.available
-                          ? "text-[#CCCCCC]"
-                          : "text-black"
-                    }`}
-                  >
-                    {date.date}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
+                  <TouchableOpacity>
+                    <Ionicons name="pencil" size={20} color="#4461F2" />
+                  </TouchableOpacity>
+                </View>
 
-          {/* Time Selection */}
-          <View className="mb-8">
-            <Text className="text-lg font-semibold text-black mb-5">
-              Select Time
-            </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{
-                flexDirection: "row",
-                gap: 12,
-                paddingRight: 20,
-              }}
-            >
-              {timeSlots.map((slot, index) => (
-                <TouchableOpacity
-                  key={index}
-                  className={`px-6 py-3 rounded-[20px] ${
-                    selectedTime === index
-                      ? "bg-[#4461F2]"
-                      : !slot.available
-                        ? "bg-[#F5F5F5]"
-                        : "bg-[#E8E8E8]"
-                  }`}
-                  onPress={() => slot.available && setSelectedTime(index)}
-                  disabled={!slot.available}
-                >
-                  <Text
-                    className={`text-base font-semibold ${
-                      selectedTime === index
-                        ? "text-white"
-                        : !slot.available
-                          ? "text-[#CCCCCC]"
-                          : "text-black"
-                    }`}
-                  >
-                    {slot.time}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
+                {/* Patient Form */}
+                <View className="bg-white rounded-xl p-4 gap-4">
+                  {/* Name Input */}
+                  <View>
+                    <Text className="text-sm text-[#9E9E9E] mb-2">Name:</Text>
+                    <Text className="text-base text-[#2D3142]">
+                      {patientInfo.name}
+                    </Text>
+                  </View>
 
-          {/* Duration Selection */}
-          <View className="mb-8">
-            <Text className="text-lg font-semibold text-black mb-5">
-              Estimated Time
-            </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{
-                flexDirection: "row",
-                gap: 12,
-                paddingRight: 20,
-              }}
-            >
-              {durationOptions.map((option, index) => (
-                <TouchableOpacity
-                  key={index}
-                  className={`px-6 py-3 rounded-[20px] ${
-                    selectedDuration === index ? "bg-[#4461F2]" : "bg-[#E8E8E8]"
-                  }`}
-                  onPress={() => setSelectedDuration(index)}
-                >
-                  <Text
-                    className={`text-base font-semibold ${
-                      selectedDuration === index ? "text-white" : "text-black"
-                    }`}
-                  >
-                    {option.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
+                  {/* Gender and Age Row */}
+                  <View className="flex-row gap-4">
+                    <View className="flex-1">
+                      <Text className="text-sm text-[#9E9E9E] mb-2">
+                        Gender:
+                      </Text>
+                      <View className="bg-[#F5F6FA] py-2 rounded-lg">
+                        <Text className="text-base text-[#2D3142] text-center">
+                          {patientInfo.gender}
+                        </Text>
+                      </View>
+                    </View>
 
-          {/* Location Section */}
-          <View className="mb-8">
-            <View className="flex-row justify-between items-center mb-5">
-              <Text className="text-lg font-semibold text-black">
-                Select your location
-              </Text>
-              <TouchableOpacity onPress={handleAddLocation}>
-                <Text className="text-sm text-[#4461F2] font-medium">
-                  Add a new location
+                    <View className="flex-1">
+                      <Text className="text-sm text-[#9E9E9E] mb-2">Age:</Text>
+                      <Text className="text-base text-[#2D3142] bg-[#F5F6FA] p-2 rounded-lg text-center">
+                        {patientInfo.age}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+
+              {/* Emergency Book Button */}
+              <TouchableOpacity
+                className="flex-row items-center justify-center bg-[#4461F2] py-4 rounded-[28px] gap-3 mb-5"
+                onPress={handleBookAppointment}
+              >
+                <Text className="text-lg font-semibold text-white">
+                  Book Appointment
                 </Text>
               </TouchableOpacity>
-            </View>
+            </ScrollView>
+          ) : (
+            /* Normal Booking UI */
+            <>
+              {/* Service Card */}
+              <View className="bg-white rounded-[20px] p-5 mb-8 shadow-sm">
+                <Text className="text-2xl font-bold text-[#2D3142] mb-3">
+                  {service.name}
+                </Text>
+                <Text className="text-base text-[#9E9E9E] leading-6 mb-3">
+                  {service.description}
+                </Text>
+                <View className="flex-row flex-wrap gap-2">
+                  {service.tags.map((tag, index) => (
+                    <View
+                      key={index}
+                      className="bg-[#F5F6FA] px-3 py-1.5 rounded-full"
+                    >
+                      <Text className="text-xs text-[#4461F2] font-medium">
+                        {tag}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
 
-            {/* Location Options */}
-            <View className="gap-3">
-              {locationOptions.length > 0 ? (
-                locationOptions.map((location, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    className={`flex-row items-center p-5 rounded-xl gap-4 ${
-                      selectedLocation === index
-                        ? "bg-[#4461F2] border-2 border-[#4461F2]"
-                        : "bg-white border border-[#E8E8E8]"
-                    }`}
-                    onPress={() => setSelectedLocation(index)}
-                  >
-                    <Ionicons
-                      name="location-outline"
-                      size={24}
-                      color={selectedLocation === index ? "#FFFFFF" : "#000000"}
-                    />
-                    <View className="flex-1">
+              {/* Date Selection */}
+              <View className="mb-8">
+                <View className="flex-row justify-between items-center mb-5">
+                  <Text className="text-lg font-semibold text-black">
+                    Select Date
+                  </Text>
+
+                  {/* Month Navigation */}
+                  <View className="flex-row items-center gap-3">
+                    <TouchableOpacity
+                      onPress={handlePreviousMonth}
+                      disabled={
+                        currentYear === today.getFullYear() &&
+                        currentMonthIndex === today.getMonth()
+                      }
+                    >
+                      <Ionicons
+                        name="chevron-back"
+                        size={20}
+                        color={
+                          currentYear === today.getFullYear() &&
+                          currentMonthIndex === today.getMonth()
+                            ? "#B8B8B8"
+                            : "#2D3142"
+                        }
+                      />
+                    </TouchableOpacity>
+                    <Text className="text-lg font-semibold text-black">
+                      {currentMonth}
+                    </Text>
+                    <TouchableOpacity onPress={handleNextMonth}>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={20}
+                        color="#2D3142"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Date Selector */}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ gap: 12, paddingRight: 20 }}
+                >
+                  {dates.map((date, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      className={`w-[70px] h-[70px] rounded-full justify-center items-center ${
+                        selectedDate === index
+                          ? "bg-[#4461F2]"
+                          : !date.available
+                            ? "bg-[#F5F5F5]"
+                            : "bg-[#E8E8E8]"
+                      }`}
+                      onPress={() => date.available && setSelectedDate(index)}
+                      disabled={!date.available}
+                    >
                       <Text
-                        className={`text-base font-semibold mb-1 ${
-                          selectedLocation === index
+                        className={`text-sm mb-1 ${
+                          selectedDate === index
+                            ? "text-white"
+                            : !date.available
+                              ? "text-[#CCCCCC]"
+                              : "text-black"
+                        }`}
+                      >
+                        {date.day}
+                      </Text>
+                      <Text
+                        className={`text-xl font-bold ${
+                          selectedDate === index
+                            ? "text-white"
+                            : !date.available
+                              ? "text-[#CCCCCC]"
+                              : "text-black"
+                        }`}
+                      >
+                        {date.date}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              {/* Time Selection */}
+              <View className="mb-8">
+                <Text className="text-lg font-semibold text-black mb-5">
+                  Select Time
+                </Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{
+                    flexDirection: "row",
+                    gap: 12,
+                    paddingRight: 20,
+                  }}
+                >
+                  {timeSlots.map((slot, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      className={`px-6 py-3 rounded-[20px] ${
+                        selectedTime === index
+                          ? "bg-[#4461F2]"
+                          : !slot.available
+                            ? "bg-[#F5F5F5]"
+                            : "bg-[#E8E8E8]"
+                      }`}
+                      onPress={() => slot.available && setSelectedTime(index)}
+                      disabled={!slot.available}
+                    >
+                      <Text
+                        className={`text-base font-semibold ${
+                          selectedTime === index
+                            ? "text-white"
+                            : !slot.available
+                              ? "text-[#CCCCCC]"
+                              : "text-black"
+                        }`}
+                      >
+                        {slot.time}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              {/* Duration Selection */}
+              <View className="mb-8">
+                <Text className="text-lg font-semibold text-black mb-5">
+                  Estimated Time
+                </Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{
+                    flexDirection: "row",
+                    gap: 12,
+                    paddingRight: 20,
+                  }}
+                >
+                  {durationOptions.map((option, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      className={`px-6 py-3 rounded-[20px] ${
+                        selectedDuration === index
+                          ? "bg-[#4461F2]"
+                          : "bg-[#E8E8E8]"
+                      }`}
+                      onPress={() => setSelectedDuration(index)}
+                    >
+                      <Text
+                        className={`text-base font-semibold ${
+                          selectedDuration === index
                             ? "text-white"
                             : "text-black"
                         }`}
                       >
-                        {location.label}
+                        {option.label}
                       </Text>
-                      <Text
-                        className={`text-sm leading-5 ${
-                          selectedLocation === index
-                            ? "text-white/80"
-                            : "text-[#9E9E9E]"
-                        }`}
-                      >
-                        {location.address}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                ))
-              ) : (
-                <View className="bg-white border border-[#E8E8E8] rounded-xl p-8 items-center">
-                  <Ionicons name="location-outline" size={48} color="#9E9E9E" />
-                  <Text className="text-base font-semibold text-[#2D3142] mt-4 mb-2">
-                    No locations saved
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              {/* Location Section */}
+              <View className="mb-8">
+                <View className="flex-row justify-between items-center mb-5">
+                  <Text className="text-lg font-semibold text-black">
+                    Select your location
                   </Text>
-                  <Text className="text-sm text-[#9E9E9E] text-center mb-4">
-                    Add a location to continue with your booking
-                  </Text>
-                  <TouchableOpacity
-                    className="bg-[#4461F2] px-6 py-3 rounded-full"
-                    onPress={handleAddLocation}
-                  >
-                    <Text className="text-sm font-semibold text-white">
-                      Add Location
+                  <TouchableOpacity onPress={handleAddLocation}>
+                    <Text className="text-sm text-[#4461F2] font-medium">
+                      Add a new location
                     </Text>
                   </TouchableOpacity>
                 </View>
-              )}
-            </View>
-          </View>
 
-          {/* Book Button */}
-          <TouchableOpacity
-            className={`flex-row items-center justify-center py-4 rounded-[28px] gap-3 mb-5 ${
-              locationOptions.length === 0 ? "bg-[#CCCCCC]" : "bg-[#4461F2]"
-            }`}
-            onPress={handleBookAppointment}
-            disabled={locationOptions.length === 0}
-          >
-            <Ionicons name="calendar-outline" size={22} color="#FFFFFF" />
-            <Text className="text-lg font-semibold text-white">
-              Book Appointment
-            </Text>
-          </TouchableOpacity>
+                {/* Location Options */}
+                <View className="gap-3">
+                  {locationOptions.length > 0 ? (
+                    locationOptions.map((location, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        className={`flex-row items-center p-5 rounded-xl gap-4 ${
+                          selectedLocation === index
+                            ? "bg-[#4461F2] border-2 border-[#4461F2]"
+                            : "bg-white border border-[#E8E8E8]"
+                        }`}
+                        onPress={() => setSelectedLocation(index)}
+                      >
+                        <Ionicons
+                          name="location-outline"
+                          size={24}
+                          color={
+                            selectedLocation === index ? "#FFFFFF" : "#000000"
+                          }
+                        />
+                        <View className="flex-1">
+                          <Text
+                            className={`text-base font-semibold mb-1 ${
+                              selectedLocation === index
+                                ? "text-white"
+                                : "text-black"
+                            }`}
+                          >
+                            {location.label}
+                          </Text>
+                          <Text
+                            className={`text-sm leading-5 ${
+                              selectedLocation === index
+                                ? "text-white/80"
+                                : "text-[#9E9E9E]"
+                            }`}
+                          >
+                            {location.address}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))
+                  ) : (
+                    <View className="bg-white border border-[#E8E8E8] rounded-xl p-8 items-center">
+                      <Ionicons
+                        name="location-outline"
+                        size={48}
+                        color="#9E9E9E"
+                      />
+                      <Text className="text-base font-semibold text-[#2D3142] mt-4 mb-2">
+                        No locations saved
+                      </Text>
+                      <Text className="text-sm text-[#9E9E9E] text-center mb-4">
+                        Add a location to continue with your booking
+                      </Text>
+                      <TouchableOpacity
+                        className="bg-[#4461F2] px-6 py-3 rounded-full"
+                        onPress={handleAddLocation}
+                      >
+                        <Text className="text-sm font-semibold text-white">
+                          Add Location
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              {/* Book Button */}
+              <TouchableOpacity
+                className={`flex-row items-center justify-center py-4 rounded-[28px] gap-3 mb-5 ${
+                  locationOptions.length === 0 ? "bg-[#CCCCCC]" : "bg-[#4461F2]"
+                }`}
+                onPress={handleBookAppointment}
+                disabled={locationOptions.length === 0}
+              >
+                <Ionicons name="calendar-outline" size={22} color="#FFFFFF" />
+                <Text className="text-lg font-semibold text-white">
+                  Book Appointment
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
         </>
       )}
     </>

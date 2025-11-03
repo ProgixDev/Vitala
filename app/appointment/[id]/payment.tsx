@@ -236,9 +236,7 @@ export default function PaymentPage() {
             className="bg-[#4461F2] py-4 rounded-[28px] justify-center items-center shadow-lg"
             onPress={handleBookAnother}
           >
-            <Text className="text-lg font-semibold text-white">
-              Book Appointment
-            </Text>
+            <Text className="text-lg font-semibold text-white">Done</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
