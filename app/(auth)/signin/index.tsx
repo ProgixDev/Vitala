@@ -48,7 +48,9 @@ export default function SignIn() {
         fullName: user.fullName,
         email: user.email,
         phoneNumber: user.phoneNumber,
-        userType: user.userType || "patient", // Default to patient if not set
+        userType: user.userType || "patient",
+        status: user.status,
+        verification: user.verification,
       };
       await authStorage.setCurrentUser(currentUser);
 
@@ -56,7 +58,14 @@ export default function SignIn() {
       await authStorage.setLoggedIn();
 
       console.log("Sign in successful");
-      router.replace("/(tabs)");
+      if (
+        currentUser.userType === "nurse" &&
+        currentUser.status === "pending"
+      ) {
+        router.replace("/profile/pending");
+      } else {
+        router.replace("/(tabs)");
+      }
     } catch (error) {
       console.error("Error during sign in:", error);
       Toast.show({
@@ -73,7 +82,7 @@ export default function SignIn() {
   };
 
   const handleCreateAccount = () => {
-    router.push("/signup");
+    router.push("/signup/choose");
   };
 
   return (

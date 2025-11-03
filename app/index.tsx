@@ -1,7 +1,8 @@
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { View } from "react-native";
-import Onboarding, {
+import {
+  Onboarding,
   isOnboardingCompleted,
   markOnboardingCompleted,
 } from "./onboarding";

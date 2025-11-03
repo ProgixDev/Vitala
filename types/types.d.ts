@@ -54,6 +54,12 @@ declare global {
     userType: "patient" | "nurse";
     medicalProfile?: MedicalProfile;
     locations?: UserLocation[];
+    status?: "pending" | "verified" | "rejected"; // verification status for nurses
+    verification?: {
+      idFrontUri?: string;
+      idBackUri?: string;
+      selfieUri?: string;
+    };
   };
 
   type UserLocation = {

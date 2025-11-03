@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View, Alert } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { authStorage } from "@/utils/auth";
 
@@ -50,21 +49,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
 );
 
 export default function Profile() {
-  const { currentUser, refreshUser } = useCurrentUser();
-  const [isToggling, setIsToggling] = useState(false);
-
-  const handleToggleUserType = async () => {
-    try {
-      setIsToggling(true);
-      await authStorage.toggleUserType();
-      await refreshUser();
-    } catch (error) {
-      console.error("Error toggling user type:", error);
-      Alert.alert("Error", "Failed to switch UI. Please try again.");
-    } finally {
-      setIsToggling(false);
-    }
-  };
+  const { currentUser } = useCurrentUser();
 
   const handleLogout = async () => {
     try {
@@ -168,46 +153,6 @@ export default function Profile() {
             </View>
           </View>
         )}
-
-        {/* UI Toggle Section - For Development/Demo */}
-        <View
-          className="rounded-[20px] p-5 mb-[30px] border-2 border-dashed border-[#4461F2]/20"
-          style={{ backgroundColor: "rgba(68, 97, 242, 0.05)" }}
-        >
-          <View className="flex-row items-center justify-between mb-3">
-            <View className="flex-1">
-              <Text className="text-base font-semibold text-[#2D3142] mb-1">
-                Switch UI Mode
-              </Text>
-              <Text className="text-xs text-[#6B7280]">
-                Toggle between Patient and Nurse interface
-              </Text>
-            </View>
-            <View className="w-12 h-12 bg-[#4461F2]/10 rounded-full items-center justify-center">
-              <Ionicons name="swap-horizontal" size={24} color="#4461F2" />
-            </View>
-          </View>
-
-          <TouchableOpacity
-            className={`py-3 px-4 rounded-xl flex-row items-center justify-center gap-2 ${
-              isToggling ? "bg-[#9CA3AF]" : "bg-[#4461F2]"
-            }`}
-            onPress={handleToggleUserType}
-            disabled={isToggling}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={currentUser?.userType === "patient" ? "medical" : "person"}
-              size={20}
-              color="white"
-            />
-            <Text className="text-sm font-semibold text-white">
-              {isToggling
-                ? "Switching..."
-                : `Switch to ${currentUser?.userType === "patient" ? "Nurse" : "Patient"} UI`}
-            </Text>
-          </TouchableOpacity>
-        </View>
 
         {/* Menu Items */}
         <View className="mb-[30px]">

@@ -1,21 +1,79 @@
-import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+} from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
+import { authStorage } from "@/utils/auth";
 
 type TabType = "About" | "Schedule" | "Ratings";
 
 export default function NurseProfile() {
   const { id } = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>("About");
+  const [nurse, setNurse] = useState<CurrentUser | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Static nurse data
-  const nurse = {
-    fullName: "Amelia Selma",
-    email: id as string,
-    phoneNumber: "+1 (555) 123-4567",
-  };
+  useEffect(() => {
+    const loadNurseData = async () => {
+      try {
+        const users = await authStorage.getUsers();
+        const foundNurse = users.find((user) => user.email === id);
+
+        if (foundNurse) {
+          setNurse({
+            fullName: foundNurse.fullName,
+            email: foundNurse.email,
+            phoneNumber: foundNurse.phoneNumber,
+            userType: foundNurse.userType,
+            status: foundNurse.status,
+          });
+        }
+      } catch (error) {
+        console.error("Error loading nurse data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadNurseData();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <View className="flex-1 bg-gray-100 items-center justify-center">
+        <ActivityIndicator size="large" color="#4461F2" />
+      </View>
+    );
+  }
+
+  if (!nurse) {
+    return (
+      <View className="flex-1 bg-gray-100 items-center justify-center px-6">
+        <Ionicons name="person-outline" size={64} color="#9E9E9E" />
+        <Text className="text-xl font-semibold text-[#2D3142] mt-4">
+          Nurse Not Found
+        </Text>
+        <Text className="text-sm text-[#9E9E9E] mt-2 text-center">
+          The nurse profile you&apos;re looking for doesn&apos;t exist.
+        </Text>
+        <TouchableOpacity
+          className="bg-[#4461F2] px-6 py-3 rounded-full mt-6"
+          onPress={() => router.back()}
+        >
+          <Text className="text-white font-semibold">Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const firstName = nurse.fullName.split(" ")[0];
 
   const handleGoBack = () => {
     router.back();
@@ -53,7 +111,7 @@ export default function NurseProfile() {
               className="w-[280px] h-[280px] rounded-full border-8 border-white shadow-xl mb-4"
             />
             <Text className="text-[32px] font-bold text-white drop-shadow-lg">
-              Amelia
+              {firstName}
             </Text>
             <Text className="text-lg text-white/90">Nurse</Text>
           </View>
@@ -114,7 +172,7 @@ export default function NurseProfile() {
           {activeTab === "About" && (
             <View className="bg-white rounded-2xl p-5 shadow-sm">
               <Text className="text-xl font-bold text-[#2D3142] mb-3">
-                Amelia Selma
+                {nurse.fullName}
               </Text>
               <Text className="text-[15px] text-[#9E9E9E] leading-6 text-justify">
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et
@@ -136,7 +194,7 @@ export default function NurseProfile() {
                     <Ionicons name="mail-outline" size={20} color="#4461F2" />
                   </View>
                   <Text className="text-[15px] text-[#2D3142]">
-                    amelia.selma@vitala.com
+                    {nurse.email}
                   </Text>
                 </View>
                 <View className="flex-row items-center gap-3">
@@ -144,7 +202,7 @@ export default function NurseProfile() {
                     <Ionicons name="call-outline" size={20} color="#4461F2" />
                   </View>
                   <Text className="text-[15px] text-[#2D3142]">
-                    +1 (555) 123-4567
+                    {nurse.phoneNumber}
                   </Text>
                 </View>
               </View>

@@ -36,6 +36,7 @@ export default function Layout() {
         >
           <Stack.Screen name="signin/index" />
           <Stack.Screen name="signup/index" />
+          <Stack.Screen name="signup/nurse/index" />
         </Stack>
       </View>
     </>

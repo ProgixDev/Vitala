@@ -32,7 +32,7 @@ interface Payment {
   status: "completed" | "pending" | "failed";
 }
 
-export default function Payment() {
+export default function PaymentdPage() {
   const [cards, setCards] = useState<Card[]>([
     {
       id: "1",

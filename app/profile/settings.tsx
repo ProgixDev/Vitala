@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { ScrollView, Switch, Text, TouchableOpacity, View } from "react-native";
 import Toast from "react-native-toast-message";
 import { authStorage } from "@/utils/auth";
+import { appointmentStorage } from "@/utils/appointments";
 import { resetOnboardingStatus } from "../onboarding";
 
 interface SettingItemProps {
@@ -93,6 +94,42 @@ export default function Settings() {
         type: "error",
         text1: "Error",
         text2: "Failed to reset onboarding. Please try again.",
+      });
+    }
+  };
+
+  const handleClearAllUsers = async () => {
+    try {
+      await authStorage.clearAllUsers();
+      Toast.show({
+        type: "success",
+        text1: "Success",
+        text2: "All users have been cleared!",
+      });
+    } catch (error) {
+      console.error("Error clearing users:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to clear users. Please try again.",
+      });
+    }
+  };
+
+  const handleClearAllAppointments = async () => {
+    try {
+      await appointmentStorage.clearAppointments();
+      Toast.show({
+        type: "success",
+        text1: "Success",
+        text2: "All appointments have been cleared!",
+      });
+    } catch (error) {
+      console.error("Error clearing appointments:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to clear appointments. Please try again.",
       });
     }
   };
@@ -297,6 +334,54 @@ export default function Settings() {
             />
           </View>
         </View>
+        {/* Developer Tools */}
+        <View className="px-6 mt-6">
+          <Text className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wider">
+            Developer Tools
+          </Text>
+          <View className="bg-white rounded-2xl py-2 shadow-sm">
+            <TouchableOpacity
+              className="flex-row items-center justify-between py-3 px-4"
+              onPress={handleClearAllUsers}
+              activeOpacity={0.7}
+            >
+              <View className="flex-row items-center flex-1">
+                <View className="w-10 h-10 rounded-[10px] bg-[#FEF3C7] items-center justify-center mr-3">
+                  <Ionicons name="people-outline" size={22} color="#F97316" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-[15px] font-medium text-orange-600 mb-0.5">
+                    Clear All Users
+                  </Text>
+                  <Text className="text-[13px] text-gray-500">
+                    Delete all user accounts
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+            <View className="h-px bg-gray-100 ml-[68px]" />
+            <TouchableOpacity
+              className="flex-row items-center justify-between py-3 px-4"
+              onPress={handleClearAllAppointments}
+              activeOpacity={0.7}
+            >
+              <View className="flex-row items-center flex-1">
+                <View className="w-10 h-10 rounded-[10px] bg-[#FEF3C7] items-center justify-center mr-3">
+                  <Ionicons name="calendar-outline" size={22} color="#F97316" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-[15px] font-medium text-orange-600 mb-0.5">
+                    Clear All Appointments
+                  </Text>
+                  <Text className="text-[13px] text-gray-500">
+                    Delete all appointments
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Account Actions */}
         <View className="px-6 mt-6">
           <Text className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wider">

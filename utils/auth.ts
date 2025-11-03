@@ -200,4 +200,17 @@ export const authStorage = {
       throw error;
     }
   },
+
+  /**
+   * Clear all users from storage
+   * @returns Promise<void>
+   */
+  clearAllUsers: async (): Promise<void> => {
+    try {
+      await AsyncStorage.setItem(USERS_KEY, JSON.stringify([]));
+    } catch (error) {
+      console.error("Error clearing all users:", error);
+      throw error;
+    }
+  },
 };

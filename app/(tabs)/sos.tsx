@@ -16,7 +16,6 @@ import Animated, {
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const SCROLLVIEW_WIDTH = SCREEN_WIDTH - 32; // Accounting for px-4 (16*2) on parent View
 const CARD_WIDTH = SCROLLVIEW_WIDTH * 0.85;
-const CARD_SPACING = 20;
 
 interface EmergencyService {
   id: number;
