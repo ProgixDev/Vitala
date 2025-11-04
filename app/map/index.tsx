@@ -148,6 +148,8 @@ export default function App() {
           mapRef.current = ref;
         }}
         showsUserLocation
+        showsMyLocationButton={false}
+        toolbarEnabled={false}
         style={styles.map}
         initialRegion={{
           latitude: userLocation?.coords.latitude || 0,
@@ -182,7 +184,7 @@ export default function App() {
       </MapView>
 
       {/* Bottom Panel */}
-      <View className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-5 shadow-2xl">
+      <View className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-5 shadow-2xl pb-12">
         <ScrollView
           showsVerticalScrollIndicator={false}
           className="max-h-64 mb-3"
@@ -207,22 +209,20 @@ export default function App() {
                     handleCenterOnLocation(location.coordinate, index)
                   }
                 >
-                  <View className="flex-row items-center justify-between w-full">
-                    <View className="flex-row gap-2">
-                      <Ionicons name="location" size={18} color="#4461F2" />
-                      <Text className="text-base font-semibold text-[#2D3142]">
+                  <View className="flex-row items-center justify-center w-full">
+                    <View className="flex-1">
+                      <Text className="text-base font-semibold text-[#2D3142] mb-1">
                         {location.label}
                       </Text>
+                      <Text className="text-xs text-[#9E9E9E]">
+                        {location.coordinate.latitude.toFixed(6)},{" "}
+                        {location.coordinate.longitude.toFixed(6)}
+                      </Text>
                     </View>
-                    <Text className="text-sm text-[#9E9E9E]">
-                      {location.address}
-                    </Text>
+                    <View className="justify-center ml-2">
+                      <Ionicons name="location" size={18} color="#4461F2" />
+                    </View>
                   </View>
-
-                  <Text className="text-xs text-[#9E9E9E] ml-6 mt-1">
-                    {location.coordinate.latitude.toFixed(6)},{" "}
-                    {location.coordinate.longitude.toFixed(6)}
-                  </Text>
                 </TouchableOpacity>
               );
             })
