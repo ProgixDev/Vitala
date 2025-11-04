@@ -120,6 +120,17 @@ export default function App() {
     setLabel("");
   };
 
+  const handleCenterOnCurrentLocation = () => {
+    if (!userLocation || !mapRef.current) return;
+    const region: Region = {
+      latitude: userLocation.coords.latitude,
+      longitude: userLocation.coords.longitude,
+      latitudeDelta: 0.1,
+      longitudeDelta: 0.1,
+    };
+    mapRef.current.animateToRegion(region, 350);
+  };
+
   return (
     <View className="flex-1 relative">
       {/* Back Button */}
@@ -136,7 +147,6 @@ export default function App() {
         ref={(ref) => {
           mapRef.current = ref;
         }}
-        showsMyLocationButton
         showsUserLocation
         style={styles.map}
         initialRegion={{
@@ -225,15 +235,23 @@ export default function App() {
 
         {/* Action Buttons */}
         {!newLocation ? (
-          <TouchableOpacity
-            onPress={handleAddNewLocation}
-            className="bg-[#4461F2] py-4 rounded-full flex-row items-center justify-center gap-2"
-          >
-            <Ionicons name="add-circle-outline" size={24} color="white" />
-            <Text className="text-base font-semibold text-white">
-              Add New Location
-            </Text>
-          </TouchableOpacity>
+          <View className="flex-row gap-3">
+            <TouchableOpacity
+              onPress={handleAddNewLocation}
+              className="flex-1 bg-[#4461F2] py-4 rounded-full flex-row items-center justify-center gap-2"
+            >
+              <Ionicons name="add-circle-outline" size={24} color="white" />
+              <Text className="text-base font-semibold text-white">
+                Add New Location
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleCenterOnCurrentLocation}
+              className="w-15 bg-gray-200 py-4 rounded-full items-center justify-center"
+            >
+              <Ionicons name="locate" size={24} color="#4461F2" />
+            </TouchableOpacity>
+          </View>
         ) : (
           <View className="flex-row gap-3">
             <TouchableOpacity

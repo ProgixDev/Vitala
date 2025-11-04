@@ -1,16 +1,18 @@
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { appointmentStorage } from "@/utils/appointments";
+import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   BackHandler,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  ActivityIndicator,
 } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -89,11 +91,11 @@ export default function BookingComponent({
   onBack,
   type = "normal",
 }: BookingComponentProps) {
-  const { currentUser, loading: userLoading } = useCurrentUser();
+  const { currentUser, loading: userLoading, refreshUser } = useCurrentUser();
   const today = new Date();
   const [currentYear, setCurrentYear] = useState<number>(today.getFullYear());
   const [currentMonthIndex, setCurrentMonthIndex] = useState<number>(
-    today.getMonth(),
+    today.getMonth()
   );
 
   const [dates, setDates] = useState<DateOption[]>([]);
@@ -123,7 +125,7 @@ export default function BookingComponent({
 
   const isDatesReady = useMemo(
     () => dates.length > 0 && currentMonth !== "",
-    [dates.length, currentMonth],
+    [dates.length, currentMonth]
   );
   const isReadyToRender = useMemo(() => {
     // Emergency flow doesn't depend on dates/time/location selections to render
@@ -139,11 +141,18 @@ export default function BookingComponent({
       () => {
         onBack();
         return true;
-      },
+      }
     );
 
     return () => backHandler.remove();
   }, [onBack]);
+
+  // Refresh user data when screen comes into focus (e.g., when returning from map page)
+  useFocusEffect(
+    useCallback(() => {
+      refreshUser();
+    }, [refreshUser])
+  );
 
   const handleBookAppointment = async () => {
     if (!currentUser) {
@@ -156,12 +165,20 @@ export default function BookingComponent({
     }
 
     if (type === "emergency") {
-      // Validate emergency description only since patient info is pre-defined
+      // Validate emergency description and location
       if (!emergencyDescription.trim()) {
         Toast.show({
           type: "error",
           text1: "Error",
           text2: "Please describe the emergency",
+        });
+        return;
+      }
+      if (locationOptions.length === 0) {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Please add a location for the emergency",
         });
         return;
       }
@@ -259,8 +276,31 @@ export default function BookingComponent({
 
   const handleAddLocation = () => {
     console.log("Add new location");
-    router.push("/map");
+    router.push(`/map?bookingType=${type}`);
     // Handle add location logic
+  };
+
+  const handleDeleteLocation = async (index: number) => {
+    try {
+      await authStorage.removeUserLocation(index);
+      await refreshUser();
+      // Adjust selectedLocation if necessary
+      if (selectedLocation >= locationOptions.length) {
+        setSelectedLocation(0);
+      }
+      Toast.show({
+        type: "success",
+        text1: "Success",
+        text2: "Location deleted successfully",
+      });
+    } catch (error) {
+      console.error("Error deleting location:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to delete location",
+      });
+    }
   };
 
   const handlePreviousMonth = () => {
@@ -416,10 +456,105 @@ export default function BookingComponent({
                 </View>
               </View>
 
+              {/* Location Section */}
+              <View className="mb-6">
+                <View className="flex-row justify-between items-center mb-5">
+                  <Text className="text-lg font-semibold text-[#2D3142]">
+                    Select your location
+                  </Text>
+                  <TouchableOpacity onPress={handleAddLocation}>
+                    <Text className="text-sm text-[#4461F2] font-medium">
+                      Add a new location
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Location Options */}
+                <View className="gap-3">
+                  {locationOptions.length > 0 ? (
+                    locationOptions.map((location, index) => (
+                      <View key={index} className="relative">
+                        <TouchableOpacity
+                          className={`flex-row items-center p-5 rounded-xl gap-4 ${
+                            selectedLocation === index
+                              ? "bg-[#4461F2] border-2 border-[#4461F2]"
+                              : "bg-white border border-[#E8E8E8]"
+                          }`}
+                          onPress={() => setSelectedLocation(index)}
+                        >
+                          <Ionicons
+                            name="location-outline"
+                            size={24}
+                            color={
+                              selectedLocation === index ? "#FFFFFF" : "#000000"
+                            }
+                          />
+                          <View className="flex-1">
+                            <Text
+                              className={`text-base font-semibold mb-1 ${
+                                selectedLocation === index
+                                  ? "text-white"
+                                  : "text-black"
+                              }`}
+                            >
+                              {location.label}
+                            </Text>
+                            <Text
+                              className={`text-sm leading-5 ${
+                                selectedLocation === index
+                                  ? "text-white/80"
+                                  : "text-[#9E9E9E]"
+                              }`}
+                            >
+                              {location.address}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          className="absolute top-1/2 right-4 transform -translate-y-1/2 p-2 bg-red-500 rounded-full shadow-sm"
+                          onPress={() => handleDeleteLocation(index)}
+                        >
+                          <Ionicons
+                            name="trash-outline"
+                            size={16}
+                            color="#FFFFFF"
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    ))
+                  ) : (
+                    <View className="bg-white border border-[#E8E8E8] rounded-xl p-8 items-center">
+                      <Ionicons
+                        name="location-outline"
+                        size={48}
+                        color="#9E9E9E"
+                      />
+                      <Text className="text-base font-semibold text-[#2D3142] mt-4 mb-2">
+                        No locations saved
+                      </Text>
+                      <Text className="text-sm text-[#9E9E9E] text-center mb-4">
+                        Add a location to continue with your emergency booking
+                      </Text>
+                      <TouchableOpacity
+                        className="bg-[#4461F2] px-6 py-3 rounded-full"
+                        onPress={handleAddLocation}
+                      >
+                        <Text className="text-sm font-semibold text-white">
+                          Add Location
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              </View>
+
               {/* Emergency Book Button */}
               <TouchableOpacity
-                className="flex-row items-center justify-center bg-[#4461F2] py-4 rounded-[28px] gap-3 mb-5"
+                className={`flex-row items-center justify-center py-4 rounded-[28px] gap-3 mb-5 ${
+                  locationOptions.length === 0 ? "bg-[#CCCCCC]" : "bg-[#4461F2]"
+                }`}
                 onPress={handleBookAppointment}
+                disabled={locationOptions.length === 0}
               >
                 <Text className="text-lg font-semibold text-white">
                   Book Appointment
@@ -635,43 +770,54 @@ export default function BookingComponent({
                 <View className="gap-3">
                   {locationOptions.length > 0 ? (
                     locationOptions.map((location, index) => (
-                      <TouchableOpacity
-                        key={index}
-                        className={`flex-row items-center p-5 rounded-xl gap-4 ${
-                          selectedLocation === index
-                            ? "bg-[#4461F2] border-2 border-[#4461F2]"
-                            : "bg-white border border-[#E8E8E8]"
-                        }`}
-                        onPress={() => setSelectedLocation(index)}
-                      >
-                        <Ionicons
-                          name="location-outline"
-                          size={24}
-                          color={
-                            selectedLocation === index ? "#FFFFFF" : "#000000"
-                          }
-                        />
-                        <View className="flex-1">
-                          <Text
-                            className={`text-base font-semibold mb-1 ${
-                              selectedLocation === index
-                                ? "text-white"
-                                : "text-black"
-                            }`}
-                          >
-                            {location.label}
-                          </Text>
-                          <Text
-                            className={`text-sm leading-5 ${
-                              selectedLocation === index
-                                ? "text-white/80"
-                                : "text-[#9E9E9E]"
-                            }`}
-                          >
-                            {location.address}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
+                      <View key={index} className="relative">
+                        <TouchableOpacity
+                          className={`flex-row items-center p-5 rounded-xl gap-4 ${
+                            selectedLocation === index
+                              ? "bg-[#4461F2] border-2 border-[#4461F2]"
+                              : "bg-white border border-[#E8E8E8]"
+                          }`}
+                          onPress={() => setSelectedLocation(index)}
+                        >
+                          <Ionicons
+                            name="location-outline"
+                            size={24}
+                            color={
+                              selectedLocation === index ? "#FFFFFF" : "#000000"
+                            }
+                          />
+                          <View className="flex-1">
+                            <Text
+                              className={`text-base font-semibold mb-1 ${
+                                selectedLocation === index
+                                  ? "text-white"
+                                  : "text-black"
+                              }`}
+                            >
+                              {location.label}
+                            </Text>
+                            <Text
+                              className={`text-sm leading-5 ${
+                                selectedLocation === index
+                                  ? "text-white/80"
+                                  : "text-[#9E9E9E]"
+                              }`}
+                            >
+                              {location.address}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          className="absolute top-1/2 right-4 transform -translate-y-1/2 p-2 bg-red-500 rounded-full shadow-sm"
+                          onPress={() => handleDeleteLocation(index)}
+                        >
+                          <Ionicons
+                            name="trash-outline"
+                            size={16}
+                            color="#FFFFFF"
+                          />
+                        </TouchableOpacity>
+                      </View>
                     ))
                   ) : (
                     <View className="bg-white border border-[#E8E8E8] rounded-xl p-8 items-center">

@@ -106,12 +106,12 @@ export const authStorage = {
    */
   validateCredentials: async (
     email: string,
-    password: string,
+    password: string
   ): Promise<User | null> => {
     try {
       const users = await authStorage.getUsers();
       const user = users.find(
-        (u) => u.email === email && u.password === password,
+        (u) => u.email === email && u.password === password
       );
       return user || null;
     } catch (error) {
@@ -197,6 +197,37 @@ export const authStorage = {
       await AsyncStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
     } catch (error) {
       console.error("Error adding user location:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Remove a location from user's locations by index
+   * @param index Index of the location to remove
+   * @returns Promise<void>
+   */
+  removeUserLocation: async (index: number): Promise<void> => {
+    try {
+      const currentUser = await authStorage.getCurrentUser();
+      if (!currentUser) {
+        throw new Error("No current user found");
+      }
+
+      const locations = currentUser.locations || [];
+      if (index < 0 || index >= locations.length) {
+        throw new Error("Invalid location index");
+      }
+
+      locations.splice(index, 1);
+
+      const updatedUser: CurrentUser = {
+        ...currentUser,
+        locations,
+      };
+
+      await AsyncStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
+    } catch (error) {
+      console.error("Error removing user location:", error);
       throw error;
     }
   },
