@@ -1,17 +1,18 @@
-import React, { useState, useEffect, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-} from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { appointmentStorage } from "@/utils/appointments";
 import { authStorage } from "@/utils/auth";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { Ionicons } from "@expo/vector-icons";
+import { router, useLocalSearchParams } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  BackHandler,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function AppointmentDetails() {
   const { id } = useLocalSearchParams();
@@ -75,8 +76,21 @@ export default function AppointmentDetails() {
     loadAppointment();
   }, [loadAppointment]);
 
+  // Handle back button - go to schedule tab instead of back
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        router.replace("/(tabs)/schedule");
+        return true;
+      }
+    );
+
+    return () => backHandler.remove();
+  }, []);
+
   const handleGoBack = () => {
-    router.back();
+    router.replace("/(tabs)/schedule");
   };
 
   const handleConfirmBooking = () => {
@@ -242,7 +256,7 @@ export default function AppointmentDetails() {
                     >
                       - {illness}
                     </Text>
-                  ),
+                  )
                 )
               ) : (
                 <Text className="text-[15px] font-semibold text-[#2D3142]">
@@ -263,7 +277,7 @@ export default function AppointmentDetails() {
                     >
                       - {allergy}
                     </Text>
-                  ),
+                  )
                 )
               ) : (
                 <Text className="text-[15px] font-semibold text-[#2D3142]">

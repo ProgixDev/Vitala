@@ -1,10 +1,17 @@
+import { appointmentStorage } from "@/utils/appointments";
+import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useState } from "react";
-import { ScrollView, Switch, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  BackHandler,
+  ScrollView,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Toast from "react-native-toast-message";
-import { authStorage } from "@/utils/auth";
-import { appointmentStorage } from "@/utils/appointments";
 import { resetOnboardingStatus } from "../onboarding";
 
 interface SettingItemProps {
@@ -56,6 +63,19 @@ export default function Settings() {
   const [smsNotifications, setSmsNotifications] = useState(false);
   const [locationServices, setLocationServices] = useState(true);
   const [biometricAuth, setBiometricAuth] = useState(false);
+
+  // Handle back button - go back to profile page
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        router.replace("/(tabs)/profile");
+        return true;
+      }
+    );
+
+    return () => backHandler.remove();
+  }, []);
 
   const handleLogout = async () => {
     Toast.show({
@@ -140,7 +160,7 @@ export default function Settings() {
       <View className="flex-row items-center justify-between px-4 pt-[60px] pb-4 bg-white border-b border-gray-100">
         <TouchableOpacity
           className="w-10 h-10 items-center justify-center"
-          onPress={() => router.back()}
+          onPress={() => router.replace("/(tabs)/profile")}
         >
           <Ionicons name="arrow-back" size={24} color="#1F2937" />
         </TouchableOpacity>

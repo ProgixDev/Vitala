@@ -1,15 +1,16 @@
-import React, { useState, useEffect, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
-import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  BackHandler,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import { appointmentStorage } from "@/utils/appointments";
 
@@ -41,8 +42,21 @@ export default function PaymentPage() {
     loadAppointment();
   }, [loadAppointment]);
 
+  // Handle back button - go to schedule tab instead of back
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        router.replace("/(tabs)/schedule");
+        return true;
+      }
+    );
+
+    return () => backHandler.remove();
+  }, []);
+
   const handleGoBack = () => {
-    router.back();
+    router.replace("/(tabs)/schedule");
   };
 
   const handleProcessPayment = async () => {
@@ -75,7 +89,7 @@ export default function PaymentPage() {
 
         await appointmentStorage.updateAppointmentPayment(
           appointment.id,
-          updatedPayment,
+          updatedPayment
         );
 
         // Reload appointment to show receipt
@@ -92,7 +106,7 @@ export default function PaymentPage() {
   const handleDownloadReceipt = () => {
     Alert.alert(
       "Download Receipt",
-      "Receipt download functionality will be implemented",
+      "Receipt download functionality will be implemented"
     );
   };
 
@@ -172,7 +186,7 @@ export default function PaymentPage() {
                 </Text>
                 <Text className="text-[15px] font-semibold text-[#2D3142]">
                   {new Date(
-                    appointment.payment.transactionDate!,
+                    appointment.payment.transactionDate!
                   ).toLocaleDateString("fr-FR", {
                     day: "2-digit",
                     month: "short",
@@ -180,7 +194,7 @@ export default function PaymentPage() {
                   })}{" "}
                   ,{" "}
                   {new Date(
-                    appointment.payment.transactionDate!,
+                    appointment.payment.transactionDate!
                   ).toLocaleTimeString("fr-FR", {
                     hour: "2-digit",
                     minute: "2-digit",

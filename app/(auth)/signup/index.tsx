@@ -1,21 +1,21 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  View,
-  TouchableOpacity,
+  BackHandler,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   Text,
-  BackHandler,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
+import { authStorage } from "@/utils/auth";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
-import { authStorage } from "@/utils/auth";
 import InfoStep from "./components/InfoStep";
-import PasswordStep from "./components/PasswordStep";
-import OTPStep from "./components/OTPStep";
 import MedicalProfileStep from "./components/MedicalProfileStep";
+import OTPStep from "./components/OTPStep";
+import PasswordStep from "./components/PasswordStep";
 
 type Step = "info" | "password" | "medical" | "otp";
 
@@ -34,7 +34,7 @@ export default function SignUp() {
 
   // Step 3: Medical Profile
   const [gender, setGender] = useState<"male" | "female" | "other" | null>(
-    null,
+    null
   );
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [bloodType, setBloodType] = useState<
@@ -66,7 +66,7 @@ export default function SignUp() {
     } else if (step === "password") {
       setStep("info");
     } else {
-      router.back();
+      router.replace("/signup/choose");
     }
   }, [step]);
   // Handle back button/swipe
@@ -76,7 +76,7 @@ export default function SignUp() {
       () => {
         handleBack();
         return true;
-      },
+      }
     );
 
     return () => backHandler.remove();

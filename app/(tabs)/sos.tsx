@@ -2,8 +2,15 @@ import AlertFamilySvg from "@/assets/images/AlertFamilly.svg";
 import AmbulenceSvg from "@/assets/images/Ambulence.svg";
 import EmergencyNurseAlertSvg from "@/assets/images/EmergencyNurseAlert.svg";
 import BookingComponent from "@/components/BookingComponent";
-import React, { useState } from "react";
-import { Dimensions, Text, TouchableOpacity, View } from "react-native";
+import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  BackHandler,
+  Dimensions,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Animated, {
   Extrapolate,
   interpolate,
@@ -61,6 +68,19 @@ export default function SOS() {
   const scrollX = useSharedValue(0);
   const [selectedEmergencyService, setSelectedEmergencyService] =
     useState<EmergencyService | null>(null);
+
+  // Handle back button - go to home tab instead of back
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        router.replace("/(tabs)");
+        return true;
+      }
+    );
+
+    return () => backHandler.remove();
+  }, []);
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {

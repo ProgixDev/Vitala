@@ -1,8 +1,15 @@
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { authStorage } from "@/utils/auth";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import React, { useEffect } from "react";
+import {
+  BackHandler,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface MenuItemProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -50,6 +57,19 @@ const MenuItem: React.FC<MenuItemProps> = ({
 
 export default function Profile() {
   const { currentUser } = useCurrentUser();
+
+  // Handle back button - go to home tab instead of back
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        router.replace("/(tabs)");
+        return true;
+      }
+    );
+
+    return () => backHandler.remove();
+  }, []);
 
   const handleLogout = async () => {
     try {

@@ -8,6 +8,7 @@ import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  BackHandler,
   Image,
   ScrollView,
   Text,
@@ -29,6 +30,19 @@ export default function Schedule() {
     handleRefresh();
   });
 
+  // Handle back button - go to home tab instead of back
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        router.replace("/(tabs)");
+        return true;
+      }
+    );
+
+    return () => backHandler.remove();
+  }, []);
+
   const handleRefresh = async () => {
     await refreshUser();
   };
@@ -44,11 +58,11 @@ export default function Schedule() {
       if (currentUser) {
         if (currentUser.userType === "patient") {
           userAppointments = allAppointments.filter(
-            (appt) => appt.userEmail === currentUser.email,
+            (appt) => appt.userEmail === currentUser.email
           );
         } else if (currentUser.userType === "nurse") {
           userAppointments = allAppointments.filter(
-            (appt) => appt.nurseEmail === currentUser.email,
+            (appt) => appt.nurseEmail === currentUser.email
           );
         }
       }
@@ -278,25 +292,25 @@ export default function Schedule() {
                           <Ionicons
                             name={
                               getPaymentStatusColor(
-                                appointment?.payment?.status,
+                                appointment?.payment?.status
                               )?.icon as any
                             }
                             size={14}
                             color={
                               getPaymentStatusColor(
-                                appointment?.payment?.status,
+                                appointment?.payment?.status
                               )?.iconColor
                             }
                           />
                           <Text
                             className={`text-xs font-semibold ${
                               getPaymentStatusColor(
-                                appointment?.payment?.status,
+                                appointment?.payment?.status
                               )?.text
                             }`}
                           >
                             {getPaymentStatusLabel(
-                              appointment?.payment?.status,
+                              appointment?.payment?.status
                             )}
                           </Text>
                         </View>

@@ -1,19 +1,20 @@
-import React, { useEffect, useRef, useState } from "react";
-import MapView, { LatLng, Marker, Region } from "react-native-maps";
-import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  TextInput,
-  Alert,
-  ScrollView,
-} from "react-native";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Alert,
+  BackHandler,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import MapView, { LatLng, Marker, Region } from "react-native-maps";
 
 import * as Location from "expo-location";
 
@@ -44,6 +45,19 @@ export default function App() {
     }
 
     getCurrentLocation();
+  }, []);
+
+  // Handle back button - go back to previous screen (booking flow)
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        router.back();
+        return true;
+      }
+    );
+
+    return () => backHandler.remove();
   }, []);
 
   const handleAddNewLocation = () => {

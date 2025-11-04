@@ -1,5 +1,8 @@
-import React, { useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
+  BackHandler,
   Dimensions,
   Image,
   StyleSheet,
@@ -8,7 +11,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SvgProps } from "react-native-svg";
 
 // Import SVG files as components
@@ -245,6 +247,32 @@ export const Onboarding: React.FC<OnboardingProps> = ({
 }) => {
   const { currentStep, nextStep, skip, totalSteps } = useOnboarding();
 
+  // Handle back button - go back to previous screen
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        // Return false to allow default back behavior
+        return false;
+      }
+    );
+
+    return () => backHandler.remove();
+  }, []);
+
+  // Handle back button - go back to previous screen
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        // Return false to allow default back behavior
+        return false;
+      }
+    );
+
+    return () => backHandler.remove();
+  }, []);
+
   const handleCreateAccount = () => {
     if (onComplete) {
       onComplete();
@@ -436,4 +464,22 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Onboarding;
+export default function OnboardingPage() {
+  const router = useRouter();
+
+  const handleComplete = () => {
+    // Mark onboarding as completed
+    markOnboardingCompleted();
+    // Navigate to signup choose page
+    router.replace("/signup/choose");
+  };
+
+  const handleLogin = () => {
+    // Mark onboarding as completed
+    markOnboardingCompleted();
+    // Navigate to signin page
+    router.replace("/signin");
+  };
+
+  return <Onboarding onComplete={handleComplete} onLogin={handleLogin} />;
+}

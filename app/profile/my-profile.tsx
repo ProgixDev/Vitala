@@ -1,11 +1,30 @@
-import React from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
-import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import React, { useEffect } from "react";
+import {
+  BackHandler,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function MyProfile() {
   const { currentUser } = useCurrentUser();
+
+  // Handle back button - go back to profile page
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        router.replace("/(tabs)/profile");
+        return true;
+      }
+    );
+
+    return () => backHandler.remove();
+  }, []);
 
   if (!currentUser) {
     return (
@@ -13,7 +32,7 @@ export default function MyProfile() {
         <View className="flex-row items-center justify-between px-4 pt-[60px] pb-4 bg-white border-b border-[#F3F4F6]">
           <TouchableOpacity
             className="w-10 h-10 items-center justify-center"
-            onPress={() => router.back()}
+            onPress={() => router.replace("/(tabs)/profile")}
           >
             <Ionicons name="arrow-back" size={24} color="#1F2937" />
           </TouchableOpacity>
@@ -37,7 +56,7 @@ export default function MyProfile() {
       <View className="flex-row items-center justify-between px-4 pt-[60px] pb-4 bg-white border-b border-[#F3F4F6]">
         <TouchableOpacity
           className="w-10 h-10 items-center justify-center"
-          onPress={() => router.back()}
+          onPress={() => router.replace("/(tabs)/profile")}
         >
           <Ionicons name="arrow-back" size={24} color="#1F2937" />
         </TouchableOpacity>
@@ -259,7 +278,7 @@ export default function MyProfile() {
                                   {allergy}
                                 </Text>
                               </View>
-                            ),
+                            )
                           )}
                         </View>
                       </View>
@@ -294,7 +313,7 @@ export default function MyProfile() {
                                 {illness}
                               </Text>
                             </View>
-                          ),
+                          )
                         )}
                       </View>
                     </View>

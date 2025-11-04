@@ -1,18 +1,19 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  Image,
-} from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { appointmentStorage } from "@/utils/appointments";
 import { authStorage } from "@/utils/auth";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { Ionicons } from "@expo/vector-icons";
+import { router, useLocalSearchParams } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  BackHandler,
+  Image,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 const statusSteps = [
   {
@@ -82,8 +83,21 @@ export default function AppointmentStatus() {
     loadAppointment();
   }, [loadAppointment]);
 
+  // Handle back button - go to schedule tab instead of back
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        router.replace("/(tabs)/schedule");
+        return true;
+      }
+    );
+
+    return () => backHandler.remove();
+  }, []);
+
   const handleGoBack = () => {
-    router.back();
+    router.replace("/(tabs)/schedule");
   };
 
   const handleContinue = async () => {
@@ -104,7 +118,7 @@ export default function AppointmentStatus() {
       try {
         const appointments = await appointmentStorage.getAppointments();
         const updatedAppointments = appointments.map((appt) =>
-          appt.id === appointment.id ? { ...appt, status: newStatus } : appt,
+          appt.id === appointment.id ? { ...appt, status: newStatus } : appt
         );
 
         await appointmentStorage.saveAppointments(updatedAppointments);

@@ -1,5 +1,7 @@
-import React from "react";
+import { router } from "expo-router";
+import React, { useEffect } from "react";
 import {
+  BackHandler,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -7,11 +9,23 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { router } from "expo-router";
 
 export default function ChooseRole() {
   const goPatient = () => router.replace("/signup");
   const goNurse = () => router.replace("/signup/nurse");
+
+  // Handle back button - go back to signin
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        router.replace("/signin");
+        return true;
+      }
+    );
+
+    return () => backHandler.remove();
+  }, []);
 
   return (
     <KeyboardAvoidingView
@@ -52,7 +66,7 @@ export default function ChooseRole() {
           </View>
 
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => router.replace("/signin")}
             className="self-center mt-4"
           >
             <Text className="text-[15px] text-[#2D3142] font-medium">Back</Text>

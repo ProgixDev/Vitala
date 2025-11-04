@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  BackHandler,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -9,15 +10,28 @@ import {
   View,
 } from "react-native";
 
+import PasswordInput from "@/components/PasswordInput";
+import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
-import { authStorage } from "@/utils/auth";
-import PasswordInput from "@/components/PasswordInput";
 
 export default function SignIn() {
   const [email, setEmail] = useState("test@project.dev");
   const [password, setPassword] = useState("12345678");
+
+  // Handle back button - prevent going back from signin page
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        // Return true to prevent default back behavior (exit app)
+        return true;
+      }
+    );
+
+    return () => backHandler.remove();
+  }, []);
 
   const handleContinue = async () => {
     // Validate inputs
@@ -82,7 +96,7 @@ export default function SignIn() {
   };
 
   const handleCreateAccount = () => {
-    router.push("/signup/choose");
+    router.replace("/signup/choose");
   };
 
   return (

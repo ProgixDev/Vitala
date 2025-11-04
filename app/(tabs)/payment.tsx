@@ -1,8 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  BackHandler,
   Modal,
   ScrollView,
   Text,
@@ -43,6 +45,19 @@ export default function PaymentdPage() {
       isDefault: true,
     },
   ]);
+
+  // Handle back button - go to home tab instead of back
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        router.replace("/(tabs)");
+        return true;
+      }
+    );
+
+    return () => backHandler.remove();
+  }, []);
 
   const [payments] = useState<Payment[]>([
     {
@@ -154,7 +169,7 @@ export default function PaymentdPage() {
       prev.map((card) => ({
         ...card,
         isDefault: card.id === cardId,
-      })),
+      }))
     );
   };
 
