@@ -33,5 +33,19 @@ export const auth = betterAuth({
       },
     },
   },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user, ctx) => {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              medicalProfile: { create: ctx && ctx.body.medicalProfile },
+            },
+          });
+        },
+      },
+    },
+  },
   trustedOrigins: ["exp://192.168.1.21:8081"],
 });

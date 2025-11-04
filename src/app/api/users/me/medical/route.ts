@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
+    const cookiesStore = await cookies();
+    console.log("Cookies:", cookiesStore.getAll());
+
     const session = await auth.api.getSession({
       headers: await headers(),
     });
@@ -12,16 +15,12 @@ export async function GET() {
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const user = await prisma.user.findFirst({
-      where: {
-        id: session.user.id,
-      },
-      include: {
-        medicalProfile: true,
-      },
+
+    const medicalProfile = prisma.medicalProfile.findUnique({
+      where: { userId: session.user.id },
     });
 
-    return NextResponse.json({ ...user });
+    return NextResponse.json({ ...medicalProfile });
   } catch (error) {
     console.error("Error fetching user data:", error);
     return NextResponse.json(

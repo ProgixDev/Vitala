@@ -12,21 +12,39 @@ datasource db {
 }
 
 model User {
-  id            String      @id
-  name          String
-  lastName      String
-  email         String
-  emailVerified Boolean     @default(false)
-  image         String?
-  role          Role        @default(PATIENT)
-  status        UserStatus?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @default(now()) @updatedAt
-  sessions      Session[]
-  accounts      Account[]
+  id             String          @id
+  name           String
+  lastName       String
+  email          String
+  emailVerified  Boolean         @default(false)
+  image          String?
+  role           Role            @default(PATIENT)
+  status         UserStatus?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @default(now()) @updatedAt
+  sessions       Session[]
+  accounts       Account[]
+  medicalProfile MedicalProfile?
 
   @@unique([email])
   @@map("user")
+}
+
+model MedicalProfile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gender           Gender?
+  dateOfBirth      String?
+  bloodType        String?
+  chronicIllnesses String[] @default([])
+  allergies        String[] @default([])
+  height           Float?
+  weight           Float?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("medical_profile")
 }
 
 model Session {
@@ -84,4 +102,10 @@ enum UserStatus {
   VERIFIED
   PENDING
   REJECTED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
 }
