@@ -83,7 +83,7 @@ export default function AppointmentDetails() {
       () => {
         router.replace("/(tabs)/schedule");
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -256,7 +256,7 @@ export default function AppointmentDetails() {
                     >
                       - {illness}
                     </Text>
-                  )
+                  ),
                 )
               ) : (
                 <Text className="text-[15px] font-semibold text-[#2D3142]">
@@ -277,7 +277,7 @@ export default function AppointmentDetails() {
                     >
                       - {allergy}
                     </Text>
-                  )
+                  ),
                 )
               ) : (
                 <Text className="text-[15px] font-semibold text-[#2D3142]">
@@ -368,7 +368,7 @@ export default function AppointmentDetails() {
 
         {/* Continue to Payment Button - Only show if not paid */}
         {appointment.payment.status !== "completed" &&
-          currentUser.userType === "patient" && (
+          currentUser.role === "patient" && (
             <TouchableOpacity
               className="bg-[#4461F2] py-4 rounded-[28px] justify-center items-center shadow-lg mt-5"
               onPress={handleConfirmBooking}
@@ -381,7 +381,7 @@ export default function AppointmentDetails() {
 
         {/* View Receipt Button - Only show if paid */}
         {appointment.payment.status === "completed" &&
-          currentUser.userType === "patient" && (
+          currentUser.role === "patient" && (
             <TouchableOpacity
               className="bg-[#32CD32] py-4 rounded-[28px] justify-center items-center shadow-lg mt-5"
               onPress={handleConfirmBooking}

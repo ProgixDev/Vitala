@@ -3,7 +3,7 @@ import PatientHomeUI from "@/components/PatientHomeUI";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { BackHandler, View } from "react-native";
 
 export default function Home() {
@@ -24,7 +24,7 @@ export default function Home() {
       () => {
         // Return true to prevent default back behavior (exit app)
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -33,7 +33,7 @@ export default function Home() {
   return (
     <View className="flex-1 pt-6 px-4">
       <StatusBar hidden />
-      {currentUser?.userType === "nurse" ? <NurseHomeUI /> : <PatientHomeUI />}
+      {currentUser?.role === "NURSE" ? <NurseHomeUI /> : <PatientHomeUI />}
     </View>
   );
 }

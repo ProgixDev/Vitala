@@ -54,7 +54,7 @@ export default function App() {
       () => {
         router.back();
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();

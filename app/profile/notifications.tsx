@@ -153,21 +153,21 @@ export default function Notifications() {
       () => {
         router.replace("/(tabs)/profile");
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
   }, []);
 
   const filteredNotifications = notifications.filter((notif) =>
-    filter === "all" ? true : !notif.read
+    filter === "all" ? true : !notif.read,
   );
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const handleNotificationPress = (id: string) => {
     setNotifications((prev) =>
-      prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif))
+      prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif)),
     );
   };
 

@@ -57,7 +57,7 @@ export default function NurseSignUp() {
       () => {
         handleBack();
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -169,7 +169,7 @@ export default function NurseSignUp() {
           email,
           phoneNumber,
           password,
-          userType: "nurse",
+          role: "NURSE",
           status: "pending",
           verification: { idFrontUri, idBackUri, selfieUri },
         };
@@ -182,7 +182,7 @@ export default function NurseSignUp() {
           fullName,
           email,
           phoneNumber,
-          userType: "nurse",
+          role: "NURSE",
           status: "pending",
           verification: { idFrontUri, idBackUri, selfieUri },
         });

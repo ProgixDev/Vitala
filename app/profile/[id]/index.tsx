@@ -31,7 +31,7 @@ export default function NurseProfile() {
             fullName: foundNurse.fullName,
             email: foundNurse.email,
             phoneNumber: foundNurse.phoneNumber,
-            userType: foundNurse.userType,
+            role: foundNurse.role,
             status: foundNurse.status,
           });
         }

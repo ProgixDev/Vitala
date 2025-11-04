@@ -106,12 +106,12 @@ export const authStorage = {
    */
   validateCredentials: async (
     email: string,
-    password: string
+    password: string,
   ): Promise<User | null> => {
     try {
       const users = await authStorage.getUsers();
       const user = users.find(
-        (u) => u.email === email && u.password === password
+        (u) => u.email === email && u.password === password,
       );
       return user || null;
     } catch (error) {
@@ -161,11 +161,11 @@ export const authStorage = {
       }
 
       const newUserType: "patient" | "nurse" =
-        currentUser.userType === "patient" ? "nurse" : "patient";
+        currentUser.role === "patient" ? "nurse" : "patient";
 
       const updatedUser: CurrentUser = {
         ...currentUser,
-        userType: newUserType,
+        role: newUserType,
       };
 
       await AsyncStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));

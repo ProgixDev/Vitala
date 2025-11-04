@@ -73,7 +73,7 @@ export default function NurseHomeUI() {
           return {
             id: appt.id,
             name: patient?.fullName || "Unknown Patient",
-            role: "Patient",
+            role: "PATIENT",
             date: appt.date,
             time: appt.time,
             image: `https://i.pravatar.cc/150?u=${appt.userEmail}`,
@@ -113,7 +113,7 @@ export default function NurseHomeUI() {
         return {
           id: appt.id,
           name: patient?.fullName || "Unknown Patient",
-          role: "Patient",
+          role: "PATIENT",
           date: appt.date,
           time: appt.time,
           image: `https://i.pravatar.cc/150?u=${appt.userEmail}`,

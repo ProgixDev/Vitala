@@ -49,7 +49,7 @@ export default function PaymentPage() {
       () => {
         router.replace("/(tabs)/schedule");
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -89,7 +89,7 @@ export default function PaymentPage() {
 
         await appointmentStorage.updateAppointmentPayment(
           appointment.id,
-          updatedPayment
+          updatedPayment,
         );
 
         // Reload appointment to show receipt
@@ -106,7 +106,7 @@ export default function PaymentPage() {
   const handleDownloadReceipt = () => {
     Alert.alert(
       "Download Receipt",
-      "Receipt download functionality will be implemented"
+      "Receipt download functionality will be implemented",
     );
   };
 
@@ -186,7 +186,7 @@ export default function PaymentPage() {
                 </Text>
                 <Text className="text-[15px] font-semibold text-[#2D3142]">
                   {new Date(
-                    appointment.payment.transactionDate!
+                    appointment.payment.transactionDate!,
                   ).toLocaleDateString("fr-FR", {
                     day: "2-digit",
                     month: "short",
@@ -194,7 +194,7 @@ export default function PaymentPage() {
                   })}{" "}
                   ,{" "}
                   {new Date(
-                    appointment.payment.transactionDate!
+                    appointment.payment.transactionDate!,
                   ).toLocaleTimeString("fr-FR", {
                     hour: "2-digit",
                     minute: "2-digit",

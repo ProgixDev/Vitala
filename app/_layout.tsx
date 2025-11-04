@@ -9,7 +9,7 @@ export default function RootLayout() {
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: "transparent" },
+          contentStyle: { backgroundColor: "#F6F6F6" },
         }}
       >
         <Stack.Screen name="index" />

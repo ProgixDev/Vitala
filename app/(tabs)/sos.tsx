@@ -76,7 +76,7 @@ export default function SOS() {
       () => {
         router.replace("/(tabs)");
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();

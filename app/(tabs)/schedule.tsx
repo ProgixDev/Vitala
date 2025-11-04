@@ -37,7 +37,7 @@ export default function Schedule() {
       () => {
         router.replace("/(tabs)");
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -56,13 +56,13 @@ export default function Schedule() {
       // Filter appointments based on user type
       let userAppointments: Appointment[] = [];
       if (currentUser) {
-        if (currentUser.userType === "patient") {
+        if (currentUser.role === "patient") {
           userAppointments = allAppointments.filter(
-            (appt) => appt.userEmail === currentUser.email
+            (appt) => appt.userEmail === currentUser.email,
           );
-        } else if (currentUser.userType === "nurse") {
+        } else if (currentUser.role === "nurse") {
           userAppointments = allAppointments.filter(
-            (appt) => appt.nurseEmail === currentUser.email
+            (appt) => appt.nurseEmail === currentUser.email,
           );
         }
       }
@@ -97,7 +97,7 @@ export default function Schedule() {
   };
 
   const handleAppointmentPress = (appointmentId: string) => {
-    if (currentUser?.userType === "patient") {
+    if (currentUser?.role === "patient") {
       router.push(`/appointment/${appointmentId}/status`);
     } else {
       router.push(`/appointment/${appointmentId}`);
@@ -211,25 +211,25 @@ export default function Schedule() {
   }
 
   const getUserInfo = (appointment: Appointment) => {
-    if (currentUser?.userType === "patient") {
+    if (currentUser?.role === "patient") {
       // Show nurse info for patients
       if (appointment.nurseEmail) {
         const nurse = users.find((u) => u.email === appointment.nurseEmail);
         return nurse
           ? {
               name: nurse.fullName,
-              role: "Nurse",
+              role: "NURSE",
               email: nurse.email,
             }
           : null;
       }
-    } else if (currentUser?.userType === "nurse") {
+    } else if (currentUser?.role === "nurse") {
       // Show patient info for nurses
       const patient = users.find((u) => u.email === appointment.userEmail);
       return patient
         ? {
             name: patient.fullName,
-            role: "Patient",
+            role: "PATIENT",
             email: patient.email,
           }
         : null;
@@ -292,25 +292,25 @@ export default function Schedule() {
                           <Ionicons
                             name={
                               getPaymentStatusColor(
-                                appointment?.payment?.status
+                                appointment?.payment?.status,
                               )?.icon as any
                             }
                             size={14}
                             color={
                               getPaymentStatusColor(
-                                appointment?.payment?.status
+                                appointment?.payment?.status,
                               )?.iconColor
                             }
                           />
                           <Text
                             className={`text-xs font-semibold ${
                               getPaymentStatusColor(
-                                appointment?.payment?.status
+                                appointment?.payment?.status,
                               )?.text
                             }`}
                           >
                             {getPaymentStatusLabel(
-                              appointment?.payment?.status
+                              appointment?.payment?.status,
                             )}
                           </Text>
                         </View>

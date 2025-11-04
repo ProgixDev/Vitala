@@ -208,14 +208,14 @@ export default function TransactionHistory() {
       () => {
         router.replace("/(tabs)/profile");
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
   }, []);
 
   const filteredTransactions = transactions.filter((trans) =>
-    filter === "all" ? true : trans.status === filter
+    filter === "all" ? true : trans.status === filter,
   );
 
   const totalSpent = transactions

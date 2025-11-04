@@ -133,7 +133,7 @@ interface PaginationDotsProps {
   current: number;
 }
 
-const PaginationDots: React.FC<PaginationDotsProps> = ({ total, current }) => {
+const PaginationDots = ({ total, current }: PaginationDotsProps) => {
   return (
     <View style={styles.paginationContainer}>
       {Array.from({ length: total }).map((_, index) => (
@@ -158,13 +158,13 @@ interface OnboardingSlideProps {
   showLogo?: boolean;
 }
 
-const OnboardingSlide: React.FC<OnboardingSlideProps> = ({
+const OnboardingSlide = ({
   slide,
   onPrimaryPress,
   onSecondaryPress,
   onSkipPress,
   showLogo,
-}) => {
+}: OnboardingSlideProps) => {
   const BackgroundSVG = slide.background;
   const IllustrationSVG = slide.illustration;
 
@@ -241,10 +241,7 @@ interface OnboardingProps {
   onLogin?: () => void;
 }
 
-export const Onboarding: React.FC<OnboardingProps> = ({
-  onComplete,
-  onLogin,
-}) => {
+export const Onboarding = ({ onComplete, onLogin }: OnboardingProps) => {
   const { currentStep, nextStep, skip, totalSteps } = useOnboarding();
 
   // Handle back button - go back to previous screen
@@ -254,7 +251,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
       () => {
         // Return false to allow default back behavior
         return false;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -267,7 +264,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
       () => {
         // Return false to allow default back behavior
         return false;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -322,6 +319,26 @@ export const Onboarding: React.FC<OnboardingProps> = ({
     </SafeAreaView>
   );
 };
+
+export default function OnboardingPage() {
+  const router = useRouter();
+
+  const handleComplete = () => {
+    // Mark onboarding as completed
+    markOnboardingCompleted();
+    // Navigate to signup choose page
+    router.replace("/signup/choose");
+  };
+
+  const handleLogin = () => {
+    // Mark onboarding as completed
+    markOnboardingCompleted();
+    // Navigate to signin page
+    router.replace("/signin");
+  };
+
+  return <Onboarding onComplete={handleComplete} onLogin={handleLogin} />;
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -463,23 +480,3 @@ const styles = StyleSheet.create({
     backgroundColor: "#D1D5DB",
   },
 });
-
-export default function OnboardingPage() {
-  const router = useRouter();
-
-  const handleComplete = () => {
-    // Mark onboarding as completed
-    markOnboardingCompleted();
-    // Navigate to signup choose page
-    router.replace("/signup/choose");
-  };
-
-  const handleLogin = () => {
-    // Mark onboarding as completed
-    markOnboardingCompleted();
-    // Navigate to signin page
-    router.replace("/signin");
-  };
-
-  return <Onboarding onComplete={handleComplete} onLogin={handleLogin} />;
-}

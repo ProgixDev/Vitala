@@ -21,7 +21,7 @@ export default function ChooseRole() {
       () => {
         router.replace("/signin");
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();

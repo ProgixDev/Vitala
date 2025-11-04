@@ -53,7 +53,7 @@ export default function PaymentdPage() {
       () => {
         router.replace("/(tabs)");
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -169,7 +169,7 @@ export default function PaymentdPage() {
       prev.map((card) => ({
         ...card,
         isDefault: card.id === cardId,
-      }))
+      })),
     );
   };
 

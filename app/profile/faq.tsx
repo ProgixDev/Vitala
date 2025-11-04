@@ -161,7 +161,7 @@ export default function FAQ() {
       () => {
         router.replace("/(tabs)/profile");
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();

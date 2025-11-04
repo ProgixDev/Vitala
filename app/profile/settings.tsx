@@ -71,7 +71,7 @@ export default function Settings() {
       () => {
         router.replace("/(tabs)/profile");
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();

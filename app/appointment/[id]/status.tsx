@@ -90,7 +90,7 @@ export default function AppointmentStatus() {
       () => {
         router.replace("/(tabs)/schedule");
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -118,7 +118,7 @@ export default function AppointmentStatus() {
       try {
         const appointments = await appointmentStorage.getAppointments();
         const updatedAppointments = appointments.map((appt) =>
-          appt.id === appointment.id ? { ...appt, status: newStatus } : appt
+          appt.id === appointment.id ? { ...appt, status: newStatus } : appt,
         );
 
         await appointmentStorage.saveAppointments(updatedAppointments);
@@ -260,7 +260,7 @@ export default function AppointmentStatus() {
         </View>
 
         {/* Nurse Info Card - Only show when confirmed and nurse is assigned */}
-        {currentUser?.userType === "patient" &&
+        {currentUser?.role === "patient" &&
           appointment.status === "confirmed" &&
           nurse && (
             <TouchableOpacity
