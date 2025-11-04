@@ -12,15 +12,16 @@ datasource db {
 }
 
 model User {
-  id            String    @id
+  id            String      @id
   name          String
-  lastName      String?
+  lastName      String
   email         String
-  emailVerified Boolean   @default(false)
+  emailVerified Boolean     @default(false)
   image         String?
-  role          String    @default("patient")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
+  role          Role        @default(PATIENT)
+  status        UserStatus?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @default(now()) @updatedAt
   sessions      Session[]
   accounts      Account[]
 
@@ -71,4 +72,16 @@ model Verification {
   updatedAt  DateTime @default(now()) @updatedAt
 
   @@map("verification")
+}
+
+enum Role {
+  PATIENT
+  NURSE
+  ADMIN
+}
+
+enum UserStatus {
+  VERIFIED
+  PENDING
+  REJECTED
 }

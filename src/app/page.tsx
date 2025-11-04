@@ -1,49 +1,14 @@
-"use client";
-
-import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
+import { auth } from "@/lib/auth";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { User } from "better-auth";
+import { headers } from "next/headers";
 
-export default function Home() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const session = await authClient.getSession();
-        setUser(session.data?.user || null);
-      } catch {
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  const handleSignOut = async () => {
-    await authClient.signOut();
-    setUser(null);
-    router.refresh();
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-foreground">Loading...</div>
-      </div>
-    );
-  }
+export default async function Home() {
+  const session = await auth.api.getSession({ headers: await headers() });
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg">
-        {user ? (
+        {session ? (
           <>
             <div className="text-center">
               <h1 className="text-3xl font-bold text-foreground mb-2">
@@ -51,26 +16,21 @@ export default function Home() {
               </h1>
               <div className="mt-4 space-y-2">
                 <p className="text-gray-600 dark:text-gray-400">
-                  <span className="font-medium">Name:</span> {user.name}
+                  <span className="font-medium">Name:</span> {session.user.name}
                 </p>
                 <p className="text-gray-600 dark:text-gray-400">
-                  <span className="font-medium">Email:</span> {user.email}
+                  <span className="font-medium">Email:</span>{" "}
+                  {session.user.email}
                 </p>
                 <p className="text-gray-600 dark:text-gray-400">
-                  <span className="font-medium">Role:</span> User
+                  <span className="font-medium">Role:</span>{" "}
+                  {session?.user.role}
                 </p>
                 <p className="text-gray-600 dark:text-gray-400">
-                  <span className="font-medium">ID:</span> {user.id}
+                  <span className="font-medium">ID:</span> {session.user.id}
                 </p>
               </div>
             </div>
-
-            <button
-              onClick={handleSignOut}
-              className="w-full py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-            >
-              Sign Out
-            </button>
           </>
         ) : (
           <>
