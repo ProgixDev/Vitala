@@ -34,7 +34,7 @@ export default function SignUp() {
 
   // Step 3: Medical Profile
   const [gender, setGender] = useState<"male" | "female" | "other" | null>(
-    null
+    null,
   );
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [bloodType, setBloodType] = useState<
@@ -76,7 +76,7 @@ export default function SignUp() {
       () => {
         handleBack();
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();

@@ -20,7 +20,7 @@ export default function MyProfile() {
       () => {
         router.replace("/(tabs)/profile");
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -278,7 +278,7 @@ export default function MyProfile() {
                                   {allergy}
                                 </Text>
                               </View>
-                            )
+                            ),
                           )}
                         </View>
                       </View>
@@ -313,7 +313,7 @@ export default function MyProfile() {
                                 {illness}
                               </Text>
                             </View>
-                          )
+                          ),
                         )}
                       </View>
                     </View>

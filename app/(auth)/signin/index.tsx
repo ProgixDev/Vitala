@@ -27,7 +27,7 @@ export default function SignIn() {
       () => {
         // Return true to prevent default back behavior (exit app)
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
