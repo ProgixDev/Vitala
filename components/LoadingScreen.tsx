@@ -1,11 +1,11 @@
 import React from "react";
 import {
-  View,
-  Text,
   ActivityIndicator,
-  StyleSheet,
-  Modal,
   Dimensions,
+  Modal,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
 const { width, height } = Dimensions.get("window");

@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 
+import LoadingScreen from "@/components/LoadingScreen";
 import { registerPatient, verifyOtp } from "@/utils/api";
 import { authStorage } from "@/utils/auth";
 import { router } from "expo-router";
@@ -17,7 +18,6 @@ import InfoStep from "./components/InfoStep";
 import MedicalProfileStep from "./components/MedicalProfileStep";
 import OTPStep from "./components/OTPStep";
 import PasswordStep from "./components/PasswordStep";
-import LoadingScreen from "@/components/LoadingScreen";
 
 type Step = "info" | "password" | "medical" | "otp";
 

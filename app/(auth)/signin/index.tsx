@@ -10,13 +10,13 @@ import {
   View,
 } from "react-native";
 
+import LoadingScreen from "@/components/LoadingScreen";
 import PasswordInput from "@/components/PasswordInput";
 import { login as apiLogin } from "@/utils/api";
 import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
-import LoadingScreen from "@/components/LoadingScreen";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");

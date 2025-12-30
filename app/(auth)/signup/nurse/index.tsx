@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 
+import LoadingScreen from "@/components/LoadingScreen";
 import { registerNurse } from "@/utils/api";
 import { authStorage } from "@/utils/auth";
 import { router } from "expo-router";
@@ -18,7 +19,6 @@ import PasswordStep from "../components/PasswordStep";
 import IdCaptureStep from "./components/IdCaptureStep";
 import ReviewStep from "./components/ReviewStep";
 import SelfieStep from "./components/SelfieStep";
-import LoadingScreen from "@/components/LoadingScreen";
 
 type Step = "info" | "password" | "id" | "selfie" | "review";
 
