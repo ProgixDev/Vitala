@@ -8,21 +8,30 @@ const {
   cancelAppointment,
   acceptAppointment,
   declineAppointment,
-} = require('../controllers/appointmentController');
-const { protect, authorize } = require('../middleware/auth');
+  assignNurse,
+  deleteAppointment,
+  getAvailableTimeSlots,
+  checkNurseAvailability,
+} = require("../controllers/appointmentController");
+const { protect, authorize } = require("../middleware/auth");
 
 router.use(protect);
 
-router.route('/')
+router
+  .route("/")
   .get(getAppointments)
-  .post(authorize('patient'), createAppointment);
+  .post(authorize("patient"), createAppointment);
 
-router.route('/:id')
-  .get(getAppointmentById);
+router.route("/:id").get(getAppointmentById).delete(deleteAppointment);
 
-router.put('/:id/status', updateAppointmentStatus);
-router.put('/:id/cancel', cancelAppointment);
-router.put('/:id/accept', authorize('nurse'), acceptAppointment);
-router.put('/:id/decline', authorize('nurse'), declineAppointment);
+router.put("/:id/status", updateAppointmentStatus);
+router.put("/:id/cancel", cancelAppointment);
+router.put("/:id/accept", authorize("nurse"), acceptAppointment);
+router.put("/:id/decline", authorize("nurse"), declineAppointment);
+router.put("/:id/assign-nurse", authorize("admin"), assignNurse);
+
+// Additional routes
+router.get("/available-slots", getAvailableTimeSlots);
+router.get("/check-availability", checkNurseAvailability);
 
 module.exports = router;

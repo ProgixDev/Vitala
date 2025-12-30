@@ -18,10 +18,13 @@ import {
 import Toast from "react-native-toast-message";
 
 interface Service {
-  id: number;
+  _id: string;
   name: string;
   description: string;
-  tags: string[];
+  category: string;
+  price: number;
+  duration: number;
+  tags?: string[];
 }
 
 interface BookingComponentProps {
@@ -96,7 +99,7 @@ export default function BookingComponent({
   const today = new Date();
   const [currentYear, setCurrentYear] = useState<number>(today.getFullYear());
   const [currentMonthIndex, setCurrentMonthIndex] = useState<number>(
-    today.getMonth(),
+    today.getMonth()
   );
 
   const [dates, setDates] = useState<DateOption[]>([]);
@@ -126,7 +129,7 @@ export default function BookingComponent({
 
   const isDatesReady = useMemo(
     () => dates.length > 0 && currentMonth !== "",
-    [dates.length, currentMonth],
+    [dates.length, currentMonth]
   );
   const isReadyToRender = useMemo(() => {
     // Emergency flow doesn't depend on dates/time/location selections to render
@@ -142,7 +145,7 @@ export default function BookingComponent({
       () => {
         onBack();
         return true;
-      },
+      }
     );
 
     return () => backHandler.remove();
@@ -252,26 +255,54 @@ export default function BookingComponent({
         location = locationOptions[selectedLocation];
       }
 
-      await appointmentStorage.saveAppointment({
-        userEmail: currentUser.email,
-        serviceName: service.name,
-        date: formattedDate,
-        time: time,
-        duration: duration,
-        type: type,
-        location: location,
-        status: "pending",
-        ...patientInfo,
+      const { accessToken } = await authStorage.getTokens();
+      if (!accessToken) {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Not authenticated",
+        });
+        return;
+      }
+
+      // Prepare appointment data for API
+      const appointmentData = {
+        service: service._id,
+        appointmentType: type,
+        scheduledDate:
+          type === "emergency"
+            ? new Date().toISOString()
+            : dates[selectedDate].fullDate.toISOString(),
+        scheduledTime: {
+          start:
+            type === "emergency"
+              ? new Date().toTimeString().slice(0, 5)
+              : timeSlots[selectedTime].time,
+        },
+        location: {
+          address: location.address,
+          coordinates: location.coordinates,
+          label: location.label,
+        },
+        symptoms: type === "emergency" ? emergencyDescription : undefined,
+        notes:
+          type === "emergency"
+            ? `Emergency request: ${emergencyDescription}`
+            : undefined,
+        price: service.price,
+        duration: service.duration,
+      };
+
+      const result = await api.createAppointment(accessToken, appointmentData);
+
+      Toast.show({
+        type: "success",
+        text1: "Appointment Booked!",
+        text2: "Your appointment has been scheduled successfully.",
       });
 
-      // Get the newly created appointment ID (it's the last one added)
-      const updatedAppointments = await appointmentStorage.getAppointments();
-      const newAppointment =
-        updatedAppointments[updatedAppointments.length - 1];
-      console.log(newAppointment.id);
-
-      // Navigate to appointment details page
-      router.push(`/appointment/${newAppointment.id}`);
+      // Navigate to schedule tab to see appointments
+      router.push("/(tabs)/schedule");
     } catch (error) {
       console.error("Error booking appointment:", error);
       Toast.show({

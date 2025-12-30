@@ -29,7 +29,8 @@ declare global {
       | "confirmed"
       | "on-the-way"
       | "in-progress"
-      | "completed";
+      | "completed"
+      | "cancelled";
     createdAt: string;
     payment: Payment;
   };

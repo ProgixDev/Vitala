@@ -178,6 +178,96 @@ export async function reverseGeocode(latitude: number, longitude: number) {
   return apiFetch<{ success: boolean; data: { address: string; coordinates: { latitude: number; longitude: number } } }>(`/api/geocoding/reverse?lat=${latitude}&lng=${longitude}`);
 }
 
+// Appointments
+export async function createAppointment(token: string, data: {
+  service: string;
+  appointmentType: 'normal' | 'emergency';
+  scheduledDate: string;
+  scheduledTime: { start: string; end?: string };
+  location: any;
+  symptoms?: string;
+  notes?: string;
+  price: number;
+  duration: number;
+  nurse?: string;
+}) {
+  return apiFetch<{ success: boolean; data: any }>(`/api/appointments`, {
+    method: "POST",
+    token,
+    body: data,
+  });
+}
+
+export async function getAppointments(token: string, filters?: { status?: string; type?: string }) {
+  const queryParams = filters ? `?${new URLSearchParams(filters)}` : '';
+  return apiFetch<{ success: boolean; count: number; data: any[] }>(`/api/appointments${queryParams}`, { token });
+}
+
+export async function getAppointmentById(token: string, appointmentId: string) {
+  return apiFetch<{ success: boolean; data: any }>(`/api/appointments/${appointmentId}`, { token });
+}
+
+export async function updateAppointmentStatus(token: string, appointmentId: string, status: string) {
+  return apiFetch<{ success: boolean; data: any }>(`/api/appointments/${appointmentId}/status`, {
+    method: "PUT",
+    token,
+    body: { status },
+  });
+}
+
+export async function cancelAppointment(token: string, appointmentId: string, reason?: string) {
+  return apiFetch<{ success: boolean; message: string; data: any }>(`/api/appointments/${appointmentId}/cancel`, {
+    method: "PUT",
+    token,
+    body: { reason },
+  });
+}
+
+export async function acceptAppointment(token: string, appointmentId: string) {
+  return apiFetch<{ success: boolean; data: any }>(`/api/appointments/${appointmentId}/accept`, {
+    method: "PUT",
+    token,
+  });
+}
+
+export async function declineAppointment(token: string, appointmentId: string, reason?: string) {
+  return apiFetch<{ success: boolean; message: string }>(`/api/appointments/${appointmentId}/decline`, {
+    method: "PUT",
+    token,
+    body: { reason },
+  });
+}
+
+export async function assignNurse(token: string, appointmentId: string, nurseId: string) {
+  return apiFetch<{ success: boolean; data: any }>(`/api/appointments/${appointmentId}/assign-nurse`, {
+    method: "PUT",
+    token,
+    body: { nurseId },
+  });
+}
+
+export async function deleteAppointment(token: string, appointmentId: string) {
+  return apiFetch<{ success: boolean; message: string }>(`/api/appointments/${appointmentId}`, {
+    method: "DELETE",
+    token,
+  });
+}
+
+export async function getAvailableTimeSlots(token: string, date: string, serviceId?: string, duration?: number) {
+  const params = new URLSearchParams({ date });
+  if (serviceId) params.append('serviceId', serviceId);
+  if (duration) params.append('duration', duration.toString());
+  
+  return apiFetch<{ success: boolean; data: { time: string; available: boolean }[] }>(`/api/appointments/available-slots?${params}`, { token });
+}
+
+export async function checkNurseAvailability(token: string, nurseId: string, date: string, startTime: string, duration?: number) {
+  const params = new URLSearchParams({ nurseId, date, startTime });
+  if (duration) params.append('duration', duration.toString());
+  
+  return apiFetch<{ success: boolean; available: boolean; reason?: string }>(`/api/appointments/check-availability?${params}`, { token });
+}
+
 // Register nurse with file uploads
 export async function registerNurse(form: FormData) {
   const url = `${API_BASE_URL}/api/auth/register/nurse`;
@@ -226,5 +316,16 @@ export const api = {
   deleteLocation,
   geocodeAddress,
   reverseGeocode,
+  createAppointment,
+  getAppointments,
+  getAppointmentById,
+  updateAppointmentStatus,
+  cancelAppointment,
+  acceptAppointment,
+  declineAppointment,
+  assignNurse,
+  deleteAppointment,
+  getAvailableTimeSlots,
+  checkNurseAvailability,
   baseUrl: API_BASE_URL,
 };

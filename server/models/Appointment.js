@@ -4,35 +4,34 @@ const appointmentSchema = new mongoose.Schema(
   {
     patient: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
     },
     nurse: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
     },
     service: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Service',
+      type: String,
       required: true,
     },
     appointmentType: {
       type: String,
-      enum: ['normal', 'emergency'],
-      default: 'normal',
+      enum: ["normal", "emergency"],
+      default: "normal",
     },
     status: {
       type: String,
       enum: [
-        'pending',
-        'confirmed',
-        'on-the-way',
-        'in-progress',
-        'completed',
-        'cancelled',
-        'declined',
+        "pending",
+        "confirmed",
+        "on-the-way",
+        "in-progress",
+        "completed",
+        "cancelled",
+        "declined",
       ],
-      default: 'pending',
+      default: "pending",
     },
     scheduledDate: {
       type: Date,
@@ -66,23 +65,23 @@ const appointmentSchema = new mongoose.Schema(
       type: Number, // in minutes
       default: 60,
     },
-    
+
     // Real-time tracking
     nurseLocation: {
       latitude: Number,
       longitude: Number,
       updatedAt: Date,
     },
-    
+
     // Completion details
     completionNotes: String,
     completedAt: Date,
-    
+
     // Cancellation details
     cancellationReason: String,
     cancelledBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
     },
     cancelledAt: Date,
   },

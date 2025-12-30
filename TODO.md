@@ -37,20 +37,20 @@
 - [x] Reverse geocoding (coordinates to address)
 
 ## Appointments
-- [ ] Create appointment (normal booking)
-- [ ] Create emergency appointment
-- [ ] Get user appointments (patient)
-- [ ] Get nurse appointments
-- [ ] Get appointment by ID
-- [ ] Update appointment status (pending, confirmed, on-the-way, in-progress, completed)
-- [ ] Assign nurse to appointment
-- [ ] Accept appointment request (nurse)
-- [ ] Decline appointment request (nurse)
-- [ ] Cancel appointment
-- [ ] Delete appointment
-- [ ] Get available time slots
-- [ ] Check nurse availability
-- [ ] Appointment notifications
+- [x] Create appointment (normal booking)
+- [x] Create emergency appointment
+- [x] Get user appointments (patient)
+- [x] Get nurse appointments
+- [x] Get appointment by ID
+- [x] Update appointment status (pending, confirmed, on-the-way, in-progress, completed)
+- [x] Assign nurse to appointment
+- [x] Accept appointment request (nurse)
+- [x] Decline appointment request (nurse)
+- [x] Cancel appointment
+- [x] Delete appointment
+- [x] Get available time slots
+- [x] Check nurse availability
+- [x] Appointment notifications
 
 ## Payment Processing
 - [ ] Process payment (credit card, PayPal)

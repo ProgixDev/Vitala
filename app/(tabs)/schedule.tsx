@@ -1,14 +1,15 @@
 import IllustrationSvg from "@/assets/images/schedule.svg";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { appointmentStorage } from "@/utils/appointments";
+import { api } from "@/utils/api";
 import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   BackHandler,
   Image,
+  RefreshControl,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -17,53 +18,59 @@ import {
 
 export default function Schedule() {
   const { currentUser } = useCurrentUser();
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadAppointments();
-  });
-
-  // Handle back button - go to home tab instead of back
-  useEffect(() => {
-    const backHandler = BackHandler.addEventListener(
-      "hardwareBackPress",
-      () => {
-        router.replace("/(tabs)");
-        return true;
-      },
-    );
-
-    return () => backHandler.remove();
-  }, []);
-
-  const loadAppointments = async () => {
+  const loadAppointments = useCallback(async () => {
     try {
-      const allAppointments = await appointmentStorage.getAppointments();
-      const allUsers = await authStorage.getUsers();
-      setUsers(allUsers);
-
-      // Filter appointments based on user type
-      let userAppointments: Appointment[] = [];
-      if (currentUser) {
-        if (currentUser.userType === "patient") {
-          userAppointments = allAppointments.filter(
-            (appt) => appt.userEmail === currentUser.email,
-          );
-        } else if (currentUser.userType === "nurse") {
-          userAppointments = allAppointments.filter(
-            (appt) => appt.nurseEmail === currentUser.email,
-          );
-        }
+      const { accessToken } = await authStorage.getTokens();
+      if (!accessToken) {
+        setLoading(false);
+        return;
       }
-      setAppointments(userAppointments);
+
+      const result = await api.getAppointments(accessToken);
+      if (result.success) {
+        // Transform API response to match frontend expectations
+        const transformedAppointments = result.data.map((appointment: any) => ({
+          id: appointment._id,
+          userEmail: appointment.patient?.email,
+          nurseEmail: appointment.nurse?.email,
+          serviceName: appointment.service,
+          date: appointment.scheduledDate
+            ? new Date(appointment.scheduledDate).toLocaleDateString()
+            : "",
+          time: appointment.scheduledTime?.start || "",
+          duration: appointment.duration,
+          type: appointment.appointmentType,
+          location: appointment.location,
+          status: appointment.status,
+          payment: appointment.payment || {
+            status: "pending",
+            amount: appointment.price || 0,
+            currency: "USD",
+          },
+          createdAt: appointment.createdAt,
+        }));
+        setAppointments(transformedAppointments);
+      }
     } catch (error) {
       console.error("Error loading appointments:", error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadAppointments();
+  }, [loadAppointments]);
+
+  useEffect(() => {
+    loadAppointments();
+  }, [loadAppointments]);
 
   const getServiceIcon = (serviceName: string) => {
     const iconMap: { [key: string]: string } = {
@@ -95,15 +102,6 @@ export default function Schedule() {
     }
   };
 
-  const handleDeleteAll = async () => {
-    try {
-      await appointmentStorage.clearAppointments();
-      setAppointments([]);
-    } catch (error) {
-      console.error("Error deleting appointments:", error);
-    }
-  };
-
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "pending":
@@ -116,6 +114,8 @@ export default function Schedule() {
         return "In Progress";
       case "completed":
         return "Completed";
+      case "cancelled":
+        return "Cancelled";
       default:
         return "Unknown";
     }
@@ -133,6 +133,8 @@ export default function Schedule() {
         return { bg: "bg-[#9370DB]/10", text: "text-[#9370DB]" };
       case "completed":
         return { bg: "bg-[#32CD32]/10", text: "text-[#32CD32]" };
+      case "cancelled":
+        return { bg: "bg-[#FF3B30]/10", text: "text-[#FF3B30]" };
       default:
         return { bg: "bg-gray-100", text: "text-gray-600" };
     }
@@ -201,29 +203,25 @@ export default function Schedule() {
     );
   }
 
-  const getUserInfo = (appointment: Appointment) => {
+  const getUserInfo = (appointment: any) => {
     if (currentUser?.userType === "patient") {
       // Show nurse info for patients
       if (appointment.nurseEmail) {
-        const nurse = users.find((u) => u.email === appointment.nurseEmail);
-        return nurse
-          ? {
-              name: nurse.fullName,
-              role: "NURSE",
-              email: nurse.email,
-            }
-          : null;
+        return {
+          name: appointment.nurseEmail, // For now, just show email until we fetch user details
+          role: "NURSE",
+          email: appointment.nurseEmail,
+        };
       }
     } else if (currentUser?.userType === "nurse") {
       // Show patient info for nurses
-      const patient = users.find((u) => u.email === appointment.userEmail);
-      return patient
-        ? {
-            name: patient.fullName,
-            role: "PATIENT",
-            email: patient.email,
-          }
-        : null;
+      if (appointment.userEmail) {
+        return {
+          name: appointment.userEmail, // For now, just show email until we fetch user details
+          role: "PATIENT",
+          email: appointment.userEmail,
+        };
+      }
     }
     return null;
   };
@@ -250,14 +248,6 @@ export default function Schedule() {
               <Text className="text-xl font-semibold text-[#2D3142]">
                 Your Appointments
               </Text>
-              <TouchableOpacity
-                onPress={handleDeleteAll}
-                className="bg-[#FF3B30] px-4 py-2 rounded-full"
-              >
-                <Text className="text-xs font-semibold text-white">
-                  Delete All
-                </Text>
-              </TouchableOpacity>
             </View>
             <View className="gap-4">
               {appointments.map((appointment) => (

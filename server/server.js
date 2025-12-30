@@ -107,7 +107,7 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/appointments', require('./routes/appointments'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/admin', require('./routes/admin'));
-app.use('/api/geocoding', require('./routes/geocoding'));
+app.use("/api/geocoding", require("./routes/geocoding"));
 
 // Health check
 app.get('/api/health', (req, res) => {

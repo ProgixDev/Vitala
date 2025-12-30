@@ -1,10 +1,11 @@
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { appointmentStorage } from "@/utils/appointments";
 import { authStorage } from "@/utils/auth";
+import { api } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
+import Toast from "react-native-toast-message";
 import {
   ActivityIndicator,
   BackHandler,
@@ -13,6 +14,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Linking,
 } from "react-native";
 
 const statusSteps = [
@@ -51,6 +53,12 @@ const statusSteps = [
       "Service completed successfully. Thank you for choosing Vitala!",
     step: "4/4",
   },
+  {
+    key: "cancelled",
+    title: "Cancelled",
+    description: "This appointment has been cancelled.",
+    step: "0/4",
+  },
 ];
 
 export default function AppointmentStatus() {
@@ -59,21 +67,107 @@ export default function AppointmentStatus() {
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [loading, setLoading] = useState(true);
   const [nurse, setNurse] = useState<User | null>(null);
+  const [partialAppointment, setPartialAppointment] = useState<any | null>(
+    null
+  );
+  const [error, setError] = useState<string | null>(null);
 
   const loadAppointment = React.useCallback(async () => {
     try {
-      const appointments = await appointmentStorage.getAppointments();
-      const found = appointments.find((appt) => appt.id === id);
-      setAppointment(found || null);
-
-      // Load nurse info if appointment is confirmed and has a nurse assigned
-      if (found && found.nurseEmail) {
-        const users = await authStorage.getUsers();
-        const nurseUser = users.find((user) => user.email === found.nurseEmail);
-        setNurse(nurseUser || null);
+      const { accessToken } = await authStorage.getTokens();
+      if (!accessToken) {
+        setError("Not authenticated");
+        setLoading(false);
+        return;
       }
-    } catch (error) {
-      console.error("Error loading appointment:", error);
+
+      const result = await api.getAppointmentById(accessToken, id as string);
+      if (result.success) {
+        const appointmentData = result.data;
+
+        const formattedAppointment = {
+          ...appointmentData,
+          serviceName:
+            appointmentData.serviceName ||
+            appointmentData.service ||
+            "Unknown Service",
+          date: appointmentData.scheduledDate
+            ? new Date(appointmentData.scheduledDate).toLocaleDateString(
+                "en-US",
+                {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                }
+              )
+            : "",
+          time: appointmentData.scheduledTime?.start || "",
+          duration: appointmentData.duration
+            ? `${appointmentData.duration} minutes`
+            : "Unknown duration",
+        };
+
+        setAppointment(formattedAppointment);
+
+        // populate nurse if present in API response
+        if (appointmentData.nurse) {
+          setNurse(appointmentData.nurse);
+        }
+      } else {
+        setAppointment(null);
+        setError("Appointment not found");
+      }
+    } catch (err) {
+      console.error("Error loading appointment:", err);
+      const msg = String((err as any)?.message || err);
+      if (/not authorized/i.test(msg)) {
+        try {
+          const { accessToken } = await authStorage.getTokens();
+          if (accessToken) {
+            const listRes = await api.getAppointments(accessToken);
+            if (listRes.success) {
+              const found = listRes.data.find(
+                (a: any) => a._id === id || a.id === id
+              );
+              if (found) {
+                const fallback = {
+                  id: found._id || found.id,
+                  serviceName:
+                    found.service || found.serviceName || "Unknown Service",
+                  date: found.scheduledDate
+                    ? new Date(found.scheduledDate).toLocaleDateString()
+                    : "",
+                  time: found.scheduledTime?.start || "",
+                  location: found.location || {},
+                  status: found.status,
+                  payment: found.payment || {
+                    status: "pending",
+                    amount: found.price || 0,
+                    currency: "USD",
+                  },
+                };
+                setPartialAppointment(fallback);
+                setError(
+                  "Limited access: some details are hidden. Here is what we can show."
+                );
+              } else {
+                setError("Not authorized to view this appointment");
+              }
+            } else {
+              setError("Not authorized to view this appointment");
+            }
+          } else {
+            setError("Not authenticated");
+          }
+        } catch (err2) {
+          console.error("Fallback error:", err2);
+          setError("Not authorized to view this appointment");
+        }
+      } else {
+        setError("Failed to load appointment");
+      }
+      setAppointment(null);
     } finally {
       setLoading(false);
     }
@@ -83,21 +177,66 @@ export default function AppointmentStatus() {
     loadAppointment();
   }, [loadAppointment]);
 
-  // Handle back button - go to schedule tab instead of back
-  useEffect(() => {
-    const backHandler = BackHandler.addEventListener(
-      "hardwareBackPress",
-      () => {
-        router.replace("/(tabs)/schedule");
-        return true;
-      },
-    );
-
-    return () => backHandler.remove();
-  }, []);
-
   const handleGoBack = () => {
     router.replace("/(tabs)/schedule");
+  };
+
+  const handleCancel = async () => {
+    if (!appointment) return;
+
+    try {
+      const { accessToken } = await authStorage.getTokens();
+      if (!accessToken) throw new Error("Not authenticated");
+
+      const appointmentId =
+        ((appointment as any)._id as string) ?? (appointment.id as string);
+      const res = await api.cancelAppointment(
+        accessToken,
+        appointmentId,
+        "Cancelled by user"
+      );
+      if (res.success) {
+        const updated = res.data;
+        const formatted = {
+          ...updated,
+          serviceName:
+            updated.serviceName || updated.service || "Unknown Service",
+          date: updated.scheduledDate
+            ? new Date(updated.scheduledDate).toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })
+            : "",
+          time: updated.scheduledTime?.start || "",
+          duration: updated.duration
+            ? `${updated.duration} minutes`
+            : "Unknown duration",
+        };
+
+        setAppointment(formatted);
+        Toast.show({
+          type: "success",
+          text1: "Appointment cancelled",
+          text2: "The appointment has been cancelled successfully",
+        });
+      } else {
+        console.error("Failed to cancel appointment", res);
+        Toast.show({
+          type: "error",
+          text1: "Cancel failed",
+          text2: "Could not cancel appointment",
+        });
+      }
+    } catch (error) {
+      console.error("Error cancelling appointment:", error);
+      Toast.show({
+        type: "error",
+        text1: "Cancel failed",
+        text2: String(error),
+      });
+    }
   };
 
   const handleContinue = async () => {
@@ -116,22 +255,69 @@ export default function AppointmentStatus() {
       const newStatus = statusOrder[currentIndex + 1];
 
       try {
-        const appointments = await appointmentStorage.getAppointments();
-        const updatedAppointments = appointments.map((appt) =>
-          appt.id === appointment.id ? { ...appt, status: newStatus } : appt,
-        );
+        const { accessToken } = await authStorage.getTokens();
+        if (!accessToken) throw new Error("Not authenticated");
 
-        await appointmentStorage.saveAppointments(updatedAppointments);
-        setAppointment({ ...appointment, status: newStatus });
+        const appointmentId =
+          ((appointment as any)._id as string) ?? (appointment.id as string);
+        const res = await api.updateAppointmentStatus(
+          accessToken,
+          appointmentId,
+          newStatus
+        );
+        if (res.success) {
+          const updated = res.data;
+          const formatted = {
+            ...updated,
+            serviceName:
+              updated.serviceName || updated.service || "Unknown Service",
+            date: updated.scheduledDate
+              ? new Date(updated.scheduledDate).toLocaleDateString("en-US", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })
+              : "",
+            time: updated.scheduledTime?.start || "",
+            duration: updated.duration
+              ? `${updated.duration} minutes`
+              : "Unknown duration",
+          };
+
+          setAppointment(formatted);
+          if (updated.nurse) setNurse(updated.nurse);
+
+          // Show success toast
+          Toast.show({
+            type: "success",
+            text1: "Status updated",
+            text2: `Appointment is now ${newStatus}`,
+          });
+        } else {
+          console.error("Failed to update status", res);
+          Toast.show({
+            type: "error",
+            text1: "Update failed",
+            text2: "Could not change appointment status",
+          });
+        }
       } catch (error) {
         console.error("Error updating appointment status:", error);
+        Toast.show({
+          type: "error",
+          text1: "Update failed",
+          text2: String(error),
+        });
       }
     } else {
       if (
         appointment.payment.status === "pending" ||
         appointment.payment.status === "failed"
       )
-        router.replace(`/appointment/${appointment.id}/payment`);
+        router.replace(
+          `/appointment/${((appointment as any)._id as string) ?? appointment.id}/payment`
+        );
       else router.replace("/(tabs)");
     }
   };
@@ -153,7 +339,8 @@ export default function AppointmentStatus() {
       "in-progress",
       "completed",
     ];
-    return statusOrder.indexOf(appointment.status) + 1;
+    const index = statusOrder.indexOf(appointment.status);
+    return index >= 0 ? index + 1 : 0;
   };
 
   const handleNurseProfilePress = () => {
@@ -170,12 +357,71 @@ export default function AppointmentStatus() {
     );
   }
 
-  if (!appointment) {
+  if (error || !appointment) {
     return (
-      <View className="flex-1 bg-gray-100 justify-center items-center">
+      <View className="flex-1 bg-gray-100 justify-center items-center px-6">
         <Text className="text-base text-[#FF3B30] text-center">
-          Appointment not found
+          {error || "Appointment not found"}
         </Text>
+
+        {partialAppointment ? (
+          <View className="bg-white rounded-xl p-4 mt-4 w-full">
+            <Text className="font-semibold text-[#2D3142] mb-2">
+              Limited appointment details
+            </Text>
+            <Text className="text-sm text-[#9E9E9E]">
+              Service: {partialAppointment.serviceName}
+            </Text>
+            <Text className="text-sm text-[#9E9E9E]">
+              Date: {partialAppointment.date}
+            </Text>
+            <Text className="text-sm text-[#9E9E9E]">
+              Time: {partialAppointment.time}
+            </Text>
+            <Text className="text-sm text-[#9E9E9E]">
+              Location:{" "}
+              {partialAppointment.location?.label ||
+                partialAppointment.location?.address ||
+                "N/A"}
+            </Text>
+            <Text className="text-sm text-[#9E9E9E]">
+              Status: {partialAppointment.status}
+            </Text>
+
+            <View className="flex-row gap-2 mt-4">
+              <TouchableOpacity
+                className="bg-[#4461F2] py-3 px-4 rounded-lg"
+                onPress={() => loadAppointment()}
+              >
+                <Text className="text-white font-semibold">Retry</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="bg-white border border-[#E0E0E0] py-3 px-4 rounded-lg"
+                onPress={() =>
+                  Linking.openURL(
+                    "mailto:support@vitala.app?subject=Appointment%20Access%20Request&body=I%20need%20access%20to%20appointment%20ID%20" +
+                      id
+                  )
+                }
+              >
+                <Text className="text-[#4461F2] font-semibold">
+                  Contact support
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <TouchableOpacity
+            className="mt-4 bg-[#4461F2] py-3 px-6 rounded-lg"
+            onPress={() => {
+              setError(null);
+              setLoading(true);
+              loadAppointment();
+            }}
+          >
+            <Text className="text-white font-semibold">Retry</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   }
@@ -217,6 +463,21 @@ export default function AppointmentStatus() {
         </View>
 
         {/* Status Illustration */}
+
+        {/* Pending confirmation indicator */}
+        {appointment?.status === "pending" &&
+          currentUser?.userType === "patient" && (
+            <View className="bg-[#FFF8E1] rounded-xl p-3 mb-4 border border-[#FFD54F]">
+              <Text className="text-sm font-semibold text-[#FF9800]">
+                Waiting for confirmation
+              </Text>
+              <Text className="text-xs text-[#9E9E9E] mt-1">
+                A nurse will confirm this appointment. We'll notify you once
+                it's confirmed.
+              </Text>
+            </View>
+          )}
+
         <View className="items-center justify-center py-12">
           <View className="w-64 h-64 bg-white rounded-full items-center justify-center">
             <Ionicons
@@ -229,7 +490,9 @@ export default function AppointmentStatus() {
                       ? "car-outline"
                       : appointment.status === "in-progress"
                         ? "medical"
-                        : "checkmark-done-circle"
+                        : appointment.status === "cancelled"
+                          ? "close-circle"
+                          : "checkmark-done-circle"
               }
               size={120}
               color="#4461F2"
@@ -344,11 +607,34 @@ export default function AppointmentStatus() {
 
         {/* Action Buttons */}
         <View className="flex-row gap-3">
+          {currentUser?.userType === "patient" &&
+            (appointment.status === "pending" ||
+              appointment.status === "confirmed") && (
+              <TouchableOpacity
+                className="flex-1 py-4 rounded-[28px] justify-center items-center bg-red-500"
+                onPress={handleCancel}
+              >
+                <Text className="text-lg font-semibold text-white">Cancel</Text>
+              </TouchableOpacity>
+            )}
           <TouchableOpacity
-            className="flex-1 bg-[#4461F2] py-4 rounded-[28px] justify-center items-center"
+            className={`flex-1 py-4 rounded-[28px] justify-center items-center ${
+              currentUser?.userType === "patient" &&
+              (appointment?.status === "pending" ||
+                appointment?.status === "cancelled")
+                ? "bg-gray-300"
+                : "bg-[#4461F2]"
+            }`}
             onPress={handleContinue}
+            disabled={
+              currentUser?.userType === "patient" &&
+              (appointment?.status === "pending" ||
+                appointment?.status === "cancelled")
+            }
           >
-            <Text className="text-lg font-semibold text-white">
+            <Text
+              className={`text-lg font-semibold ${currentUser?.userType === "patient" && (appointment?.status === "pending" || appointment?.status === "cancelled") ? "text-gray-600" : "text-white"}`}
+            >
               {currentStep.key !== "completed" ? (
                 "Continue"
               ) : (
@@ -359,9 +645,6 @@ export default function AppointmentStatus() {
                 </>
               )}
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity className="w-14 h-14 bg-white rounded-[28px] justify-center items-center border border-[#E0E0E0]">
-            <Ionicons name="chatbubble-outline" size={24} color="#4461F2" />
           </TouchableOpacity>
         </View>
       </ScrollView>

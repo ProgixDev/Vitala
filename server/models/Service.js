@@ -4,30 +4,30 @@ const serviceSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'Please provide service name'],
+      required: [true, "Please provide service name"],
       trim: true,
     },
     description: {
       type: String,
-      required: [true, 'Please provide service description'],
+      required: [true, "Please provide service description"],
     },
     category: {
       type: String,
       required: true,
       enum: [
-        'general-care',
-        'wound-care',
-        'elderly-care',
-        'post-surgery',
-        'medication-administration',
-        'vital-monitoring',
-        'emergency',
-        'other',
+        "general-care",
+        "wound-care",
+        "elderly-care",
+        "post-surgery",
+        "medication-administration",
+        "vital-monitoring",
+        "emergency",
+        "other",
       ],
     },
     price: {
       type: Number,
-      required: [true, 'Please provide service price'],
+      required: [true, "Please provide service price"],
     },
     duration: {
       type: Number, // in minutes
@@ -41,7 +41,7 @@ const serviceSchema = new mongoose.Schema(
     icon: String,
     image: String,
     requirements: [String],
-    
+
     // Pricing tiers
     pricingTiers: [
       {
