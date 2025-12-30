@@ -1,8 +1,9 @@
+import { authStorage } from "@/utils/auth";
 import { Stack, router } from "expo-router";
-import { View, Image } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { authStorage } from "@/utils/auth";
+import { Image, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 export default function Layout() {
   useEffect(() => {
@@ -17,7 +18,7 @@ export default function Layout() {
   };
 
   return (
-    <>
+    <SafeAreaProvider>
       <StatusBar hidden />
       <View className="flex-1 px-4 py-6">
         {/* Logo */}
@@ -40,6 +41,6 @@ export default function Layout() {
           <Stack.Screen name="signup/nurse/index" />
         </Stack>
       </View>
-    </>
+    </SafeAreaProvider>
   );
 }

@@ -12,22 +12,24 @@ import {
 import LoadingScreen from "@/components/LoadingScreen";
 import { registerPatient } from "@/utils/api";
 import { authStorage } from "@/utils/auth";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import Toast from "react-native-toast-message";
+import EmailVerificationStep from "./components/EmailVerificationStep";
 import InfoStep from "./components/InfoStep";
 import MedicalProfileStep from "./components/MedicalProfileStep";
 import PasswordStep from "./components/PasswordStep";
 
-type Step = "info" | "password" | "medical";
+type Step = "info" | "password" | "medical" | "verification";
 
 export default function SignUp() {
-  const [step, setStep] = useState<Step>("info");
+  const params = useLocalSearchParams();
+  const [step, setStep] = useState<Step>((params.step as Step) || "info");
   const [isLoading, setIsLoading] = useState(false);
 
   // Step 1: Info
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [fullName, setFullName] = useState((params.fullName as string) || "");
+  const [email, setEmail] = useState((params.email as string) || "");
+  const [phoneNumber, setPhoneNumber] = useState((params.phoneNumber as string) || "");
 
   // Step 2: Password
   const [newPassword, setNewPassword] = useState("");
@@ -47,8 +49,14 @@ export default function SignUp() {
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
 
+  // Step 4: Email Verification
+  const [verificationCode, setVerificationCode] = useState(["", "", "", "", "", ""]);
+  const [timer, setTimer] = useState(59);
+
   const handleBack = useCallback(() => {
-    if (step === "medical") {
+    if (step === "verification") {
+      setStep("medical");
+    } else if (step === "medical") {
       setStep("password");
     } else if (step === "password") {
       setStep("info");
@@ -68,6 +76,17 @@ export default function SignUp() {
 
     return () => backHandler.remove();
   }, [step, handleBack]);
+
+  // Timer countdown for verification
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (step === "verification" && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [step, timer]);
 
   const handleContinue = async () => {
     if (step === "info") {
@@ -145,7 +164,7 @@ export default function SignUp() {
 
       setStep("medical");
     } else if (step === "medical") {
-      // Submit registration to backend, then go to OTP
+      // Submit registration to backend, then go to verification
       try {
         setIsLoading(true);
 
@@ -180,21 +199,42 @@ export default function SignUp() {
         });
         await authStorage.setLoggedIn();
 
-        if (resp.data.requiresEmailVerification) {
-          // Show success message and navigate to sign in
-          Toast.show({
-            type: "success",
-            text1: "Registration Successful",
-            text2:
-              "Please check your email to verify your account before signing in.",
-          });
-          router.replace("/signin");
-        } else {
-          // Email already verified, navigate to main app
-          router.replace("/(tabs)");
-        }
+        // Start the resend timer
+        setTimer(59);
+        setStep("verification");
       } catch (err) {
         console.error("Registration error:", err);
+        Toast.show({ type: "error", text1: "Error", text2: String(err) });
+      } finally {
+        setIsLoading(false);
+      }
+    } else if (step === "verification") {
+      // Verify email code
+      try {
+        setIsLoading(true);
+        const code = verificationCode.join("");
+
+        if (code.length !== 6) {
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2: "Please enter the complete 6-digit code",
+          });
+          return;
+        }
+
+        const { verifyEmail } = await import("@/utils/api");
+        await verifyEmail(code);
+
+        Toast.show({
+          type: "success",
+          text1: "Email Verified",
+          text2: "Your account has been successfully verified!",
+        });
+
+        router.replace("/(tabs)");
+      } catch (err) {
+        console.error("Verification error:", err);
         Toast.show({ type: "error", text1: "Error", text2: String(err) });
       } finally {
         setIsLoading(false);
@@ -204,6 +244,25 @@ export default function SignUp() {
 
   const handleSignIn = () => {
     router.replace("/signin");
+  };
+
+  const handleResendCode = async () => {
+    try {
+      const { resendEmailVerification } = await import("@/utils/api");
+      await resendEmailVerification(email);
+      setTimer(59);
+      Toast.show({
+        type: "success",
+        text1: "Code Sent",
+        text2: "A new verification code has been sent to your email",
+      });
+    } catch (err) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to resend verification code",
+      });
+    }
   };
 
   const renderStepContent = () => {
@@ -252,6 +311,19 @@ export default function SignUp() {
             onNext={handleContinue}
           />
         );
+
+      case "verification":
+        return (
+          <EmailVerificationStep
+            code={verificationCode}
+            setCode={setVerificationCode}
+            timer={timer}
+            onResend={handleResendCode}
+            onVerify={handleContinue}
+            email={email}
+            isLoading={isLoading}
+          />
+        );
     }
   };
 
@@ -267,8 +339,8 @@ export default function SignUp() {
       >
         {renderStepContent()}
 
-        {/* Continue/Verify Button - Hide for medical step as it has its own button */}
-        {step !== "medical" && (
+        {/* Continue/Verify Button - Hide for medical and verification steps */}
+        {step !== "medical" && step !== "verification" && (
           <TouchableOpacity
             className="bg-[#4461F2] rounded-[28px] h-14 justify-center items-center shadow-lg mb-8"
             onPress={handleContinue}

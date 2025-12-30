@@ -19,6 +19,26 @@ exports.approveNurse = async (req, res) => {
   }
 };
 
+// Reject nurse account
+exports.rejectNurse = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rejectionReason } = req.body;
+    const user = await User.findById(id);
+    if (!user || user.userType !== 'nurse') {
+      return res.status(404).json({ success: false, message: 'Nurse not found' });
+    }
+    user.nurseProfile = user.nurseProfile || {};
+    user.nurseProfile.verificationStatus = 'rejected';
+    user.status = 'rejected';
+    user.nurseProfile.rejectionReason = rejectionReason || 'Application rejected by admin';
+    await user.save();
+    res.status(200).json({ success: true, message: 'Nurse rejected', data: user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error rejecting nurse', error: error.message });
+  }
+};
+
 // Get user by ID or email
 exports.getUser = async (req, res) => {
   try {

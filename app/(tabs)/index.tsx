@@ -1,21 +1,12 @@
 import NurseHomeUI from "@/components/NurseHomeUI";
 import PatientHomeUI from "@/components/PatientHomeUI";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { BackHandler, View } from "react-native";
 
 export default function Home() {
-  const { currentUser, refreshUser } = useCurrentUser();
-
-  const handleRefreshUser = async () => {
-    await refreshUser();
-  };
-
-  useFocusEffect(() => {
-    handleRefreshUser();
-  });
+  const { currentUser } = useCurrentUser();
 
   // Handle back button - prevent going back from home screen
   useEffect(() => {

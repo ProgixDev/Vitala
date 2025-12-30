@@ -70,20 +70,6 @@ export default function SignIn() {
         await authStorage.setCurrentUser(currentUser);
         await authStorage.setLoggedIn();
 
-        // Check if email is verified
-        if (!apiUser.isEmailVerified) {
-          Toast.show({
-            type: "error",
-            text1: "Email Not Verified",
-            text2:
-              "Please check your email and verify your account before signing in.",
-          });
-          // Clear stored data since user can't proceed
-          await authStorage.clearTokens();
-          await authStorage.setLoggedOut();
-          return;
-        }
-
         console.log("Sign in successful (API)");
         if (
           currentUser.userType === "nurse" &&
@@ -94,7 +80,32 @@ export default function SignIn() {
           router.replace("/(tabs)");
         }
         return;
-      } catch (apiErr) {
+      } catch (apiErr: any) {
+        // Check if email verification is required
+        if (apiErr.message?.includes("Email not verified") || apiErr.message?.includes("403")) {
+          // Store the email for verification flow
+          await authStorage.setCurrentUser({
+            email: email,
+            fullName: "", // Will be filled during verification
+            phoneNumber: "",
+            userType: "patient",
+            status: "pending",
+          });
+          
+          Toast.show({
+            type: "info",
+            text1: "Email Verification Required",
+            text2: "Redirecting to email verification...",
+          });
+          
+          // Navigate to signup verification step
+          router.replace({
+            pathname: "/(auth)/signup",
+            params: { step: "verification", email: email }
+          });
+          return;
+        }
+        
         console.warn("API login failed, falling back to local:", apiErr);
       }
 

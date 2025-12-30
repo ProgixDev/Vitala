@@ -267,6 +267,14 @@ exports.updateSettings = async (req, res) => {
       data: user.settings,
     });
   } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error updating settings',
+      error: error.message,
+    });
+  }
+};
+
 // @desc    Delete user account
 // @route   DELETE /api/users/account
 // @access  Private

@@ -2,9 +2,8 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { appointmentStorage } from "@/utils/appointments";
 import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   BackHandler,
@@ -148,11 +147,12 @@ export default function BookingComponent({
   }, [onBack]);
 
   // Refresh user data when screen comes into focus (e.g., when returning from map page)
-  useFocusEffect(
-    useCallback(() => {
-      refreshUser();
-    }, [refreshUser]),
-  );
+  // Note: User data is now cached in useCurrentUser hook, no need to refresh on focus
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     refreshUser();
+  //   }, [refreshUser]),
+  // );
 
   const handleBookAppointment = async () => {
     if (!currentUser) {

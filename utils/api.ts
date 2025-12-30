@@ -74,12 +74,23 @@ export async function registerPatient(payload: {
 }
 
 // Verify email
-export async function verifyEmail(token: string) {
+export async function verifyEmail(code: string) {
   return apiFetch<{ success: boolean; message: string }>(
     "/api/auth/verify-email",
     {
       method: "POST",
-      body: { token },
+      body: { code },
+    }
+  );
+}
+
+// Resend email verification
+export async function resendEmailVerification(email: string) {
+  return apiFetch<{ success: boolean; message: string }>(
+    "/api/auth/resend-verification",
+    {
+      method: "POST",
+      body: { email },
     }
   );
 }
@@ -164,6 +175,7 @@ export const api = {
   login,
   getMe,
   registerPatient,
+  resendEmailVerification,
   forgotPassword,
   resetPassword,
   refresh,

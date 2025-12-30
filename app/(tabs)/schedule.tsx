@@ -3,7 +3,6 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { appointmentStorage } from "@/utils/appointments";
 import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -17,17 +16,13 @@ import {
 } from "react-native";
 
 export default function Schedule() {
-  const { currentUser, refreshUser } = useCurrentUser();
+  const { currentUser } = useCurrentUser();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadAppointments();
-  });
-
-  useFocusEffect(() => {
-    handleRefresh();
   });
 
   // Handle back button - go to home tab instead of back
@@ -42,10 +37,6 @@ export default function Schedule() {
 
     return () => backHandler.remove();
   }, []);
-
-  const handleRefresh = async () => {
-    await refreshUser();
-  };
 
   const loadAppointments = async () => {
     try {

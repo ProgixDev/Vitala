@@ -5,6 +5,7 @@ const {
   registerNurse,
   login,
   verifyEmail,
+  resendEmailVerification,
   forgotPassword,
   resetPassword,
   refreshToken,
@@ -27,6 +28,7 @@ router.post(
 );
 router.post("/login", login);
 router.post("/verify-email", verifyEmail);
+router.post("/resend-verification", resendEmailVerification);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password/:token', resetPassword);
 router.post('/refresh-token', refreshToken);

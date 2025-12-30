@@ -21,8 +21,17 @@ export function useCurrentUser() {
           setCurrentUser(user);
           await authStorage.setCurrentUser(user);
           return;
-        } catch (err) {
-          // Attempt token refresh on failure
+        } catch (err: any) {
+          // Check if email verification is required
+          if (err.message?.includes('Email not verified')) {
+            console.log('Email not verified, redirecting to verification');
+            // Clear tokens since user needs to verify
+            await authStorage.clearTokens();
+            // Redirect to verification flow will be handled by the app
+            setCurrentUser(null);
+            return;
+          }
+          // Attempt token refresh on other failures
           if (refreshToken) {
             try {
               const res = await refresh(refreshToken);
@@ -35,8 +44,13 @@ export function useCurrentUser() {
               setCurrentUser(user2);
               await authStorage.setCurrentUser(user2);
               return;
-            } catch (e2) {
+            } catch (e2: any) {
               console.warn("Token refresh failed", e2);
+              if (e2.message?.includes('Email not verified')) {
+                await authStorage.clearTokens();
+                setCurrentUser(null);
+                return;
+              }
               await authStorage.clearTokens();
             }
           }

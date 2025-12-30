@@ -28,10 +28,9 @@ exports.registerPatient = async (req, res) => {
       });
     }
 
-    // Generate email verification token
-    const crypto = require("crypto");
-    const emailVerificationToken = crypto.randomBytes(32).toString("hex");
-    const emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    // Generate email verification code
+    const emailVerificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const emailVerificationExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     console.log("Creating user with data:", {
       fullName,
@@ -49,31 +48,35 @@ exports.registerPatient = async (req, res) => {
       password,
       userType: "patient",
       medicalProfile,
-      emailVerificationToken,
+      emailVerificationToken: emailVerificationCode,
       emailVerificationExpires,
       isEmailVerified: false,
     });
 
-    // Send email verification
+    // Send email verification code
     try {
-      const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${emailVerificationToken}`;
-
+      console.log(
+        `Sending verification email to ${email} with code ${emailVerificationCode}`
+      );
       await sendEmail({
         to: email,
         subject: "Verify Your Email - Vitala",
         html: `
           <h1>Welcome to Vitala!</h1>
           <p>Hi ${fullName},</p>
-          <p>Thank you for registering with Vitala. Please verify your email address by clicking the link below:</p>
-          <a href="${verificationUrl}" style="background-color: #4461F2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 16px 0;">Verify Email</a>
-          <p><a href="${verificationUrl}">${verificationUrl}</a></p>
-          <p>This link will expire in 24 hours.</p>
+          <p>Thank you for registering with Vitala. Your verification code is:</p>
+          <div style="background-color: #f0f0f0; padding: 16px; border-radius: 8px; text-align: center; margin: 16px 0;">
+            <span style="font-size: 24px; font-weight: bold; color: #4461F2; letter-spacing: 4px;">${emailVerificationCode}</span>
+          </div>
+          <p>This code will expire in 10 minutes.</p>
           <p>If you didn't create an account, please ignore this email.</p>
         `,
       });
+      console.log(`Verification email sent successfully to ${email}`);
     } catch (emailError) {
       console.error("Error sending verification email:", emailError);
-      // Don't fail registration if email fails, but log it
+      // For now, don't fail registration if email fails, but this should be fixed
+      // TODO: Consider failing registration if email cannot be sent
     }
 
     // Generate tokens
@@ -265,6 +268,8 @@ exports.login = async (req, res) => {
       });
     }
 
+    console.log(`Login attempt for user: ${user.email}, isEmailVerified: ${user.isEmailVerified}`);
+
     // Check password
     const isMatch = await user.comparePassword(password);
 
@@ -272,6 +277,24 @@ exports.login = async (req, res) => {
       return res.status(401).json({
         success: false,
         message: "Invalid credentials",
+      });
+    }
+
+    // Check if email is verified
+    console.log(`User ${user.email} isEmailVerified:`, user.isEmailVerified);
+    if (!user.isEmailVerified) {
+      console.log(`Blocking login for unverified user: ${user.email}`);
+      return res.status(403).json({
+        success: false,
+        message: "Email not verified",
+        requiresEmailVerification: true,
+        data: {
+          user: {
+            id: user._id,
+            email: user.email,
+            fullName: user.fullName,
+          },
+        },
       });
     }
 
@@ -296,6 +319,7 @@ exports.login = async (req, res) => {
           status: user.status,
           profilePicture: user.profilePicture,
           verificationStatus: user.nurseProfile?.verificationStatus,
+          isEmailVerified: user.isEmailVerified,
         },
         token,
         refreshToken,
@@ -310,33 +334,29 @@ exports.login = async (req, res) => {
   }
 };
 
-// @desc    Verify email
+// @desc    Verify email with code
 // @route   POST /api/auth/verify-email
 // @access  Public
 exports.verifyEmail = async (req, res) => {
   try {
-    const { token } = req.body;
+    const { code } = req.body;
 
-    if (!token) {
+    if (!code) {
       return res.status(400).json({
         success: false,
-        message: "Verification token is required",
+        message: "Verification code is required",
       });
     }
 
-    // Hash the token to compare with stored hash
-    const crypto = require("crypto");
-    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-
     const user = await User.findOne({
-      emailVerificationToken: hashedToken,
+      emailVerificationToken: code,
       emailVerificationExpires: { $gt: Date.now() },
     });
 
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: "Invalid or expired verification token",
+        message: "Invalid or expired verification code",
       });
     }
 
@@ -354,6 +374,74 @@ exports.verifyEmail = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error verifying email",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Resend email verification code
+// @route   POST /api/auth/resend-verification
+// @access  Public
+exports.resendEmailVerification = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is already verified',
+      });
+    }
+
+    // Generate new verification code
+    const emailVerificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const emailVerificationExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    user.emailVerificationToken = emailVerificationCode;
+    user.emailVerificationExpires = emailVerificationExpires;
+    await user.save();
+
+    // Send email verification code
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: "Verify Your Email - Vitala",
+        html: `
+          <h1>Email Verification</h1>
+          <p>Hi ${user.fullName},</p>
+          <p>Your new verification code is:</p>
+          <div style="background-color: #f0f0f0; padding: 16px; border-radius: 8px; text-align: center; margin: 16px 0;">
+            <span style="font-size: 24px; font-weight: bold; color: #4461F2; letter-spacing: 4px;">${emailVerificationCode}</span>
+          </div>
+          <p>This code will expire in 10 minutes.</p>
+          <p>If you didn't request this, please ignore this email.</p>
+        `,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Verification code sent successfully',
+      });
+    } catch (emailError) {
+      console.error('Error sending verification email:', emailError);
+      return res.status(500).json({
+        success: false,
+        message: 'Error sending verification email',
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error resending verification code',
       error: error.message,
     });
   }
@@ -556,6 +644,15 @@ exports.logout = async (req, res) => {
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
+
+    // Check if email is verified
+    if (!user.isEmailVerified) {
+      return res.status(403).json({
+        success: false,
+        message: 'Email not verified',
+        requiresEmailVerification: true,
+      });
+    }
 
     res.status(200).json({
       success: true,

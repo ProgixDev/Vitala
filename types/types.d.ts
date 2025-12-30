@@ -55,6 +55,7 @@ declare global {
     medicalProfile?: MedicalProfile;
     locations?: UserLocation[];
     status?: "pending" | "verified" | "rejected"; // verification status for nurses
+    isEmailVerified?: boolean;
     verification?: {
       idFrontUri?: string;
       idBackUri?: string;
@@ -72,3 +73,4 @@ declare global {
 }
 
 export {};
+
