@@ -5,28 +5,28 @@
 - [x] Patient sign up (full name, email, phone number)
 - [x] Patient password creation and validation
 - [x] Patient medical profile creation (gender, DOB, blood type, allergies, chronic illnesses, height, weight)
-- [ ] Patient OTP verification
+- [x] Patient email verification
 - [x] Nurse sign up (full name, email, phone number)
 - [x] Nurse password creation and validation
 - [x] Nurse ID document upload (front and back)
 - [x] Nurse selfie verification upload
 - [x] Nurse verification review and approval/rejection
 - [x] Forgot password functionality
-- [x] Password reset via email/OTP
+- [x] Password reset via email
 - [x] User logout
 - [x] Session management
 - [x] Token refresh
 
 ## User Management
-- [ ] Get current user profile
-- [ ] Update user profile (name, email, phone)
-- [ ] Update medical profile
-- [ ] Upload profile picture
-- [ ] Change password
-- [ ] Delete user account
-- [ ] Get user by email/ID
-- [ ] Get all users (admin)
-- [ ] User role management
+- [x] Get current user profile
+- [x] Update user profile (name, email, phone)
+- [x] Update medical profile
+- [x] Upload profile picture
+- [x] Change password
+- [x] Delete user account
+- [x] Get user by email/ID
+- [x] Get all users (admin)
+- [x] User role management
 
 ## Location Management
 - [ ] Save user location (coordinate, address, label)

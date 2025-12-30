@@ -267,9 +267,41 @@ exports.updateSettings = async (req, res) => {
       data: user.settings,
     });
   } catch (error) {
+// @desc    Delete user account
+// @route   DELETE /api/users/account
+// @access  Private
+exports.deleteAccount = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Delete user's profile picture from cloudinary if exists
+    if (user.profilePicture) {
+      try {
+        const publicId = user.profilePicture.split('/').pop().split('.')[0];
+        await cloudinary.uploader.destroy(`vitala/profiles/${publicId}`);
+      } catch (error) {
+        console.log('Error deleting profile picture:', error.message);
+      }
+    }
+
+    // Delete the user
+    await User.findByIdAndDelete(req.user._id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Account deleted successfully',
+    });
+  } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error updating settings',
+      message: 'Error deleting account',
       error: error.message,
     });
   }

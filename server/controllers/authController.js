@@ -9,7 +9,6 @@ if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN &&
 const {
   generateToken,
   generateRefreshToken,
-  generateOTP,
 } = require('../utils/tokenUtils');
 
 // @desc    Register patient
@@ -306,99 +305,6 @@ exports.login = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error logging in",
-      error: error.message,
-    });
-  }
-};
-
-// @desc    Verify OTP
-// @route   POST /api/auth/verify-otp
-// @access  Private
-exports.verifyOTP = async (req, res) => {
-  try {
-    const { otp } = req.body;
-    const userId = req.user._id;
-
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    // Check if OTP is valid
-    if (!user.otp || user.otp.code !== otp) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid OTP",
-      });
-    }
-
-    // Check if OTP is expired
-    if (new Date() > user.otp.expiresAt) {
-      return res.status(400).json({
-        success: false,
-        message: "OTP has expired",
-      });
-    }
-
-    // Mark OTP as verified
-    user.otp.verified = true;
-    user.isPhoneVerified = true;
-    await user.save();
-
-    res.status(200).json({
-      success: true,
-      message: "OTP verified successfully",
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error verifying OTP",
-      error: error.message,
-    });
-  }
-};
-
-// @desc    Resend OTP
-// @route   POST /api/auth/resend-otp
-// @access  Private
-exports.resendOTP = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    // Generate new OTP
-    const otpCode = generateOTP();
-    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-    user.otp = {
-      code: otpCode,
-      expiresAt: otpExpires,
-      verified: false,
-    };
-    await user.save();
-
-    // TODO: Send OTP via SMS
-    console.log(`New OTP for ${user.email}: ${otpCode}`);
-
-    res.status(200).json({
-      success: true,
-      message: "OTP resent successfully",
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error resending OTP",
       error: error.message,
     });
   }

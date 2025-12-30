@@ -19,22 +19,103 @@ exports.approveNurse = async (req, res) => {
   }
 };
 
-// Reject nurse account
-exports.rejectNurse = async (req, res) => {
+// Get user by ID or email
+exports.getUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { reason } = req.body;
-    const user = await User.findById(id);
-    if (!user || user.userType !== 'nurse') {
-      return res.status(404).json({ success: false, message: 'Nurse not found' });
+    let user;
+
+    // Check if id is email or ObjectId
+    if (id.includes('@')) {
+      user = await User.findOne({ email: id }).select('-password -refreshToken');
+    } else {
+      user = await User.findById(id).select('-password -refreshToken');
     }
-    user.nurseProfile = user.nurseProfile || {};
-    user.nurseProfile.verificationStatus = 'rejected';
-    user.nurseProfile.rejectionReason = reason || 'Not specified';
-    user.status = 'rejected';
-    await user.save();
-    res.status(200).json({ success: true, message: 'Nurse rejected', data: user });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: user,
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error rejecting nurse', error: error.message });
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching user',
+      error: error.message,
+    });
+  }
+};
+
+// Get all users
+exports.getAllUsers = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const users = await User.find()
+      .select('-password -refreshToken')
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const total = await User.countDocuments();
+
+    res.status(200).json({
+      success: true,
+      data: users,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching users',
+      error: error.message,
+    });
+  }
+};
+
+// Update user role
+exports.updateUserRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userType, status } = req.body;
+
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    if (userType) user.userType = userType;
+    if (status) user.status = status;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'User role updated successfully',
+      data: user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error updating user role',
+      error: error.message,
+    });
   }
 };

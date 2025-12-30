@@ -15,11 +15,6 @@ const generateRefreshToken = (id) => {
   });
 };
 
-// Generate OTP
-const generateOTP = () => {
-  return Math.floor(1000 + Math.random() * 9000).toString();
-};
-
 // Generate password reset token
 const crypto = require('crypto');
 const generateResetToken = () => {
@@ -29,6 +24,5 @@ const generateResetToken = () => {
 module.exports = {
   generateToken,
   generateRefreshToken,
-  generateOTP,
   generateResetToken,
 };

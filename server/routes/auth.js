@@ -4,9 +4,7 @@ const {
   registerPatient,
   registerNurse,
   login,
-  verifyOTP,
   verifyEmail,
-  resendOTP,
   forgotPassword,
   resetPassword,
   refreshToken,
@@ -34,8 +32,6 @@ router.post('/reset-password/:token', resetPassword);
 router.post('/refresh-token', refreshToken);
 
 // Protected routes
-router.post('/verify-otp', protect, verifyOTP);
-router.post('/resend-otp', protect, resendOTP);
 router.post('/logout', protect, logout);
 router.get('/me', protect, getMe);
 

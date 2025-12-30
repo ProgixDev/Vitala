@@ -47,10 +47,6 @@ export default function SignUp() {
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
 
-  // Step 4: OTP
-  const [otp, setOtp] = useState(["", "", "", ""]);
-  const [timer, setTimer] = useState(59);
-
   const handleBack = useCallback(() => {
     if (step === "medical") {
       setStep("password");

@@ -73,18 +73,6 @@ export async function registerPatient(payload: {
   }>("/api/auth/register/patient", { method: "POST", body: payload });
 }
 
-// Verify OTP
-export async function verifyOtp(token: string, otpCode: string) {
-  return apiFetch<{ success: boolean; message: string }>(
-    "/api/auth/verify-otp",
-    {
-      method: "POST",
-      token,
-      body: { otp: otpCode },
-    }
-  );
-}
-
 // Verify email
 export async function verifyEmail(token: string) {
   return apiFetch<{ success: boolean; message: string }>(
@@ -94,14 +82,6 @@ export async function verifyEmail(token: string) {
       body: { token },
     }
   );
-}
-
-// Resend OTP
-export async function resendOtp(token: string) {
-  return apiFetch<{ success: boolean; message: string }>("/api/auth/resend-otp", {
-    method: "POST",
-    token,
-  });
 }
 
 // Forgot password
@@ -184,8 +164,6 @@ export const api = {
   login,
   getMe,
   registerPatient,
-  verifyOtp,
-  resendOtp,
   forgotPassword,
   resetPassword,
   refresh,

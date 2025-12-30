@@ -132,15 +132,7 @@ const userSchema = new mongoose.Schema(
       },
     },
 
-    // OTP and password reset
-    otp: {
-      code: String,
-      expiresAt: Date,
-      verified: {
-        type: Boolean,
-        default: false,
-      },
-    },
+    // Password reset
     passwordResetToken: String,
     passwordResetExpires: Date,
 
@@ -152,10 +144,6 @@ const userSchema = new mongoose.Schema(
     refreshToken: String,
 
     isEmailVerified: {
-      type: Boolean,
-      default: false,
-    },
-    isPhoneVerified: {
       type: Boolean,
       default: false,
     },
