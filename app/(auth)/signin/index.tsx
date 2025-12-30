@@ -70,6 +70,20 @@ export default function SignIn() {
         await authStorage.setCurrentUser(currentUser);
         await authStorage.setLoggedIn();
 
+        // Check if email is verified
+        if (!apiUser.isEmailVerified) {
+          Toast.show({
+            type: "error",
+            text1: "Email Not Verified",
+            text2:
+              "Please check your email and verify your account before signing in.",
+          });
+          // Clear stored data since user can't proceed
+          await authStorage.clearTokens();
+          await authStorage.setLoggedOut();
+          return;
+        }
+
         console.log("Sign in successful (API)");
         if (
           currentUser.userType === "nurse" &&

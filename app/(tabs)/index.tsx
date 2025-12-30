@@ -33,7 +33,7 @@ export default function Home() {
   return (
     <View className="flex-1 pt-6 px-4">
       <StatusBar hidden />
-      {currentUser?.role === "NURSE" ? <NurseHomeUI /> : <PatientHomeUI />}
+      {currentUser?.userType === "nurse" ? <NurseHomeUI /> : <PatientHomeUI />}
     </View>
   );
 }

@@ -368,7 +368,7 @@ export default function AppointmentDetails() {
 
         {/* Continue to Payment Button - Only show if not paid */}
         {appointment.payment.status !== "completed" &&
-          currentUser.role === "patient" && (
+          currentUser.userType === "patient" && (
             <TouchableOpacity
               className="bg-[#4461F2] py-4 rounded-[28px] justify-center items-center shadow-lg mt-5"
               onPress={handleConfirmBooking}
@@ -381,7 +381,7 @@ export default function AppointmentDetails() {
 
         {/* View Receipt Button - Only show if paid */}
         {appointment.payment.status === "completed" &&
-          currentUser.role === "patient" && (
+          currentUser.userType === "patient" && (
             <TouchableOpacity
               className="bg-[#32CD32] py-4 rounded-[28px] justify-center items-center shadow-lg mt-5"
               onPress={handleConfirmBooking}

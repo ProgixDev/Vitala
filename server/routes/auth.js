@@ -5,28 +5,30 @@ const {
   registerNurse,
   login,
   verifyOTP,
+  verifyEmail,
   resendOTP,
   forgotPassword,
   resetPassword,
   refreshToken,
   logout,
   getMe,
-} = require('../controllers/authController');
-const { protect } = require('../middleware/auth');
-const upload = require('../middleware/upload');
+} = require("../controllers/authController");
+const { protect } = require("../middleware/auth");
+const upload = require("../middleware/upload");
 
 // Public routes
-router.post('/register/patient', registerPatient);
+router.post("/register/patient", registerPatient);
 router.post(
-  '/register/nurse',
+  "/register/nurse",
   upload.fields([
-    { name: 'idFront', maxCount: 1 },
-    { name: 'idBack', maxCount: 1 },
-    { name: 'selfie', maxCount: 1 },
+    { name: "idFront", maxCount: 1 },
+    { name: "idBack", maxCount: 1 },
+    { name: "selfie", maxCount: 1 },
   ]),
   registerNurse
 );
-router.post('/login', login);
+router.post("/login", login);
+router.post("/verify-email", verifyEmail);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password/:token', resetPassword);
 router.post('/refresh-token', refreshToken);

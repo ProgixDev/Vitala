@@ -17,39 +17,29 @@ const {
 // @access  Public
 exports.registerPatient = async (req, res) => {
   try {
-    console.log('Registration request body:', req.body);
-    const {
-      fullName,
-      email,
-      phoneNumber,
-      password,
-      medicalProfile,
-    } = req.body;
+    console.log("Registration request body:", req.body);
+    const { fullName, email, phoneNumber, password, medicalProfile } = req.body;
 
     // Check if user exists
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({
         success: false,
-        message: 'User already exists with this email',
+        message: "User already exists with this email",
       });
     }
 
-    // Generate OTP
-    const otpCode = generateOTP();
-    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    // Generate email verification token
+    const crypto = require("crypto");
+    const emailVerificationToken = crypto.randomBytes(32).toString("hex");
+    const emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    console.log('Creating user with data:', {
+    console.log("Creating user with data:", {
       fullName,
       email,
       phoneNumber,
-      userType: 'patient',
+      userType: "patient",
       medicalProfile,
-      otp: {
-        code: otpCode,
-        expiresAt: otpExpires,
-        verified: false,
-      },
     });
 
     // Create user
@@ -58,16 +48,34 @@ exports.registerPatient = async (req, res) => {
       email,
       phoneNumber,
       password,
-      userType: 'patient',
+      userType: "patient",
       medicalProfile,
-      otp: {
-        code: otpCode,
-        expiresAt: otpExpires,
-        verified: true, // Skip OTP for now
-      },
+      emailVerificationToken,
+      emailVerificationExpires,
+      isEmailVerified: false,
     });
 
-    // OTP sending removed for now
+    // Send email verification
+    try {
+      const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${emailVerificationToken}`;
+
+      await sendEmail({
+        to: email,
+        subject: "Verify Your Email - Vitala",
+        html: `
+          <h1>Welcome to Vitala!</h1>
+          <p>Hi ${fullName},</p>
+          <p>Thank you for registering with Vitala. Please verify your email address by clicking the link below:</p>
+          <a href="${verificationUrl}" style="background-color: #4461F2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 16px 0;">Verify Email</a>
+          <p><a href="${verificationUrl}">${verificationUrl}</a></p>
+          <p>This link will expire in 24 hours.</p>
+          <p>If you didn't create an account, please ignore this email.</p>
+        `,
+      });
+    } catch (emailError) {
+      console.error("Error sending verification email:", emailError);
+      // Don't fail registration if email fails, but log it
+    }
 
     // Generate tokens
     const token = generateToken(user._id);
@@ -79,7 +87,8 @@ exports.registerPatient = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Patient registered successfully. Please verify OTP.',
+      message:
+        "Patient registered successfully. Please check your email to verify your account.",
       data: {
         user: {
           id: user._id,
@@ -88,17 +97,18 @@ exports.registerPatient = async (req, res) => {
           phoneNumber: user.phoneNumber,
           userType: user.userType,
           status: user.status,
+          isEmailVerified: user.isEmailVerified,
         },
         token,
         refreshToken,
-        requiresOTP: false, // Skip OTP
+        requiresEmailVerification: true,
       },
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error("Registration error:", error);
     res.status(500).json({
       success: false,
-      message: 'Error registering patient',
+      message: "Error registering patient",
       error: error.message,
     });
   }
@@ -109,9 +119,9 @@ exports.registerPatient = async (req, res) => {
 // @access  Public
 exports.registerNurse = async (req, res) => {
   try {
-    console.log('Nurse registration request received');
-    console.log('Request body:', req.body);
-    console.log('Request files:', req.files);
+    console.log("Nurse registration request received");
+    console.log("Request body:", req.body);
+    console.log("Request files:", req.files);
 
     const {
       fullName,
@@ -128,7 +138,7 @@ exports.registerNurse = async (req, res) => {
     if (userExists) {
       return res.status(400).json({
         success: false,
-        message: 'User already exists with this email',
+        message: "User already exists with this email",
       });
     }
 
@@ -140,7 +150,7 @@ exports.registerNurse = async (req, res) => {
     if (!idFront || !idBack || !selfie) {
       return res.status(400).json({
         success: false,
-        message: 'Please upload ID documents (front, back) and selfie',
+        message: "Please upload ID documents (front, back) and selfie",
       });
     }
 
@@ -148,9 +158,10 @@ exports.registerNurse = async (req, res) => {
     let parsedSpecializations = [];
     if (specializations) {
       try {
-        parsedSpecializations = typeof specializations === 'string' 
-          ? JSON.parse(specializations) 
-          : specializations;
+        parsedSpecializations =
+          typeof specializations === "string"
+            ? JSON.parse(specializations)
+            : specializations;
       } catch (e) {
         parsedSpecializations = [];
       }
@@ -165,18 +176,18 @@ exports.registerNurse = async (req, res) => {
       email,
       phoneNumber,
       password,
-      userType: 'nurse',
-      status: 'pending',
+      userType: "nurse",
+      status: "pending",
       nurseProfile: {
         idDocuments: {
           front: idFront,
           back: idBack,
         },
         selfieVerification: selfie,
-        licenseNumber: licenseNumber || '',
+        licenseNumber: licenseNumber || "",
         specializations: parsedSpecializations,
         experience: parsedExperience,
-        verificationStatus: 'pending',
+        verificationStatus: "pending",
       },
     });
 
@@ -184,7 +195,7 @@ exports.registerNurse = async (req, res) => {
     try {
       await sendEmail({
         to: email,
-        subject: 'Nurse Registration - Pending Verification',
+        subject: "Nurse Registration - Pending Verification",
         html: `
           <h1>Welcome to Vitala!</h1>
           <p>Hi ${fullName},</p>
@@ -193,7 +204,7 @@ exports.registerNurse = async (req, res) => {
         `,
       });
     } catch (emailError) {
-      console.error('Error sending email:', emailError);
+      console.error("Error sending email:", emailError);
     }
 
     // Generate tokens
@@ -206,7 +217,7 @@ exports.registerNurse = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Nurse registered successfully. Account pending verification.',
+      message: "Nurse registered successfully. Account pending verification.",
       data: {
         user: {
           id: user._id,
@@ -224,7 +235,7 @@ exports.registerNurse = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error registering nurse',
+      message: "Error registering nurse",
       error: error.message,
     });
   }
@@ -241,17 +252,17 @@ exports.login = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide email and password',
+        message: "Please provide email and password",
       });
     }
 
     // Check for user
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email }).select("+password");
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials',
+        message: "Invalid credentials",
       });
     }
 
@@ -261,7 +272,7 @@ exports.login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials',
+        message: "Invalid credentials",
       });
     }
 
@@ -275,7 +286,7 @@ exports.login = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Login successful',
+      message: "Login successful",
       data: {
         user: {
           id: user._id,
@@ -294,7 +305,7 @@ exports.login = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error logging in',
+      message: "Error logging in",
       error: error.message,
     });
   }
@@ -313,7 +324,7 @@ exports.verifyOTP = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found',
+        message: "User not found",
       });
     }
 
@@ -321,7 +332,7 @@ exports.verifyOTP = async (req, res) => {
     if (!user.otp || user.otp.code !== otp) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid OTP',
+        message: "Invalid OTP",
       });
     }
 
@@ -329,7 +340,7 @@ exports.verifyOTP = async (req, res) => {
     if (new Date() > user.otp.expiresAt) {
       return res.status(400).json({
         success: false,
-        message: 'OTP has expired',
+        message: "OTP has expired",
       });
     }
 
@@ -340,12 +351,12 @@ exports.verifyOTP = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'OTP verified successfully',
+      message: "OTP verified successfully",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error verifying OTP',
+      message: "Error verifying OTP",
       error: error.message,
     });
   }
@@ -362,7 +373,7 @@ exports.resendOTP = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found',
+        message: "User not found",
       });
     }
 
@@ -382,12 +393,61 @@ exports.resendOTP = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'OTP resent successfully',
+      message: "OTP resent successfully",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error resending OTP',
+      message: "Error resending OTP",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Verify email
+// @route   POST /api/auth/verify-email
+// @access  Public
+exports.verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "Verification token is required",
+      });
+    }
+
+    // Hash the token to compare with stored hash
+    const crypto = require("crypto");
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    const user = await User.findOne({
+      emailVerificationToken: hashedToken,
+      emailVerificationExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired verification token",
+      });
+    }
+
+    // Mark email as verified
+    user.isEmailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Email verified successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error verifying email",
       error: error.message,
     });
   }

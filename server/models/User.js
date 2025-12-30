@@ -5,57 +5,57 @@ const userSchema = new mongoose.Schema(
   {
     fullName: {
       type: String,
-      required: [true, 'Please provide your full name'],
+      required: [true, "Please provide your full name"],
       trim: true,
-      minlength: [2, 'Name must be at least 2 characters'],
+      minlength: [2, "Name must be at least 2 characters"],
     },
     email: {
       type: String,
-      required: [true, 'Please provide your email'],
+      required: [true, "Please provide your email"],
       unique: true,
       lowercase: true,
       trim: true,
       match: [
         /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
-        'Please provide a valid email',
+        "Please provide a valid email",
       ],
     },
     phoneNumber: {
       type: String,
-      required: [true, 'Please provide your phone number'],
+      required: [true, "Please provide your phone number"],
       trim: true,
     },
     password: {
       type: String,
-      required: [true, 'Please provide a password'],
-      minlength: [8, 'Password must be at least 8 characters'],
+      required: [true, "Please provide a password"],
+      minlength: [8, "Password must be at least 8 characters"],
       select: false,
     },
     userType: {
       type: String,
-      enum: ['patient', 'nurse', 'admin'],
-      default: 'patient',
+      enum: ["patient", "nurse", "admin"],
+      default: "patient",
     },
     status: {
       type: String,
-      enum: ['active', 'pending', 'suspended', 'rejected'],
-      default: 'active',
+      enum: ["active", "pending", "suspended", "rejected"],
+      default: "active",
     },
     profilePicture: {
       type: String,
-      default: '',
+      default: "",
     },
-    
+
     // Patient-specific fields
     medicalProfile: {
       gender: {
         type: String,
-        enum: ['male', 'female', 'other'],
+        enum: ["male", "female", "other"],
       },
       dateOfBirth: Date,
       bloodType: {
         type: String,
-        enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
+        enum: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
       },
       allergies: [String],
       chronicIllnesses: [String],
@@ -94,8 +94,8 @@ const userSchema = new mongoose.Schema(
       },
       verificationStatus: {
         type: String,
-        enum: ['pending', 'approved', 'rejected'],
-        default: 'pending',
+        enum: ["pending", "approved", "rejected"],
+        default: "pending",
       },
       rejectionReason: String,
     },
@@ -126,7 +126,7 @@ const userSchema = new mongoose.Schema(
         shareLocation: { type: Boolean, default: true },
       },
       preferences: {
-        language: { type: String, default: 'en' },
+        language: { type: String, default: "en" },
         darkMode: { type: Boolean, default: false },
         biometricAuth: { type: Boolean, default: false },
       },
@@ -143,6 +143,10 @@ const userSchema = new mongoose.Schema(
     },
     passwordResetToken: String,
     passwordResetExpires: Date,
+
+    // Email verification
+    emailVerificationToken: String,
+    emailVerificationExpires: Date,
 
     // Refresh token
     refreshToken: String,

@@ -260,7 +260,7 @@ export default function AppointmentStatus() {
         </View>
 
         {/* Nurse Info Card - Only show when confirmed and nurse is assigned */}
-        {currentUser?.role === "patient" &&
+        {currentUser?.userType === "patient" &&
           appointment.status === "confirmed" &&
           nurse && (
             <TouchableOpacity

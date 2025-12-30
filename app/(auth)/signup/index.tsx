@@ -10,16 +10,15 @@ import {
 } from "react-native";
 
 import LoadingScreen from "@/components/LoadingScreen";
-import { registerPatient, verifyOtp } from "@/utils/api";
+import { registerPatient } from "@/utils/api";
 import { authStorage } from "@/utils/auth";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
 import InfoStep from "./components/InfoStep";
 import MedicalProfileStep from "./components/MedicalProfileStep";
-import OTPStep from "./components/OTPStep";
 import PasswordStep from "./components/PasswordStep";
 
-type Step = "info" | "password" | "medical" | "otp";
+type Step = "info" | "password" | "medical";
 
 export default function SignUp() {
   const [step, setStep] = useState<Step>("info");
@@ -52,19 +51,8 @@ export default function SignUp() {
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [timer, setTimer] = useState(59);
 
-  useEffect(() => {
-    if (step === "otp" && timer > 0) {
-      const interval = setInterval(() => {
-        setTimer((prev) => prev - 1);
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [step, timer]);
-
   const handleBack = useCallback(() => {
-    if (step === "otp") {
-      setStep("medical");
-    } else if (step === "medical") {
+    if (step === "medical") {
       setStep("password");
     } else if (step === "password") {
       setStep("info");
@@ -79,7 +67,7 @@ export default function SignUp() {
       () => {
         handleBack();
         return true;
-      },
+      }
     );
 
     return () => backHandler.remove();
@@ -164,10 +152,12 @@ export default function SignUp() {
       // Submit registration to backend, then go to OTP
       try {
         setIsLoading(true);
-        
+
         const medicalProfile: MedicalProfile = {
           gender,
-          dateOfBirth: dateOfBirth ? new Date(dateOfBirth.split('/').reverse().join('-')).toISOString() : null,
+          dateOfBirth: dateOfBirth
+            ? new Date(dateOfBirth.split("/").reverse().join("-")).toISOString()
+            : null,
           bloodType,
           chronicIllnesses,
           allergies,
@@ -194,33 +184,22 @@ export default function SignUp() {
         });
         await authStorage.setLoggedIn();
 
-        if (resp.data.requiresOTP) {
-          setTimer(59);
-          setStep("otp");
+        if (resp.data.requiresEmailVerification) {
+          // Show success message and navigate to sign in
+          Toast.show({
+            type: "success",
+            text1: "Registration Successful",
+            text2:
+              "Please check your email to verify your account before signing in.",
+          });
+          router.replace("/signin");
         } else {
-          // Skip OTP, navigate to main app
+          // Email already verified, navigate to main app
           router.replace("/(tabs)");
         }
       } catch (err) {
         console.error("Registration error:", err);
         Toast.show({ type: "error", text1: "Error", text2: String(err) });
-      } finally {
-        setIsLoading(false);
-      }
-    } else if (step === "otp") {
-      try {
-        setIsLoading(true);
-        
-        const { accessToken } = await authStorage.getTokens();
-        const code = otp.join("");
-        if (!accessToken) throw new Error("Missing token for OTP verify");
-        await verifyOtp(accessToken, code);
-        Toast.show({ type: "success", text1: "Verified", text2: "OTP verified" });
-        router.replace("/(tabs)");
-      } catch (error) {
-        console.error("Error completing signup:", error);
-        const msg = error instanceof Error ? error.message : "Error completing signup. Please try again.";
-        Toast.show({ type: "error", text1: "Error", text2: msg });
       } finally {
         setIsLoading(false);
       }
@@ -277,9 +256,6 @@ export default function SignUp() {
             onNext={handleContinue}
           />
         );
-
-      case "otp":
-        return <OTPStep otp={otp} setOtp={setOtp} timer={timer} />;
     }
   };
 
@@ -302,9 +278,7 @@ export default function SignUp() {
             onPress={handleContinue}
             disabled={isLoading}
           >
-            <Text className="text-lg font-semibold text-white">
-              {step === "otp" ? "Verify" : "Continue"}
-            </Text>
+            <Text className="text-lg font-semibold text-white">Continue</Text>
           </TouchableOpacity>
         )}
 
@@ -328,15 +302,11 @@ export default function SignUp() {
         message={
           step === "medical"
             ? "Creating your account..."
-            : step === "otp"
-            ? "Verifying OTP..."
             : "Loading..."
         }
         subtitle={
           step === "medical"
             ? "Setting up your medical profile"
-            : step === "otp"
-            ? "Please wait while we verify your code"
             : ""
         }
       />

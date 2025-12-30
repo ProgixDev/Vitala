@@ -56,11 +56,11 @@ export default function Schedule() {
       // Filter appointments based on user type
       let userAppointments: Appointment[] = [];
       if (currentUser) {
-        if (currentUser.role === "patient") {
+        if (currentUser.userType === "patient") {
           userAppointments = allAppointments.filter(
             (appt) => appt.userEmail === currentUser.email,
           );
-        } else if (currentUser.role === "nurse") {
+        } else if (currentUser.userType === "nurse") {
           userAppointments = allAppointments.filter(
             (appt) => appt.nurseEmail === currentUser.email,
           );
@@ -97,7 +97,7 @@ export default function Schedule() {
   };
 
   const handleAppointmentPress = (appointmentId: string) => {
-    if (currentUser?.role === "patient") {
+    if (currentUser?.userType === "patient") {
       router.push(`/appointment/${appointmentId}/status`);
     } else {
       router.push(`/appointment/${appointmentId}`);
@@ -211,7 +211,7 @@ export default function Schedule() {
   }
 
   const getUserInfo = (appointment: Appointment) => {
-    if (currentUser?.role === "patient") {
+    if (currentUser?.userType === "patient") {
       // Show nurse info for patients
       if (appointment.nurseEmail) {
         const nurse = users.find((u) => u.email === appointment.nurseEmail);
@@ -223,7 +223,7 @@ export default function Schedule() {
             }
           : null;
       }
-    } else if (currentUser?.role === "nurse") {
+    } else if (currentUser?.userType === "nurse") {
       // Show patient info for nurses
       const patient = users.find((u) => u.email === appointment.userEmail);
       return patient

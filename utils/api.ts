@@ -62,19 +62,38 @@ export async function registerPatient(payload: {
   password: string;
   medicalProfile?: any;
 }) {
-  return apiFetch<{ success: boolean; data: { user: any; token: string; refreshToken: string; requiresOTP: boolean } }>(
-    "/api/auth/register/patient",
-    { method: "POST", body: payload },
-  );
+  return apiFetch<{
+    success: boolean;
+    data: {
+      user: any;
+      token: string;
+      refreshToken: string;
+      requiresEmailVerification: boolean;
+    };
+  }>("/api/auth/register/patient", { method: "POST", body: payload });
 }
 
 // Verify OTP
 export async function verifyOtp(token: string, otpCode: string) {
-  return apiFetch<{ success: boolean; message: string }>("/api/auth/verify-otp", {
-    method: "POST",
-    token,
-    body: { otp: otpCode },
-  });
+  return apiFetch<{ success: boolean; message: string }>(
+    "/api/auth/verify-otp",
+    {
+      method: "POST",
+      token,
+      body: { otp: otpCode },
+    }
+  );
+}
+
+// Verify email
+export async function verifyEmail(token: string) {
+  return apiFetch<{ success: boolean; message: string }>(
+    "/api/auth/verify-email",
+    {
+      method: "POST",
+      body: { token },
+    }
+  );
 }
 
 // Resend OTP
