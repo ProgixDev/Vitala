@@ -86,6 +86,12 @@ export default function Settings() {
       visibilityTime: 4000,
       onPress: async () => {
         try {
+          const { accessToken } = await authStorage.getTokens();
+          if (accessToken) {
+            const { logout } = await import("@/utils/api");
+            await logout(accessToken);
+          }
+          await authStorage.clearTokens();
           await authStorage.setLoggedOut();
           router.replace("/signin");
         } catch (error) {

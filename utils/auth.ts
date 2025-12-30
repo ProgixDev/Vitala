@@ -1,8 +1,10 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 
 const LOGGED_IN_KEY = "loggedIn";
 const USERS_KEY = "users";
 const CURRENT_USER_KEY = "currentUser";
+const ACCESS_TOKEN_KEY = "accessToken";
+const REFRESH_TOKEN_KEY = "refreshToken";
 
 export const authStorage = {
   /**
@@ -10,13 +12,9 @@ export const authStorage = {
    * @returns Promise<boolean>
    */
   isLoggedIn: async (): Promise<boolean> => {
-    try {
-      const value = await AsyncStorage.getItem(LOGGED_IN_KEY);
-      return value === "true";
-    } catch (error) {
-      console.error("Error checking login status:", error);
-      return false;
-    }
+    // Check if access token exists
+    const { accessToken } = await authStorage.getTokens();
+    return !!accessToken;
   },
 
   /**
@@ -24,12 +22,7 @@ export const authStorage = {
    * @returns Promise<void>
    */
   setLoggedIn: async (): Promise<void> => {
-    try {
-      await AsyncStorage.setItem(LOGGED_IN_KEY, "true");
-    } catch (error) {
-      console.error("Error setting login status:", error);
-      throw error;
-    }
+    // Removed local storage - no-op
   },
 
   /**
@@ -37,13 +30,8 @@ export const authStorage = {
    * @returns Promise<void>
    */
   setLoggedOut: async (): Promise<void> => {
-    try {
-      await AsyncStorage.setItem(LOGGED_IN_KEY, "false");
-      await AsyncStorage.removeItem(CURRENT_USER_KEY);
-    } catch (error) {
-      console.error("Error setting logout status:", error);
-      throw error;
-    }
+    // Clear tokens on logout
+    await authStorage.clearTokens();
   },
 
   /**
@@ -51,13 +39,7 @@ export const authStorage = {
    * @returns Promise<void>
    */
   clearAuth: async (): Promise<void> => {
-    try {
-      await AsyncStorage.removeItem(LOGGED_IN_KEY);
-      await AsyncStorage.removeItem(CURRENT_USER_KEY);
-    } catch (error) {
-      console.error("Error clearing auth data:", error);
-      throw error;
-    }
+    // Removed local storage - no-op
   },
 
   /**
@@ -65,14 +47,8 @@ export const authStorage = {
    * @returns Promise<User[]>
    */
   getUsers: async (): Promise<User[]> => {
-    try {
-      const usersJson = await AsyncStorage.getItem(USERS_KEY);
-      if (!usersJson) return [];
-      return JSON.parse(usersJson);
-    } catch (error) {
-      console.error("Error getting users:", error);
-      return [];
-    }
+    // Removed local storage - users are now in MongoDB
+    return [];
   },
 
   /**
@@ -81,21 +57,8 @@ export const authStorage = {
    * @returns Promise<void>
    */
   saveUser: async (user: User): Promise<void> => {
-    try {
-      const users = await authStorage.getUsers();
-
-      // Check if email already exists
-      const existingUser = users.find((u) => u.email === user.email);
-      if (existingUser) {
-        throw new Error("Email already registered");
-      }
-
-      users.push(user);
-      await AsyncStorage.setItem(USERS_KEY, JSON.stringify(users));
-    } catch (error) {
-      console.error("Error saving user:", error);
-      throw error;
-    }
+    // Removed local storage - use API to save to MongoDB
+    throw new Error("Use API to register users");
   },
 
   /**
@@ -106,18 +69,10 @@ export const authStorage = {
    */
   validateCredentials: async (
     email: string,
-    password: string,
+    password: string
   ): Promise<User | null> => {
-    try {
-      const users = await authStorage.getUsers();
-      const user = users.find(
-        (u) => u.email === email && u.password === password,
-      );
-      return user || null;
-    } catch (error) {
-      console.error("Error validating credentials:", error);
-      return null;
-    }
+    // Removed local storage - use API for authentication
+    return null;
   },
 
   /**
@@ -126,12 +81,7 @@ export const authStorage = {
    * @returns Promise<void>
    */
   setCurrentUser: async (user: CurrentUser): Promise<void> => {
-    try {
-      await AsyncStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
-    } catch (error) {
-      console.error("Error setting current user:", error);
-      throw error;
-    }
+    // Removed local storage - no-op
   },
 
   /**
@@ -139,13 +89,56 @@ export const authStorage = {
    * @returns Promise<CurrentUser | null>
    */
   getCurrentUser: async (): Promise<CurrentUser | null> => {
+    // Removed local storage - fetch from API if token available
+    // For now, return null since no token storage
+    return null;
+  },
+
+  /**
+   * Store access and refresh tokens
+   */
+  setTokens: async (
+    accessToken: string,
+    refreshToken?: string
+  ): Promise<void> => {
     try {
-      const userJson = await AsyncStorage.getItem(CURRENT_USER_KEY);
-      if (!userJson) return null;
-      return JSON.parse(userJson);
+      await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, accessToken);
+      if (refreshToken) {
+        await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken);
+      }
     } catch (error) {
-      console.error("Error getting current user:", error);
-      return null;
+      console.error("Error setting tokens:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Retrieve stored tokens
+   */
+  getTokens: async (): Promise<{
+    accessToken: string | null;
+    refreshToken: string | null;
+  }> => {
+    try {
+      const accessToken = await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
+      const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+      return { accessToken, refreshToken };
+    } catch (error) {
+      console.error("Error getting tokens:", error);
+      return { accessToken: null, refreshToken: null };
+    }
+  },
+
+  /**
+   * Clear stored tokens
+   */
+  clearTokens: async (): Promise<void> => {
+    try {
+      await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
+      await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+    } catch (error) {
+      console.error("Error clearing tokens:", error);
+      throw error;
     }
   },
 
@@ -154,51 +147,18 @@ export const authStorage = {
    * @returns Promise<void>
    */
   toggleUserType: async (): Promise<void> => {
-    try {
-      const currentUser = await authStorage.getCurrentUser();
-      if (!currentUser) {
-        throw new Error("No current user found");
-      }
-
-      const newUserType: "patient" | "nurse" =
-        currentUser.role === "patient" ? "nurse" : "patient";
-
-      const updatedUser: CurrentUser = {
-        ...currentUser,
-        role: newUserType,
-      };
-
-      await AsyncStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
-    } catch (error) {
-      console.error("Error toggling user type:", error);
-      throw error;
-    }
+    // Removed local storage - use API to update user
+    throw new Error("Use API to update user role");
   },
+
   /**
    * Add a location to user's locations
    * @param location Location object to add
    * @returns Promise<void>
    */
   addUserLocation: async (location: UserLocation): Promise<void> => {
-    try {
-      const currentUser = await authStorage.getCurrentUser();
-      if (!currentUser) {
-        throw new Error("No current user found");
-      }
-
-      const locations = currentUser.locations || [];
-      locations.push(location);
-
-      const updatedUser: CurrentUser = {
-        ...currentUser,
-        locations,
-      };
-
-      await AsyncStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
-    } catch (error) {
-      console.error("Error adding user location:", error);
-      throw error;
-    }
+    // Removed local storage - use API to update user
+    throw new Error("Use API to update user locations");
   },
 
   /**
@@ -207,29 +167,8 @@ export const authStorage = {
    * @returns Promise<void>
    */
   removeUserLocation: async (index: number): Promise<void> => {
-    try {
-      const currentUser = await authStorage.getCurrentUser();
-      if (!currentUser) {
-        throw new Error("No current user found");
-      }
-
-      const locations = currentUser.locations || [];
-      if (index < 0 || index >= locations.length) {
-        throw new Error("Invalid location index");
-      }
-
-      locations.splice(index, 1);
-
-      const updatedUser: CurrentUser = {
-        ...currentUser,
-        locations,
-      };
-
-      await AsyncStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
-    } catch (error) {
-      console.error("Error removing user location:", error);
-      throw error;
-    }
+    // Removed local storage - use API to update user
+    throw new Error("Use API to update user locations");
   },
 
   /**
@@ -237,11 +176,6 @@ export const authStorage = {
    * @returns Promise<void>
    */
   clearAllUsers: async (): Promise<void> => {
-    try {
-      await AsyncStorage.setItem(USERS_KEY, JSON.stringify([]));
-    } catch (error) {
-      console.error("Error clearing all users:", error);
-      throw error;
-    }
+    // Removed local storage - no-op
   },
 };

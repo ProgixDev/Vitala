@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 
+import { registerNurse } from "@/utils/api";
 import { authStorage } from "@/utils/auth";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
@@ -17,11 +18,13 @@ import PasswordStep from "../components/PasswordStep";
 import IdCaptureStep from "./components/IdCaptureStep";
 import ReviewStep from "./components/ReviewStep";
 import SelfieStep from "./components/SelfieStep";
+import LoadingScreen from "@/components/LoadingScreen";
 
 type Step = "info" | "password" | "id" | "selfie" | "review";
 
 export default function NurseSignUp() {
   const [step, setStep] = useState<Step>("info");
+  const [isLoading, setIsLoading] = useState(false);
 
   // Step 1: Info
   const [fullName, setFullName] = useState("");
@@ -163,31 +166,61 @@ export default function NurseSignUp() {
       setStep("review");
     } else if (step === "review") {
       try {
-        // Create user object
-        const user: User = {
+        setIsLoading(true);
+        
+        if (!idFrontUri || !idBackUri || !selfieUri) {
+          throw new Error("Missing ID/selfie files");
+        }
+
+        const form = new FormData();
+        form.append("fullName", fullName);
+        form.append("email", email);
+        form.append("phoneNumber", phoneNumber);
+        form.append("password", password);
+        // optional nurse meta
+        form.append("licenseNumber", "");
+        form.append("specializations", JSON.stringify([]));
+        form.append("experience", String(0));
+
+        // For React Native, file objects with uri, name, and type work with FormData
+        form.append("idFront", {
+          uri: idFrontUri,
+          name: "id_front.jpg",
+          type: "image/jpeg",
+        } as any);
+        form.append("idBack", {
+          uri: idBackUri,
+          name: "id_back.jpg",
+          type: "image/jpeg",
+        } as any);
+        form.append("selfie", {
+          uri: selfieUri,
+          name: "selfie.jpg",
+          type: "image/jpeg",
+        } as any);
+
+        console.log("Starting nurse registration...");
+        console.log("Form data:", {
           fullName,
           email,
           phoneNumber,
-          password,
-          role: "NURSE",
-          status: "pending",
-          verification: { idFrontUri, idBackUri, selfieUri },
-        };
-
-        // Save user to storage
-        await authStorage.saveUser(user);
-
-        // Set current user (without password)
-        await authStorage.setCurrentUser({
-          fullName,
-          email,
-          phoneNumber,
-          role: "NURSE",
-          status: "pending",
-          verification: { idFrontUri, idBackUri, selfieUri },
+          idFrontUri: !!idFrontUri,
+          idBackUri: !!idBackUri,
+          selfieUri: !!selfieUri,
         });
 
-        // Set logged in status
+        const resp = await registerNurse(form);
+        console.log("Nurse registration response:", resp);
+        const { user: apiUser, token, refreshToken } = resp.data;
+
+        await authStorage.setTokens(token, refreshToken);
+        await authStorage.setCurrentUser({
+          fullName: apiUser.fullName,
+          email: apiUser.email,
+          phoneNumber: apiUser.phoneNumber,
+          userType: apiUser.userType || "nurse",
+          status: apiUser.status,
+        });
         await authStorage.setLoggedIn();
 
         Toast.show({
@@ -195,24 +228,13 @@ export default function NurseSignUp() {
           text1: "Submitted",
           text2: "Your account is pending verification",
         });
-
-        console.log("Nurse sign up complete");
         router.replace("/(tabs)");
       } catch (error) {
         console.error("Error completing nurse signup:", error);
-        if (error instanceof Error) {
-          Toast.show({
-            type: "error",
-            text1: "Error",
-            text2: error.message,
-          });
-        } else {
-          Toast.show({
-            type: "error",
-            text1: "Error",
-            text2: "Error completing signup. Please try again.",
-          });
-        }
+        const msg = error instanceof Error ? error.message : "Error completing signup. Please try again.";
+        Toast.show({ type: "error", text1: "Error", text2: msg });
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -290,6 +312,7 @@ export default function NurseSignUp() {
         <TouchableOpacity
           className="bg-[#4461F2] rounded-[28px] h-14 justify-center items-center shadow-lg mb-8"
           onPress={handleContinue}
+          disabled={isLoading}
         >
           <Text className="text-lg font-semibold text-white">
             {step === "review" ? "Submit" : "Continue"}
@@ -310,6 +333,12 @@ export default function NurseSignUp() {
           </View>
         )}
       </ScrollView>
+
+      <LoadingScreen
+        visible={isLoading}
+        message="Creating your account..."
+        subtitle="Uploading documents and processing registration"
+      />
     </KeyboardAvoidingView>
   );
 }

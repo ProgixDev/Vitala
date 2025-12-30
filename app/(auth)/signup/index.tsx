@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 
+import { registerPatient, verifyOtp } from "@/utils/api";
 import { authStorage } from "@/utils/auth";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
@@ -16,25 +17,27 @@ import InfoStep from "./components/InfoStep";
 import MedicalProfileStep from "./components/MedicalProfileStep";
 import OTPStep from "./components/OTPStep";
 import PasswordStep from "./components/PasswordStep";
+import LoadingScreen from "@/components/LoadingScreen";
 
 type Step = "info" | "password" | "medical" | "otp";
 
 export default function SignUp() {
   const [step, setStep] = useState<Step>("info");
+  const [isLoading, setIsLoading] = useState(false);
 
   // Step 1: Info
-  const [fullName, setFullName] = useState("testing test");
-  const [email, setEmail] = useState("test@project.dev");
-  const [phoneNumber, setPhoneNumber] = useState("0600000000");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
 
   // Step 2: Password
-  const [newPassword, setNewPassword] = useState("12345678");
-  const [confirmPassword, setConfirmPassword] = useState("12345678");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
 
   // Step 3: Medical Profile
   const [gender, setGender] = useState<"male" | "female" | "other" | null>(
-    null,
+    null
   );
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [bloodType, setBloodType] = useState<
@@ -46,7 +49,7 @@ export default function SignUp() {
   const [weight, setWeight] = useState("");
 
   // Step 4: OTP
-  const [otp, setOtp] = useState(["1", "2", "3", "4"]);
+  const [otp, setOtp] = useState(["", "", "", ""]);
   const [timer, setTimer] = useState(59);
 
   useEffect(() => {
@@ -158,15 +161,13 @@ export default function SignUp() {
 
       setStep("medical");
     } else if (step === "medical") {
-      // Medical profile is optional, so we can continue without validation
-      setTimer(59);
-      setStep("otp");
-    } else if (step === "otp") {
+      // Submit registration to backend, then go to OTP
       try {
-        // Create medical profile
+        setIsLoading(true);
+        
         const medicalProfile: MedicalProfile = {
           gender,
-          dateOfBirth: dateOfBirth || null,
+          dateOfBirth: dateOfBirth ? new Date(dateOfBirth.split('/').reverse().join('-')).toISOString() : null,
           bloodType,
           chronicIllnesses,
           allergies,
@@ -174,48 +175,54 @@ export default function SignUp() {
           weight: weight ? parseFloat(weight) : null,
         };
 
-        // Create user object
-        const user: User = {
+        const resp = await registerPatient({
           fullName,
           email,
           phoneNumber,
           password: newPassword,
-          userType: "patient", // Default to patient for new signups
-          medicalProfile,
-        };
-
-        // Save user to storage
-        await authStorage.saveUser(user);
-
-        // Set current user (without password)
-        await authStorage.setCurrentUser({
-          fullName,
-          email,
-          phoneNumber,
-          userType: "patient", // Default to patient for new signups
           medicalProfile,
         });
 
-        // Set logged in status
+        const { user: apiUser, token, refreshToken } = resp.data;
+        await authStorage.setTokens(token, refreshToken);
+        await authStorage.setCurrentUser({
+          fullName: apiUser.fullName,
+          email: apiUser.email,
+          phoneNumber: apiUser.phoneNumber,
+          userType: apiUser.userType || "patient",
+          status: apiUser.status,
+        });
         await authStorage.setLoggedIn();
 
-        console.log("Sign up complete");
+        if (resp.data.requiresOTP) {
+          setTimer(59);
+          setStep("otp");
+        } else {
+          // Skip OTP, navigate to main app
+          router.replace("/(tabs)");
+        }
+      } catch (err) {
+        console.error("Registration error:", err);
+        Toast.show({ type: "error", text1: "Error", text2: String(err) });
+      } finally {
+        setIsLoading(false);
+      }
+    } else if (step === "otp") {
+      try {
+        setIsLoading(true);
+        
+        const { accessToken } = await authStorage.getTokens();
+        const code = otp.join("");
+        if (!accessToken) throw new Error("Missing token for OTP verify");
+        await verifyOtp(accessToken, code);
+        Toast.show({ type: "success", text1: "Verified", text2: "OTP verified" });
         router.replace("/(tabs)");
       } catch (error) {
         console.error("Error completing signup:", error);
-        if (error instanceof Error) {
-          Toast.show({
-            type: "error",
-            text1: "Error",
-            text2: error.message,
-          });
-        } else {
-          Toast.show({
-            type: "error",
-            text1: "Error",
-            text2: "Error completing signup. Please try again.",
-          });
-        }
+        const msg = error instanceof Error ? error.message : "Error completing signup. Please try again.";
+        Toast.show({ type: "error", text1: "Error", text2: msg });
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -293,6 +300,7 @@ export default function SignUp() {
           <TouchableOpacity
             className="bg-[#4461F2] rounded-[28px] h-14 justify-center items-center shadow-lg mb-8"
             onPress={handleContinue}
+            disabled={isLoading}
           >
             <Text className="text-lg font-semibold text-white">
               {step === "otp" ? "Verify" : "Continue"}
@@ -314,6 +322,24 @@ export default function SignUp() {
           </View>
         )}
       </ScrollView>
+
+      <LoadingScreen
+        visible={isLoading}
+        message={
+          step === "medical"
+            ? "Creating your account..."
+            : step === "otp"
+            ? "Verifying OTP..."
+            : "Loading..."
+        }
+        subtitle={
+          step === "medical"
+            ? "Setting up your medical profile"
+            : step === "otp"
+            ? "Please wait while we verify your code"
+            : ""
+        }
+      />
     </KeyboardAvoidingView>
   );
 }

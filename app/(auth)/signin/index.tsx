@@ -11,14 +11,17 @@ import {
 } from "react-native";
 
 import PasswordInput from "@/components/PasswordInput";
+import { login as apiLogin } from "@/utils/api";
 import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
+import LoadingScreen from "@/components/LoadingScreen";
 
 export default function SignIn() {
-  const [email, setEmail] = useState("test@project.dev");
-  const [password, setPassword] = useState("12345678");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   // Handle back button - prevent going back from signin page
   useEffect(() => {
@@ -27,7 +30,7 @@ export default function SignIn() {
       () => {
         // Return true to prevent default back behavior (exit app)
         return true;
-      },
+      }
     );
 
     return () => backHandler.remove();
@@ -45,9 +48,44 @@ export default function SignIn() {
     }
 
     try {
-      // Validate credentials
-      const user = await authStorage.validateCredentials(email, password);
+      setIsLoading(true);
+      
+      // Try backend login first
+      try {
+        const resp = await apiLogin(email, password);
+        const { user: apiUser, token, refreshToken } = resp.data;
 
+        // Store tokens
+        await authStorage.setTokens(token, refreshToken);
+
+        // Set current user
+        const currentUser: CurrentUser = {
+          fullName: apiUser.fullName,
+          email: apiUser.email,
+          phoneNumber: apiUser.phoneNumber,
+          userType: apiUser.userType || "patient",
+          status: apiUser.status,
+          verification: apiUser.verification,
+        };
+        await authStorage.setCurrentUser(currentUser);
+        await authStorage.setLoggedIn();
+
+        console.log("Sign in successful (API)");
+        if (
+          currentUser.userType === "nurse" &&
+          currentUser.status === "pending"
+        ) {
+          router.replace("/profile/pending");
+        } else {
+          router.replace("/(tabs)");
+        }
+        return;
+      } catch (apiErr) {
+        console.warn("API login failed, falling back to local:", apiErr);
+      }
+
+      // Fallback: validate local credentials (dev/demo mode)
+      const user = await authStorage.validateCredentials(email, password);
       if (!user) {
         Toast.show({
           type: "error",
@@ -57,7 +95,6 @@ export default function SignIn() {
         return;
       }
 
-      // Set current user (without password)
       const currentUser: CurrentUser = {
         fullName: user.fullName,
         email: user.email,
@@ -67,8 +104,6 @@ export default function SignIn() {
         verification: user.verification,
       };
       await authStorage.setCurrentUser(currentUser);
-
-      // Set logged in status
       await authStorage.setLoggedIn();
 
       console.log("Sign in successful");
@@ -87,12 +122,40 @@ export default function SignIn() {
         text1: "Error",
         text2: "Error signing in. Please try again.",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleForgotPassword = () => {
-    // Navigate to forgot password
-    console.log("Forgot password");
+    // Use entered email to request reset
+    if (!email) {
+      Toast.show({
+        type: "error",
+        text1: "Forgot Password",
+        text2: "Please enter your email above first",
+      });
+      return;
+    }
+    apiLogin // noop to keep imports used
+    ;(async () => {
+      try {
+        const { forgotPassword } = await import("@/utils/api");
+        await forgotPassword(email);
+        Toast.show({
+          type: "success",
+          text1: "Email sent",
+          text2: "Check your inbox for the reset link",
+        });
+      } catch (err) {
+        console.error("Forgot password error:", err);
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Could not send reset email",
+        });
+      }
+    })();
   };
 
   const handleCreateAccount = () => {
@@ -160,6 +223,7 @@ export default function SignIn() {
         <TouchableOpacity
           className="bg-[#4461F2] rounded-[28px] h-14 justify-center items-center shadow-lg mb-8"
           onPress={handleContinue}
+          disabled={isLoading}
         >
           <Text className="text-lg font-semibold text-white">Continue</Text>
         </TouchableOpacity>
@@ -176,6 +240,12 @@ export default function SignIn() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <LoadingScreen
+        visible={isLoading}
+        message="Signing you in..."
+        subtitle="Please wait while we authenticate you"
+      />
     </KeyboardAvoidingView>
   );
 }

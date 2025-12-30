@@ -1,5 +1,5 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 import React, { useEffect, useState } from "react";
 import {
   BackHandler,
@@ -31,7 +31,7 @@ const ONBOARDING_COMPLETED_KEY = "onboarding_completed";
  */
 export const isOnboardingCompleted = async (): Promise<boolean> => {
   try {
-    const value = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
+    const value = await SecureStore.getItemAsync(ONBOARDING_COMPLETED_KEY);
     return value === "true";
   } catch (error) {
     console.error("Error checking onboarding status:", error);
@@ -44,7 +44,7 @@ export const isOnboardingCompleted = async (): Promise<boolean> => {
  */
 export const markOnboardingCompleted = async (): Promise<void> => {
   try {
-    await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, "true");
+    await SecureStore.setItemAsync(ONBOARDING_COMPLETED_KEY, "true");
   } catch (error) {
     console.error("Error marking onboarding as completed:", error);
   }
@@ -55,7 +55,7 @@ export const markOnboardingCompleted = async (): Promise<void> => {
  */
 export const resetOnboardingStatus = async (): Promise<void> => {
   try {
-    await AsyncStorage.removeItem(ONBOARDING_COMPLETED_KEY);
+    await SecureStore.deleteItemAsync(ONBOARDING_COMPLETED_KEY);
   } catch (error) {
     console.error("Error resetting onboarding status:", error);
   }
@@ -251,7 +251,7 @@ export const Onboarding = ({ onComplete, onLogin }: OnboardingProps) => {
       () => {
         // Return false to allow default back behavior
         return false;
-      },
+      }
     );
 
     return () => backHandler.remove();
@@ -264,7 +264,7 @@ export const Onboarding = ({ onComplete, onLogin }: OnboardingProps) => {
       () => {
         // Return false to allow default back behavior
         return false;
-      },
+      }
     );
 
     return () => backHandler.remove();

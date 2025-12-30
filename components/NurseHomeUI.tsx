@@ -1,18 +1,17 @@
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { appointmentStorage } from "@/utils/appointments";
+import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
-  ActivityIndicator,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { appointmentStorage } from "@/utils/appointments";
-import { authStorage } from "@/utils/auth";
-import { router } from "expo-router";
 import Toast from "react-native-toast-message";
 
 type RequestItem = {
@@ -80,7 +79,7 @@ export default function NurseHomeUI() {
             serviceName: appt.serviceName,
             userEmail: appt.userEmail,
           };
-        },
+        }
       );
 
       setUpcomingAppointments(appointmentItems);
@@ -143,7 +142,7 @@ export default function NurseHomeUI() {
     try {
       const allAppointments = await appointmentStorage.getAppointments();
       const appointmentIndex = allAppointments.findIndex(
-        (appt) => appt.id === appointmentId,
+        (appt) => appt.id === appointmentId
       );
 
       if (appointmentIndex !== -1) {
@@ -174,13 +173,12 @@ export default function NurseHomeUI() {
 
       const users = await authStorage.getUsers();
       const userIndex = users.findIndex(
-        (user) => user.email === currentUser.email,
+        (user) => user.email === currentUser.email
       );
 
       if (userIndex !== -1) {
         users[userIndex].status = "verified";
-        // Manually save updated users array
-        await AsyncStorage.setItem("users", JSON.stringify(users));
+        // Removed AsyncStorage - users are in MongoDB
 
         await authStorage.setCurrentUser({
           ...currentUser,
