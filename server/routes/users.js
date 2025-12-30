@@ -8,6 +8,7 @@ const {
   changePassword,
   addLocation,
   getLocations,
+  updateLocation,
   deleteLocation,
   updateSettings,
   deleteAccount,
@@ -28,6 +29,8 @@ router.post(
 router.put("/change-password", changePassword);
 
 router.route("/locations").get(getLocations).post(addLocation);
+
+router.put("/locations/:locationId", updateLocation);
 
 router.delete("/locations/:locationId", deleteLocation);
 

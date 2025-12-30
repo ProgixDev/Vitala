@@ -141,6 +141,43 @@ export async function updateProfile(token: string, data: { fullName?: string; ph
   });
 }
 
+// Location management
+export async function getLocations(token: string) {
+  return apiFetch<{ success: boolean; data: any[] }>("/api/users/locations", { token });
+}
+
+export async function addLocation(token: string, data: { label: string; address: string; coordinates?: { latitude: number; longitude: number }; isDefault?: boolean }) {
+  return apiFetch<{ success: boolean; message: string; data: any[] }>("/api/users/locations", {
+    method: "POST",
+    token,
+    body: data,
+  });
+}
+
+export async function updateLocation(token: string, locationId: string, data: { label?: string; address?: string; coordinates?: { latitude: number; longitude: number }; isDefault?: boolean }) {
+  return apiFetch<{ success: boolean; message: string; data: any }>(`/api/users/locations/${locationId}`, {
+    method: "PUT",
+    token,
+    body: data,
+  });
+}
+
+export async function deleteLocation(token: string, locationId: string) {
+  return apiFetch<{ success: boolean; message: string }>(`/api/users/locations/${locationId}`, {
+    method: "DELETE",
+    token,
+  });
+}
+
+// Geocoding
+export async function geocodeAddress(address: string) {
+  return apiFetch<{ success: boolean; data: { coordinates: { latitude: number; longitude: number }; formattedAddress: string } }>(`/api/geocoding/geocode?address=${encodeURIComponent(address)}`);
+}
+
+export async function reverseGeocode(latitude: number, longitude: number) {
+  return apiFetch<{ success: boolean; data: { address: string; coordinates: { latitude: number; longitude: number } } }>(`/api/geocoding/reverse?lat=${latitude}&lng=${longitude}`);
+}
+
 // Register nurse with file uploads
 export async function registerNurse(form: FormData) {
   const url = `${API_BASE_URL}/api/auth/register/nurse`;
@@ -183,5 +220,11 @@ export const api = {
   getProfile,
   updateProfile,
   registerNurse,
+  getLocations,
+  addLocation,
+  updateLocation,
+  deleteLocation,
+  geocodeAddress,
+  reverseGeocode,
   baseUrl: API_BASE_URL,
 };

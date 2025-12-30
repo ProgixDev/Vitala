@@ -1,7 +1,9 @@
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { api } from "@/utils/api";
 import { appointmentStorage } from "@/utils/appointments";
 import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -147,7 +149,13 @@ export default function BookingComponent({
   }, [onBack]);
 
   // Refresh user data when screen comes into focus (e.g., when returning from map page)
-  // Note: User data is now cached in useCurrentUser hook, no need to refresh on focus
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshUser();
+    }, [refreshUser])
+  );
+
+  // Handle back button/swipe
   // useFocusEffect(
   //   useCallback(() => {
   //     refreshUser();
@@ -282,8 +290,29 @@ export default function BookingComponent({
 
   const handleDeleteLocation = async (index: number) => {
     try {
-      await authStorage.removeUserLocation(index);
+      const { accessToken } = await authStorage.getTokens();
+      if (!accessToken) {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Not authenticated",
+        });
+        return;
+      }
+
+      if (!currentUser?.locations || !currentUser.locations[index]) {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Location not found",
+        });
+        return;
+      }
+
+      const locationId = (currentUser.locations[index] as any)._id;
+      await api.deleteLocation(accessToken, locationId);
       await refreshUser();
+
       // Adjust selectedLocation if necessary
       if (selectedLocation >= locationOptions.length) {
         setSelectedLocation(0);

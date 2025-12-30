@@ -1,9 +1,11 @@
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { api } from "@/utils/api";
 import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   BackHandler,
   Modal,
@@ -31,21 +33,43 @@ export default function App() {
   const [selectedLocationIndex, setSelectedLocationIndex] = useState<
     number | null
   >(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(true);
 
   useEffect(() => {
     async function getCurrentLocation() {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission Denied", "Location permission is required");
-        return;
-      }
+      try {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert("Permission Denied", "Location permission is required");
+          setIsLoadingLocation(false);
+          return;
+        }
 
-      let location = await Location.getCurrentPositionAsync({});
-      setUserLocation(location);
+        let location = await Location.getCurrentPositionAsync({});
+        setUserLocation(location);
+        setIsLoadingLocation(false);
+      } catch (error) {
+        console.error("Error getting location:", error);
+        setIsLoadingLocation(false);
+        Alert.alert("Error", "Failed to get your location");
+      }
     }
 
     getCurrentLocation();
   }, []);
+
+  // Animate to user location when it's loaded
+  useEffect(() => {
+    if (userLocation && mapRef.current && !newLocation) {
+      const region: Region = {
+        latitude: userLocation.coords.latitude,
+        longitude: userLocation.coords.longitude,
+        latitudeDelta: 0.1,
+        longitudeDelta: 0.1,
+      };
+      mapRef.current.animateToRegion(region, 1000);
+    }
+  }, [userLocation]);
 
   // Handle back button - go back to previous screen (booking flow)
   useEffect(() => {
@@ -94,13 +118,22 @@ export default function App() {
     if (!newLocation) return;
 
     try {
-      const locationData: UserLocation = {
-        coordinate: newLocation,
-        address: address.trim(),
+      const { accessToken } = await authStorage.getTokens();
+      if (!accessToken) {
+        Alert.alert("Error", "Not authenticated");
+        return;
+      }
+
+      const locationData = {
         label: label.trim(),
+        address: address.trim(),
+        coordinates: {
+          latitude: newLocation.latitude,
+          longitude: newLocation.longitude,
+        },
       };
 
-      await authStorage.addUserLocation(locationData);
+      await api.addLocation(accessToken, locationData);
       await refreshUser();
 
       Alert.alert("Success", "Location saved successfully");
@@ -121,7 +154,16 @@ export default function App() {
   };
 
   const handleCenterOnCurrentLocation = () => {
-    if (!userLocation || !mapRef.current) return;
+    if (isLoadingLocation) {
+      Alert.alert("Loading", "Getting your location...");
+      return;
+    }
+    
+    if (!userLocation || !mapRef.current) {
+      Alert.alert("Error", "Unable to get your current location");
+      return;
+    }
+    
     const region: Region = {
       latitude: userLocation.coords.latitude,
       longitude: userLocation.coords.longitude,
@@ -152,8 +194,8 @@ export default function App() {
         toolbarEnabled={false}
         style={styles.map}
         initialRegion={{
-          latitude: userLocation?.coords.latitude || 0,
-          longitude: userLocation?.coords.longitude || 0,
+          latitude: userLocation?.coords.latitude || 40.7128, // Default to New York
+          longitude: userLocation?.coords.longitude || -74.0060,
           latitudeDelta: 0.1,
           longitudeDelta: 0.1,
         }}
@@ -163,7 +205,7 @@ export default function App() {
           currentUser?.locations?.map((location, index) => (
             <Marker
               key={index}
-              coordinate={location.coordinate}
+              coordinate={location.coordinates}
               title={location.label}
               description={location.address}
               pinColor={selectedLocationIndex === index ? "#4461F2" : "red"}
@@ -206,7 +248,7 @@ export default function App() {
                       : "bg-gray-50 border-gray-200"
                   }`}
                   onPress={() =>
-                    handleCenterOnLocation(location.coordinate, index)
+                    handleCenterOnLocation(location.coordinates, index)
                   }
                 >
                   <View className="flex-row items-center justify-center w-full">
@@ -215,8 +257,8 @@ export default function App() {
                         {location.label}
                       </Text>
                       <Text className="text-xs text-[#9E9E9E]">
-                        {location.coordinate.latitude.toFixed(6)},{" "}
-                        {location.coordinate.longitude.toFixed(6)}
+                        {location.coordinates.latitude.toFixed(6)},{" "}
+                        {location.coordinates.longitude.toFixed(6)}
                       </Text>
                     </View>
                     <View className="justify-center ml-2">
@@ -248,8 +290,13 @@ export default function App() {
             <TouchableOpacity
               onPress={handleCenterOnCurrentLocation}
               className="w-15 bg-gray-200 py-4 rounded-full items-center justify-center"
+              disabled={isLoadingLocation}
             >
-              <Ionicons name="locate" size={24} color="#4461F2" />
+              {isLoadingLocation ? (
+                <ActivityIndicator size="small" color="#4461F2" />
+              ) : (
+                <Ionicons name="locate" size={24} color="#4461F2" />
+              )}
             </TouchableOpacity>
           </View>
         ) : (

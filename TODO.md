@@ -29,12 +29,12 @@
 - [x] User role management
 
 ## Location Management
-- [ ] Save user location (coordinate, address, label)
-- [ ] Get user locations
-- [ ] Update location
-- [ ] Delete location
-- [ ] Geocoding (address to coordinates)
-- [ ] Reverse geocoding (coordinates to address)
+- [x] Save user location (coordinate, address, label)
+- [x] Get user locations
+- [x] Update location
+- [x] Delete location
+- [x] Geocoding (address to coordinates)
+- [x] Reverse geocoding (coordinates to address)
 
 ## Appointments
 - [ ] Create appointment (normal booking)

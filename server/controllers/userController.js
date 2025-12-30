@@ -167,11 +167,42 @@ exports.changePassword = async (req, res) => {
 // @desc    Add user location
 // @route   POST /api/users/locations
 // @access  Private
+const geocoder = require('../config/geocoding');
+
+// @desc    Add user location
+// @route   POST /api/users/locations
+// @access  Private
 exports.addLocation = async (req, res) => {
   try {
     const { label, address, coordinates, isDefault } = req.body;
 
+    if (!address && !coordinates) {
+      return res.status(400).json({
+        success: false,
+        message: 'Either address or coordinates must be provided',
+      });
+    }
+
     const user = await User.findById(req.user._id);
+
+    let finalCoordinates = coordinates;
+    let finalAddress = address;
+
+    // If coordinates not provided but address is, geocode the address
+    if (!coordinates && address) {
+      try {
+        const geocodeResult = await geocoder.geocode(address);
+        if (geocodeResult && geocodeResult.length > 0) {
+          finalCoordinates = {
+            latitude: parseFloat(geocodeResult[0].latitude),
+            longitude: parseFloat(geocodeResult[0].longitude),
+          };
+          finalAddress = geocodeResult[0].formattedAddress || address;
+        }
+      } catch (geocodeError) {
+        console.warn('Geocoding failed, proceeding without coordinates:', geocodeError.message);
+      }
+    }
 
     // If this is set as default, unset others
     if (isDefault) {
@@ -180,8 +211,8 @@ exports.addLocation = async (req, res) => {
 
     user.locations.push({
       label,
-      address,
-      coordinates,
+      address: finalAddress,
+      coordinates: finalCoordinates,
       isDefault,
     });
 
@@ -242,6 +273,52 @@ exports.deleteLocation = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error deleting location',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Update location
+// @route   PUT /api/users/locations/:locationId
+// @access  Private
+exports.updateLocation = async (req, res) => {
+  try {
+    const { label, address, coordinates, isDefault } = req.body;
+    const user = await User.findById(req.user._id);
+
+    const locationIndex = user.locations.findIndex(
+      loc => loc._id.toString() === req.params.locationId
+    );
+
+    if (locationIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Location not found',
+      });
+    }
+
+    // If this is set as default, unset others
+    if (isDefault) {
+      user.locations.forEach(loc => loc.isDefault = false);
+    }
+
+    // Update the location
+    if (label !== undefined) user.locations[locationIndex].label = label;
+    if (address !== undefined) user.locations[locationIndex].address = address;
+    if (coordinates !== undefined) user.locations[locationIndex].coordinates = coordinates;
+    if (isDefault !== undefined) user.locations[locationIndex].isDefault = isDefault;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Location updated successfully',
+      data: user.locations[locationIndex],
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error updating location',
       error: error.message,
     });
   }

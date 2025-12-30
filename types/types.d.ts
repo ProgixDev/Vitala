@@ -1,5 +1,3 @@
-import { LatLng } from "react-native-maps";
-
 declare global {
   type Payment = {
     id: string;
@@ -64,13 +62,16 @@ declare global {
   };
 
   type UserLocation = {
-    coordinate: LatLng;
+    coordinates: {
+      latitude: number;
+      longitude: number;
+    };
     address: string;
     label: string;
+    isDefault?: boolean;
   };
 
   type CurrentUser = Omit<User, "password">;
 }
 
 export {};
-
