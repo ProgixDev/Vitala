@@ -10,6 +10,7 @@ const {
   getLocations,
   updateLocation,
   deleteLocation,
+  getSettings,
   updateSettings,
   deleteAccount,
 } = require("../controllers/userController");
@@ -23,7 +24,7 @@ router.put("/profile", updateProfile);
 router.put("/medical-profile", updateMedicalProfile);
 router.post(
   "/profile-picture",
-  upload.single("profilePicture"),
+  upload.uploadProfilePicture.single("profilePicture"),
   uploadProfilePicture
 );
 router.put("/change-password", changePassword);
@@ -36,6 +37,7 @@ router.delete("/locations/:locationId", deleteLocation);
 
 router.delete("/account", deleteAccount);
 
+router.get('/settings', getSettings);
 router.put('/settings', updateSettings);
 
 module.exports = router;

@@ -1,3 +1,4 @@
+import LoadingScreen from "@/components/LoadingScreen";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -8,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 
 interface Notification {
   id: string;
@@ -17,49 +19,6 @@ interface Notification {
   time: string;
   read: boolean;
 }
-
-const mockNotifications: Notification[] = [
-  {
-    id: "1",
-    type: "appointment",
-    title: "Appointment Confirmed",
-    message: "Your appointment has been confirmed for tomorrow at 10:00 AM",
-    time: "2 hours ago",
-    read: false,
-  },
-  {
-    id: "2",
-    type: "reminder",
-    title: "Upcoming Appointment",
-    message: "Reminder: You have an appointment in 24 hours",
-    time: "5 hours ago",
-    read: false,
-  },
-  {
-    id: "3",
-    type: "system",
-    title: "Profile Updated",
-    message: "Your profile information has been successfully updated",
-    time: "1 day ago",
-    read: true,
-  },
-  {
-    id: "4",
-    type: "emergency",
-    title: "Emergency Alert",
-    message: "Emergency services have been notified",
-    time: "2 days ago",
-    read: true,
-  },
-  {
-    id: "5",
-    type: "appointment",
-    title: "Appointment Cancelled",
-    message: "Your appointment scheduled for Dec 20 has been cancelled",
-    time: "3 days ago",
-    read: true,
-  },
-];
 
 const getNotificationIcon = (type: string) => {
   switch (type) {
@@ -143,8 +102,74 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
 };
 
 export default function Notifications() {
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "unread">("all");
+
+  // Fetch notifications on component mount
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        // For now, use mock data since backend is not implemented
+        // TODO: Replace with real API call when backend is ready
+        const mockNotifications: Notification[] = [
+          {
+            id: "1",
+            type: "appointment",
+            title: "Appointment Confirmed",
+            message:
+              "Your appointment has been confirmed for tomorrow at 10:00 AM",
+            time: "2 hours ago",
+            read: false,
+          },
+          {
+            id: "2",
+            type: "reminder",
+            title: "Upcoming Appointment",
+            message: "Reminder: You have an appointment in 24 hours",
+            time: "5 hours ago",
+            read: false,
+          },
+          {
+            id: "3",
+            type: "system",
+            title: "Profile Updated",
+            message: "Your profile information has been successfully updated",
+            time: "1 day ago",
+            read: true,
+          },
+          {
+            id: "4",
+            type: "emergency",
+            title: "Emergency Alert",
+            message: "Emergency services have been notified",
+            time: "2 days ago",
+            read: true,
+          },
+          {
+            id: "5",
+            type: "appointment",
+            title: "Appointment Cancelled",
+            message: "Your appointment scheduled for Dec 20 has been cancelled",
+            time: "3 days ago",
+            read: true,
+          },
+        ];
+        setNotifications(mockNotifications);
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Failed to load notifications",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotifications();
+  }, []);
 
   // Handle back button - go back to profile page
   useEffect(() => {
@@ -153,134 +178,181 @@ export default function Notifications() {
       () => {
         router.replace("/(tabs)/profile");
         return true;
-      },
+      }
     );
 
     return () => backHandler.remove();
   }, []);
 
   const filteredNotifications = notifications.filter((notif) =>
-    filter === "all" ? true : !notif.read,
+    filter === "all" ? true : !notif.read
   );
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const handleNotificationPress = (id: string) => {
+  const handleNotificationPress = async (id: string) => {
+    // Mark as read
     setNotifications((prev) =>
-      prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif)),
+      prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif))
     );
+    // TODO: Call API when backend is ready
+    // try {
+    //   await markNotificationAsRead(currentUser.token, id);
+    // } catch (error) {
+    //   console.error("Error marking notification as read:", error);
+    // }
   };
 
-  const handleMarkAllAsRead = () => {
+  const handleMarkAllAsRead = async () => {
     setNotifications((prev) => prev.map((notif) => ({ ...notif, read: true })));
+    // TODO: Call API when backend is ready
+    // try {
+    //   await markAllNotificationsAsRead(currentUser.token);
+    //   Toast.show({
+    //     type: "success",
+    //     text1: "Success",
+    //     text2: "All notifications marked as read",
+    //   });
+    // } catch (error) {
+    //   console.error("Error marking all notifications as read:", error);
+    //   Toast.show({
+    //     type: "error",
+    //     text1: "Error",
+    //     text2: "Failed to mark notifications as read",
+    //   });
+    // }
   };
 
-  const handleClearAll = () => {
+  const handleClearAll = async () => {
     setNotifications([]);
+    // TODO: Call API when backend is ready
+    // try {
+    //   await clearAllNotifications(currentUser.token);
+    //   Toast.show({
+    //     type: "success",
+    //     text1: "Success",
+    //     text2: "All notifications cleared",
+    //   });
+    // } catch (error) {
+    //   console.error("Error clearing notifications:", error);
+    //   Toast.show({
+    //     type: "error",
+    //     text1: "Error",
+    //     text2: "Failed to clear notifications",
+    //   });
+    // }
   };
 
   return (
     <View className="flex-1 bg-[#F9FAFB]">
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-4 pt-[60px] pb-4 bg-white border-b border-[#F3F4F6]">
-        <TouchableOpacity
-          className="w-10 h-10 items-center justify-center"
-          onPress={() => router.replace("/(tabs)/profile")}
-        >
-          <Ionicons name="arrow-back" size={24} color="#1F2937" />
-        </TouchableOpacity>
-        <Text className="text-lg font-semibold text-[#1F2937]">
-          Notifications
-        </Text>
-        <TouchableOpacity
-          className="w-10 h-10 items-center justify-center"
-          onPress={() => console.log("More options")}
-        >
-          <Ionicons name="ellipsis-vertical" size={24} color="#1F2937" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Filter and Actions */}
-      <View className="bg-white px-6 py-4 border-b border-[#F3F4F6]">
-        <View className="flex-row gap-3 mb-3">
-          <TouchableOpacity
-            className={`px-4 py-2 rounded-full ${
-              filter === "all" ? "bg-[#4461F2]" : "bg-[#F3F4F6]"
-            }`}
-            onPress={() => setFilter("all")}
-          >
-            <Text
-              className={`text-sm font-medium ${
-                filter === "all" ? "text-white" : "text-[#6B7280]"
-              }`}
+      <LoadingScreen visible={loading} />
+      {!loading && (
+        <>
+          {/* Header */}
+          <View className="flex-row items-center justify-between px-4 pt-[60px] pb-4 bg-white border-b border-[#F3F4F6]">
+            <TouchableOpacity
+              className="w-10 h-10 items-center justify-center"
+              onPress={() => router.replace("/(tabs)/profile")}
             >
-              All ({notifications.length})
+              <Ionicons name="arrow-back" size={24} color="#1F2937" />
+            </TouchableOpacity>
+            <Text className="text-lg font-semibold text-[#1F2937]">
+              Notifications
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className={`px-4 py-2 rounded-full ${
-              filter === "unread" ? "bg-[#4461F2]" : "bg-[#F3F4F6]"
-            }`}
-            onPress={() => setFilter("unread")}
-          >
-            <Text
-              className={`text-sm font-medium ${
-                filter === "unread" ? "text-white" : "text-[#6B7280]"
-              }`}
+            <TouchableOpacity
+              className="w-10 h-10 items-center justify-center"
+              onPress={() => console.log("More options")}
             >
-              Unread ({unreadCount})
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {notifications.length > 0 && (
-          <View className="flex-row gap-4">
-            {unreadCount > 0 && (
-              <TouchableOpacity className="py-1" onPress={handleMarkAllAsRead}>
-                <Text className="text-[13px] font-medium text-[#4461F2]">
-                  Mark all as read
-                </Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity className="py-1" onPress={handleClearAll}>
-              <Text className="text-[13px] font-medium text-[#EF4444]">
-                Clear all
-              </Text>
+              <Ionicons name="ellipsis-vertical" size={24} color="#1F2937" />
             </TouchableOpacity>
           </View>
-        )}
-      </View>
 
-      {/* Notifications List */}
-      {filteredNotifications.length === 0 ? (
-        <View className="flex-1 items-center justify-center px-12">
-          <Ionicons
-            name="notifications-off-outline"
-            size={64}
-            color="#D1D5DB"
-          />
-          <Text className="text-xl font-semibold text-[#1F2937] mt-4 mb-2">
-            No Notifications
-          </Text>
-          <Text className="text-sm text-[#6B7280] text-center leading-5">
-            {filter === "unread"
-              ? "You have no unread notifications"
-              : "You're all caught up!"}
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredNotifications}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <NotificationItem
-              notification={item}
-              onPress={() => handleNotificationPress(item.id)}
+          {/* Filter and Actions */}
+          <View className="bg-white px-6 py-4 border-b border-[#F3F4F6]">
+            <View className="flex-row gap-3 mb-3">
+              <TouchableOpacity
+                className={`px-4 py-2 rounded-full ${
+                  filter === "all" ? "bg-[#4461F2]" : "bg-[#F3F4F6]"
+                }`}
+                onPress={() => setFilter("all")}
+              >
+                <Text
+                  className={`text-sm font-medium ${
+                    filter === "all" ? "text-white" : "text-[#6B7280]"
+                  }`}
+                >
+                  All ({notifications.length})
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`px-4 py-2 rounded-full ${
+                  filter === "unread" ? "bg-[#4461F2]" : "bg-[#F3F4F6]"
+                }`}
+                onPress={() => setFilter("unread")}
+              >
+                <Text
+                  className={`text-sm font-medium ${
+                    filter === "unread" ? "text-white" : "text-[#6B7280]"
+                  }`}
+                >
+                  Unread ({unreadCount})
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {notifications.length > 0 && (
+              <View className="flex-row gap-4">
+                {unreadCount > 0 && (
+                  <TouchableOpacity
+                    className="py-1"
+                    onPress={handleMarkAllAsRead}
+                  >
+                    <Text className="text-[13px] font-medium text-[#4461F2]">
+                      Mark all as read
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity className="py-1" onPress={handleClearAll}>
+                  <Text className="text-[13px] font-medium text-[#EF4444]">
+                    Clear all
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          {/* Notifications List */}
+          {filteredNotifications.length === 0 ? (
+            <View className="flex-1 items-center justify-center px-12">
+              <Ionicons
+                name="notifications-off-outline"
+                size={64}
+                color="#D1D5DB"
+              />
+              <Text className="text-xl font-semibold text-[#1F2937] mt-4 mb-2">
+                No Notifications
+              </Text>
+              <Text className="text-sm text-[#6B7280] text-center leading-5">
+                {filter === "unread"
+                  ? "You have no unread notifications"
+                  : "You're all caught up!"}
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={filteredNotifications}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <NotificationItem
+                  notification={item}
+                  onPress={() => handleNotificationPress(item.id)}
+                />
+              )}
+              contentContainerStyle={{ padding: 16 }}
+              showsVerticalScrollIndicator={false}
             />
           )}
-          contentContainerStyle={{ padding: 16 }}
-          showsVerticalScrollIndicator={false}
-        />
+        </>
       )}
     </View>
   );

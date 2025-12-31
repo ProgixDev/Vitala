@@ -72,7 +72,11 @@ declare global {
     isDefault?: boolean;
   };
 
-  type CurrentUser = Omit<User, "password">;
+  type CurrentUser = Omit<User, "password"> & {
+    token?: string;
+    profilePicture?: string;
+  };
 }
 
 export {};
+

@@ -131,7 +131,6 @@
 - [ ] Update location services preference
 - [ ] Update biometric authentication preference
 - [ ] Update language preference
-- [ ] Update dark mode preference
 
 ## File Upload
 - [ ] Upload ID document (front)

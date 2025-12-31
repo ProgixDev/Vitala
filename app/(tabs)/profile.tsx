@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import React, { useEffect } from "react";
 import {
   BackHandler,
+  Image,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -142,9 +143,17 @@ export default function Profile() {
         {currentUser && (
           <View className="bg-white rounded-[20px] p-6 mb-[30px] items-center">
             <View className="mb-4">
-              <View className="w-20 h-20 rounded-full bg-[#EEF2FF] items-center justify-center border-3 border-[#E0E7FF]">
-                <Ionicons name="person" size={40} color="#4461F2" />
-              </View>
+              {currentUser.profilePicture ? (
+                <Image
+                  source={{ uri: currentUser.profilePicture }}
+                  className="w-20 h-20 rounded-full border-3 border-[#E0E7FF]"
+                  resizeMode="cover"
+                />
+              ) : (
+                <View className="w-20 h-20 rounded-full bg-[#EEF2FF] items-center justify-center border-3 border-[#E0E7FF]">
+                  <Ionicons name="person" size={40} color="#4461F2" />
+                </View>
+              )}
             </View>
             <Text className="text-xl font-bold text-[#1F2937] mb-1">
               {currentUser.fullName}

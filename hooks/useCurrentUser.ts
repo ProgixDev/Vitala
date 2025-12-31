@@ -18,8 +18,9 @@ export function useCurrentUser() {
         try {
           const me = await getMe(accessToken);
           const user = me.data as CurrentUser;
-          setCurrentUser(user);
-          await authStorage.setCurrentUser(user);
+          const userWithToken = { ...user, token: accessToken };
+          setCurrentUser(userWithToken);
+          await authStorage.setCurrentUser(userWithToken);
           return;
         } catch (err: any) {
           // Check if email verification is required
@@ -41,8 +42,9 @@ export function useCurrentUser() {
               );
               const me2 = await getMe(res.data.token);
               const user2 = me2.data as CurrentUser;
-              setCurrentUser(user2);
-              await authStorage.setCurrentUser(user2);
+              const user2WithToken = { ...user2, token: res.data.token };
+              setCurrentUser(user2WithToken);
+              await authStorage.setCurrentUser(user2WithToken);
               return;
             } catch (e2: any) {
               console.warn("Token refresh failed", e2);
@@ -58,7 +60,13 @@ export function useCurrentUser() {
       }
       // Fallback to local storage user
       const localUser = await authStorage.getCurrentUser();
-      setCurrentUser(localUser);
+      const { accessToken: storedToken } = await authStorage.getTokens();
+      if (localUser && storedToken) {
+        const userWithToken = { ...localUser, token: storedToken };
+        setCurrentUser(userWithToken);
+      } else {
+        setCurrentUser(localUser);
+      }
     } catch (error) {
       console.error("Error loading current user:", error);
       setCurrentUser(null);

@@ -1,6 +1,13 @@
 const User = require('../models/User');
 const cloudinary = require('../config/cloudinary');
 const fs = require('fs');
+const path = require('path');
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, '../uploads/temp');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 // @desc    Get user profile
 // @route   GET /api/users/profile
@@ -98,19 +105,45 @@ exports.uploadProfilePicture = async (req, res) => {
       });
     }
 
+    console.log('Uploading profile picture for user:', req.user._id);
+    console.log('File details:', {
+      filename: req.file.filename,
+      originalname: req.file.originalname,
+      size: req.file.size,
+      path: req.file.path
+    });
+
     // Upload to cloudinary
     const result = await cloudinary.uploader.upload(req.file.path, {
       folder: 'vitala/profiles',
-      transformation: [{ width: 400, height: 400, crop: 'fill' }],
+      transformation: [
+        { width: 400, height: 400, crop: 'fill' },
+        { quality: 'auto' }
+      ],
+      public_id: `profile_${req.user._id}_${Date.now()}`,
     });
 
+    console.log('Cloudinary upload successful:', result.secure_url);
+
     // Delete local file
-    fs.unlinkSync(req.file.path);
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+      console.log('Local file deleted successfully');
+    }
 
     // Update user
     const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
     user.profilePicture = result.secure_url;
     await user.save();
+
+    console.log('User profile picture updated in database');
 
     res.status(200).json({
       success: true,
@@ -120,6 +153,17 @@ exports.uploadProfilePicture = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error('Profile picture upload error:', error);
+
+    // Clean up local file if it exists
+    if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (cleanupError) {
+        console.error('Error cleaning up file:', cleanupError);
+      }
+    }
+
     res.status(500).json({
       success: false,
       message: 'Error uploading profile picture',
@@ -319,6 +363,26 @@ exports.updateLocation = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error updating location',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Get user settings
+// @route   GET /api/users/settings
+// @access  Private
+exports.getSettings = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('settings');
+
+    res.status(200).json({
+      success: true,
+      data: user.settings,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching settings',
       error: error.message,
     });
   }

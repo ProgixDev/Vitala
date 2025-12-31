@@ -35,6 +35,10 @@ exports.protect = async (req, res, next) => {
       });
     }
 
+    // Prevent caching of private/authenticated responses (avoids 304 Not Modified)
+    // This ensures clients always receive fresh JSON (no ETag/conditional GET effects).
+    res.set('Cache-Control', 'no-store');
+
     next();
   } catch (error) {
     return res.status(401).json({

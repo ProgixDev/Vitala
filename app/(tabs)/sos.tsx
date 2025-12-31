@@ -25,32 +25,44 @@ const SCROLLVIEW_WIDTH = SCREEN_WIDTH - 32; // Accounting for px-4 (16*2) on par
 const CARD_WIDTH = SCROLLVIEW_WIDTH * 0.85;
 
 interface EmergencyService {
-  id: number;
+  _id: string;
   name: string;
   description: string;
+  category: string;
+  price: number;
+  duration: number;
   tags: string[];
 }
 
 const emergencyServices: EmergencyService[] = [
   {
-    id: 1,
+    _id: "emergency-nurse",
     name: "Emergency Nurse Alert",
     description:
       "Call medical emergency helpline for immediate nursing assistance and medical emergency response.",
+    category: "emergency",
+    price: 0,
+    duration: 60,
     tags: ["emergency", "nurse", "urgent", "medical"],
   },
   {
-    id: 2,
+    _id: "ambulance",
     name: "Ambulance Service",
     description:
       "Request ambulance from nearby hospitals for emergency medical transportation and care.",
+    category: "emergency",
+    price: 0,
+    duration: 30,
     tags: ["ambulance", "emergency", "transport", "hospital"],
   },
   {
-    id: 3,
+    _id: "alert-family",
     name: "Family Alert",
     description:
       "Send emergency alerts to all your emergency contacts for immediate family notification.",
+    category: "emergency",
+    price: 0,
+    duration: 5,
     tags: ["alert", "family", "emergency", "contacts"],
   },
 ];
@@ -76,7 +88,7 @@ export default function SOS() {
       () => {
         router.replace("/(tabs)");
         return true;
-      },
+      }
     );
 
     return () => backHandler.remove();
@@ -100,7 +112,9 @@ export default function SOS() {
       backgroundColor: "#ff4b93",
       illustration: EmergencyNurseAlertSvg,
       action: () => {
-        const service = emergencyServices.find((s) => s.id === 1);
+        const service = emergencyServices.find(
+          (s) => s._id === "emergency-nurse"
+        );
         if (service) setSelectedEmergencyService(service);
       },
     },
@@ -111,7 +125,7 @@ export default function SOS() {
       backgroundColor: "#ff5b5b",
       illustration: AmbulenceSvg,
       action: () => {
-        const service = emergencyServices.find((s) => s.id === 2);
+        const service = emergencyServices.find((s) => s._id === "ambulance");
         if (service) setSelectedEmergencyService(service);
       },
     },
@@ -122,7 +136,7 @@ export default function SOS() {
       backgroundColor: "#00b4b4",
       illustration: AlertFamilySvg,
       action: () => {
-        const service = emergencyServices.find((s) => s.id === 3);
+        const service = emergencyServices.find((s) => s._id === "alert-family");
         if (service) setSelectedEmergencyService(service);
       },
     },

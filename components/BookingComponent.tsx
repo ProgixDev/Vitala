@@ -1,6 +1,5 @@
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/utils/api";
-import { appointmentStorage } from "@/utils/appointments";
 import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -633,7 +632,7 @@ export default function BookingComponent({
                   {service.description}
                 </Text>
                 <View className="flex-row flex-wrap gap-2">
-                  {service.tags.map((tag, index) => (
+                  {service.tags?.map((tag, index) => (
                     <View
                       key={index}
                       className="bg-[#F5F6FA] px-3 py-1.5 rounded-full"

@@ -1,5 +1,6 @@
+import BookingComponent from "@/components/BookingComponent";
 import { FontAwesome6, Ionicons } from "@expo/vector-icons";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -8,8 +9,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import BookingComponent from "@/components/BookingComponent";
-import { api } from "@/utils/api";
 
 interface Service {
   _id: string;
@@ -203,7 +202,7 @@ export default function PatientHomeUI() {
   };
 
   const getServiceIcon = (category: string) => {
-    const iconMap: Record<string, JSX.Element> = {
+    const iconMap: Record<string, React.JSX.Element> = {
       reeducation: <Ionicons name="accessibility" size={28} color="#4461F2" />,
       perfusion: <Ionicons name="water" size={28} color="#4461F2" />,
       vaccination: <Ionicons name="medical" size={28} color="#4461F2" />,

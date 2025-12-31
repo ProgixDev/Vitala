@@ -101,6 +101,48 @@ const faqData: FAQItem[] = [
       "If you encounter any technical issues, try restarting the app first. If the problem persists, contact our support team through the Help Center. Please provide details about the issue and any error messages you received.",
     category: "Support",
   },
+  {
+    id: "13",
+    question: "How do I find and book a nurse?",
+    answer:
+      "To find and book a nurse, go to the Search tab, enter your location and select the type of care needed. Browse available nurses, check their profiles and ratings, then choose a date and time for your appointment. Confirm your booking and you'll receive a notification once scheduled.",
+    category: "Appointments",
+  },
+  {
+    id: "14",
+    question: "What qualifications do the nurses have?",
+    answer:
+      "All nurses on our platform are licensed healthcare professionals with valid certifications. They undergo background checks and verification processes. You can view each nurse's qualifications, experience, and specializations in their profile before booking.",
+    category: "Account",
+  },
+  {
+    id: "15",
+    question: "How do I leave a review for a nurse?",
+    answer:
+      "After your appointment is completed, you'll receive a notification to rate and review your experience. Go to your appointment history in the Schedule tab, select the completed appointment, and tap 'Leave Review'. Your feedback helps maintain service quality.",
+    category: "Account",
+  },
+  {
+    id: "16",
+    question: "What happens if a nurse is late or doesn't show up?",
+    answer:
+      "If a nurse is running late, you'll be notified via the app. If they don't show up within 15 minutes of the scheduled time, you can contact support immediately. We'll arrange a replacement nurse or provide a full refund, depending on the circumstances.",
+    category: "Appointments",
+  },
+  {
+    id: "17",
+    question: "How does the app use my location?",
+    answer:
+      "Your location is used to find nearby nurses and calculate distances for appointments. For emergency SOS, your location is shared with emergency services. You can control location permissions in your device settings, but some features may be limited without it.",
+    category: "Privacy",
+  },
+  {
+    id: "18",
+    question: "Can I request a specific nurse for future appointments?",
+    answer:
+      "Yes, you can request a specific nurse when booking if they've provided care for you before. During the booking process, you can select 'Request Previous Nurse' or search for them by name. However, availability isn't guaranteed and depends on their schedule.",
+    category: "Appointments",
+  },
 ];
 
 const categories = [
@@ -152,7 +194,6 @@ const FAQItemComponent: React.FC<FAQItemComponentProps> = ({
 
 export default function FAQ() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState("All");
 
   // Handle back button - go back to profile page
   useEffect(() => {
@@ -166,11 +207,6 @@ export default function FAQ() {
 
     return () => backHandler.remove();
   }, []);
-
-  const filteredFAQs =
-    selectedCategory === "All"
-      ? faqData
-      : faqData.filter((faq) => faq.category === selectedCategory);
 
   const handleFAQPress = (id: string) => {
     setExpandedId(expandedId === id ? null : id);
@@ -205,62 +241,22 @@ export default function FAQ() {
         </View>
       </View>
 
-      {/* Category Filter */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        className="mt-5"
-        contentContainerStyle={{ paddingHorizontal: 24, gap: 8 }}
-      >
-        {categories.map((category) => (
-          <TouchableOpacity
-            key={category}
-            className={`px-4 py-2 rounded-full border ${
-              selectedCategory === category
-                ? "bg-[#4461F2] border-[#4461F2]"
-                : "bg-white border-[#E5E7EB]"
-            }`}
-            onPress={() => setSelectedCategory(category)}
-          >
-            <Text
-              className={`text-sm font-medium ${
-                selectedCategory === category ? "text-white" : "text-[#6B7280]"
-              }`}
-            >
-              {category}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
       {/* FAQ List */}
       <ScrollView
         className="flex-1 mt-5"
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
-        {filteredFAQs.length === 0 ? (
-          <View className="items-center justify-center py-[60px] px-12">
-            <Ionicons name="document-text-outline" size={64} color="#D1D5DB" />
-            <Text className="text-xl font-semibold text-[#1F2937] mt-4 mb-2">
-              No FAQs Found
-            </Text>
-            <Text className="text-sm text-[#6B7280] text-center leading-5">
-              No questions found in this category
-            </Text>
-          </View>
-        ) : (
-          <View className="px-6">
-            {filteredFAQs.map((faq) => (
-              <FAQItemComponent
-                key={faq.id}
-                faq={faq}
-                isExpanded={expandedId === faq.id}
-                onPress={() => handleFAQPress(faq.id)}
-              />
-            ))}
-          </View>
-        )}
+        <View className="px-6">
+          {faqData.map((faq) => (
+            <FAQItemComponent
+              key={faq.id}
+              faq={faq}
+              isExpanded={expandedId === faq.id}
+              onPress={() => handleFAQPress(faq.id)}
+            />
+          ))}
+        </View>
 
         {/* Still Need Help */}
         <View className="mx-6 mt-6 p-5 bg-white rounded-2xl items-center shadow-sm">

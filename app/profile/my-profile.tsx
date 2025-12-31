@@ -1,17 +1,32 @@
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useEffect } from "react";
 import {
+  updateMedicalProfile,
+  updateProfile,
+  uploadProfilePicture,
+} from "@/utils/api";
+import { authStorage } from "@/utils/auth";
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  Alert,
   BackHandler,
+  Image,
   ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 
 export default function MyProfile() {
-  const { currentUser } = useCurrentUser();
+  const { currentUser, refreshUser } = useCurrentUser();
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedUser, setEditedUser] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
 
   // Handle back button - go back to profile page
   useEffect(() => {
@@ -20,11 +35,216 @@ export default function MyProfile() {
       () => {
         router.replace("/(tabs)/profile");
         return true;
-      },
+      }
     );
 
     return () => backHandler.remove();
   }, []);
+
+  const requestPermissions = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission Required",
+        "Camera roll permissions are required to select a profile picture.",
+        [{ text: "OK" }]
+      );
+      return false;
+    }
+    return true;
+  };
+
+  const pickImage = async () => {
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) return;
+
+    Alert.alert(
+      "Select Image",
+      "Choose an option to select your profile picture",
+      [
+        { text: "Camera", onPress: openCamera },
+        { text: "Gallery", onPress: openGallery },
+        { text: "Cancel", style: "cancel" },
+      ]
+    );
+  };
+
+  const openCamera = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission Required",
+        "Camera permissions are required to take a photo.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ["images"],
+      allowsEditing: false,
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      Toast.show({
+        type: "info",
+        text1: "Processing Image...",
+        text2: "Please wait while we upload your photo",
+      });
+      await uploadImage(result.assets[0]);
+    }
+  };
+
+  const openGallery = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: false,
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      Toast.show({
+        type: "info",
+        text1: "Processing Image...",
+        text2: "Please wait while we upload your photo",
+      });
+      await uploadImage(result.assets[0]);
+    }
+  };
+
+  const uploadImage = async (asset: ImagePicker.ImagePickerAsset) => {
+    let token = currentUser?.token;
+
+    // Fallback: get token from authStorage if not in currentUser
+    if (!token) {
+      try {
+        const { accessToken } = await authStorage.getTokens();
+        token = accessToken || undefined;
+      } catch (error) {
+        console.error("Error getting token from authStorage:", error);
+      }
+    }
+
+    if (!token) {
+      Toast.show({
+        type: "error",
+        text1: "Authentication Error",
+        text2: "Please log in again",
+      });
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      // Use the same approach as nurse signup (uri, name, type object)
+      formData.append("profilePicture", {
+        uri: asset.uri,
+        type: asset.type === "image" ? "image/jpeg" : "image/jpeg",
+        name: `profile-picture-${Date.now()}.jpg`,
+      } as any);
+
+      const response = await uploadProfilePicture(token, formData);
+
+      await refreshUser();
+
+      Toast.show({
+        type: "success",
+        text1: "Profile Picture Updated",
+        text2: "Your profile picture has been updated successfully",
+      });
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Upload Failed",
+        text2: error.message || "Failed to upload profile picture",
+      });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const startEditing = () => {
+    setEditedUser({
+      ...currentUser,
+      medicalProfile: currentUser?.medicalProfile
+        ? {
+            ...currentUser.medicalProfile,
+            allergies: currentUser.medicalProfile.allergies || [],
+            chronicIllnesses: currentUser.medicalProfile.chronicIllnesses || [],
+          }
+        : {
+            allergies: [],
+            chronicIllnesses: [],
+          },
+    });
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditedUser(null);
+  };
+
+  const saveProfile = async () => {
+    if (!editedUser) return;
+
+    let token = currentUser?.token;
+    if (!token) {
+      try {
+        const { accessToken } = await authStorage.getTokens();
+        token = accessToken || undefined;
+      } catch (error) {
+        console.error("Error getting token from authStorage:", error);
+      }
+    }
+
+    if (!token) {
+      Toast.show({
+        type: "error",
+        text1: "Authentication Error",
+        text2: "Please log in again",
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      // Update basic profile
+      const profileData = {
+        fullName: editedUser.fullName,
+        email: editedUser.email,
+        phoneNumber: editedUser.phoneNumber,
+      };
+      await updateProfile(token, profileData);
+
+      // Update medical profile if it exists
+      if (editedUser.medicalProfile) {
+        await updateMedicalProfile(token, editedUser.medicalProfile);
+      }
+
+      await refreshUser();
+      setIsEditing(false);
+      setEditedUser(null);
+
+      Toast.show({
+        type: "success",
+        text1: "Profile Updated",
+        text2: "Your profile has been updated successfully",
+      });
+    } catch (error: any) {
+      console.error("Save error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Save Failed",
+        text2: error.message || "Failed to update profile",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (!currentUser) {
     return (
@@ -61,9 +281,37 @@ export default function MyProfile() {
           <Ionicons name="arrow-back" size={24} color="#1F2937" />
         </TouchableOpacity>
         <Text className="text-lg font-semibold text-[#1F2937]">My Profile</Text>
-        <TouchableOpacity className="w-10 h-10 items-center justify-center">
-          <Ionicons name="create-outline" size={24} color="#4461F2" />
-        </TouchableOpacity>
+        <View className="flex-row">
+          {isEditing ? (
+            <>
+              <TouchableOpacity
+                className="w-10 h-10 items-center justify-center mr-2"
+                onPress={cancelEditing}
+                disabled={saving}
+              >
+                <Ionicons name="close" size={24} color="#EF4444" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="w-10 h-10 items-center justify-center"
+                onPress={saveProfile}
+                disabled={saving}
+              >
+                <Ionicons
+                  name={saving ? "hourglass" : "checkmark"}
+                  size={24}
+                  color="#10B981"
+                />
+              </TouchableOpacity>
+            </>
+          ) : (
+            <TouchableOpacity
+              className="w-10 h-10 items-center justify-center"
+              onPress={startEditing}
+            >
+              <Ionicons name="create-outline" size={24} color="#4461F2" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       <ScrollView
@@ -74,13 +322,54 @@ export default function MyProfile() {
         {/* Avatar Section */}
         <View className="items-center py-8 bg-white mb-4">
           <View className="relative">
-            <View className="w-[100px] h-[100px] rounded-full bg-[#EEF2FF] items-center justify-center border-4 border-[#E0E7FF]">
-              <Ionicons name="person" size={50} color="#4461F2" />
+            <View className="w-[100px] h-[100px] rounded-full bg-[#EEF2FF] items-center justify-center border-4 border-[#E0E7FF] overflow-hidden">
+              {currentUser?.profilePicture ? (
+                <TouchableOpacity
+                  className="w-full h-full"
+                  onPress={() => {
+                    Toast.show({
+                      type: "info",
+                      text1: "Change Profile Picture",
+                      text2: "Tap the camera icon to update your photo",
+                    });
+                  }}
+                >
+                  <Image
+                    source={{ uri: currentUser.profilePicture }}
+                    className="w-full h-full"
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  className="w-full h-full items-center justify-center"
+                  onPress={() => {
+                    Toast.show({
+                      type: "info",
+                      text1: "Add Profile Picture",
+                      text2: "Tap the camera icon to add your photo",
+                    });
+                  }}
+                >
+                  <Ionicons name="person" size={50} color="#4461F2" />
+                </TouchableOpacity>
+              )}
             </View>
-            <TouchableOpacity className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-[#4461F2] items-center justify-center border-3 border-white">
-              <Ionicons name="camera" size={18} color="#FFFFFF" />
+            <TouchableOpacity
+              className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-[#4461F2] items-center justify-center border-3 border-white"
+              onPress={pickImage}
+              disabled={uploadingImage}
+            >
+              <Ionicons
+                name={uploadingImage ? "hourglass" : "camera"}
+                size={18}
+                color="#FFFFFF"
+              />
             </TouchableOpacity>
           </View>
+          {uploadingImage && (
+            <Text className="text-sm text-[#6B7280] mt-2">Uploading...</Text>
+          )}
         </View>
 
         {/* Personal Information */}
@@ -98,9 +387,20 @@ export default function MyProfile() {
                 <Text className="text-[13px] text-[#6B7280] mb-1">
                   Full Name
                 </Text>
-                <Text className="text-base font-semibold text-[#1F2937]">
-                  {currentUser.fullName}
-                </Text>
+                {isEditing ? (
+                  <TextInput
+                    className="text-base font-semibold text-[#1F2937] border-b border-[#E5E7EB] pb-1"
+                    value={editedUser?.fullName || ""}
+                    onChangeText={(text) =>
+                      setEditedUser({ ...editedUser, fullName: text })
+                    }
+                    placeholder="Enter full name"
+                  />
+                ) : (
+                  <Text className="text-base font-semibold text-[#1F2937]">
+                    {currentUser.fullName}
+                  </Text>
+                )}
               </View>
             </View>
 
@@ -112,9 +412,22 @@ export default function MyProfile() {
               </View>
               <View className="flex-1">
                 <Text className="text-[13px] text-[#6B7280] mb-1">Email</Text>
-                <Text className="text-base font-semibold text-[#1F2937]">
-                  {currentUser.email}
-                </Text>
+                {isEditing ? (
+                  <TextInput
+                    className="text-base font-semibold text-[#1F2937] border-b border-[#E5E7EB] pb-1"
+                    value={editedUser?.email || ""}
+                    onChangeText={(text) =>
+                      setEditedUser({ ...editedUser, email: text })
+                    }
+                    placeholder="Enter email"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                ) : (
+                  <Text className="text-base font-semibold text-[#1F2937]">
+                    {currentUser.email}
+                  </Text>
+                )}
               </View>
             </View>
 
@@ -128,9 +441,21 @@ export default function MyProfile() {
                 <Text className="text-[13px] text-[#6B7280] mb-1">
                   Phone Number
                 </Text>
-                <Text className="text-base font-semibold text-[#1F2937]">
-                  {currentUser.phoneNumber}
-                </Text>
+                {isEditing ? (
+                  <TextInput
+                    className="text-base font-semibold text-[#1F2937] border-b border-[#E5E7EB] pb-1"
+                    value={editedUser?.phoneNumber || ""}
+                    onChangeText={(text) =>
+                      setEditedUser({ ...editedUser, phoneNumber: text })
+                    }
+                    placeholder="Enter phone number"
+                    keyboardType="phone-pad"
+                  />
+                ) : (
+                  <Text className="text-base font-semibold text-[#1F2937]">
+                    {currentUser.phoneNumber}
+                  </Text>
+                )}
               </View>
             </View>
           </View>
@@ -145,7 +470,8 @@ export default function MyProfile() {
 
             <View className="bg-white rounded-2xl p-5 shadow-sm">
               {/* Gender */}
-              {currentUser.medicalProfile.gender && (
+              {((isEditing && editedUser?.medicalProfile) ||
+                (!isEditing && currentUser.medicalProfile?.gender)) && (
                 <>
                   <View className="flex-row items-center">
                     <View className="w-11 h-11 rounded-xl bg-[#F0F2FF] items-center justify-center mr-4">
@@ -159,9 +485,26 @@ export default function MyProfile() {
                       <Text className="text-[13px] text-[#6B7280] mb-1">
                         Gender
                       </Text>
-                      <Text className="text-base font-semibold text-[#1F2937] capitalize">
-                        {currentUser.medicalProfile.gender}
-                      </Text>
+                      {isEditing ? (
+                        <TextInput
+                          className="text-base font-semibold text-[#1F2937] border-b border-[#E5E7EB] pb-1"
+                          value={editedUser?.medicalProfile?.gender || ""}
+                          onChangeText={(text) =>
+                            setEditedUser({
+                              ...editedUser,
+                              medicalProfile: {
+                                ...editedUser.medicalProfile,
+                                gender: text,
+                              },
+                            })
+                          }
+                          placeholder="Enter gender"
+                        />
+                      ) : (
+                        <Text className="text-base font-semibold text-[#1F2937] capitalize">
+                          {currentUser.medicalProfile.gender}
+                        </Text>
+                      )}
                     </View>
                   </View>
                   <View className="h-px bg-[#F3F4F6] my-4" />
@@ -169,7 +512,8 @@ export default function MyProfile() {
               )}
 
               {/* Date of Birth */}
-              {currentUser.medicalProfile.dateOfBirth && (
+              {((isEditing && editedUser?.medicalProfile) ||
+                (!isEditing && currentUser.medicalProfile?.dateOfBirth)) && (
                 <>
                   <View className="flex-row items-center">
                     <View className="w-11 h-11 rounded-xl bg-[#F0F2FF] items-center justify-center mr-4">
@@ -183,9 +527,30 @@ export default function MyProfile() {
                       <Text className="text-[13px] text-[#6B7280] mb-1">
                         Date of Birth
                       </Text>
-                      <Text className="text-base font-semibold text-[#1F2937]">
-                        {currentUser.medicalProfile.dateOfBirth}
-                      </Text>
+                      {isEditing ? (
+                        <TextInput
+                          className="text-base font-semibold text-[#1F2937] border-b border-[#E5E7EB] pb-1"
+                          value={editedUser?.medicalProfile?.dateOfBirth || ""}
+                          onChangeText={(text) =>
+                            setEditedUser({
+                              ...editedUser,
+                              medicalProfile: {
+                                ...editedUser.medicalProfile,
+                                dateOfBirth: text,
+                              },
+                            })
+                          }
+                          placeholder="YYYY-MM-DD"
+                        />
+                      ) : (
+                        <Text className="text-base font-semibold text-[#1F2937]">
+                          {
+                            currentUser.medicalProfile.dateOfBirth?.split(
+                              "T"
+                            )[0]
+                          }
+                        </Text>
+                      )}
                     </View>
                   </View>
                   <View className="h-px bg-[#F3F4F6] my-4" />
@@ -193,7 +558,8 @@ export default function MyProfile() {
               )}
 
               {/* Blood Type */}
-              {currentUser.medicalProfile.bloodType && (
+              {((isEditing && editedUser?.medicalProfile) ||
+                (!isEditing && currentUser.medicalProfile?.bloodType)) && (
                 <>
                   <View className="flex-row items-center">
                     <View className="w-11 h-11 rounded-xl bg-[#F0F2FF] items-center justify-center mr-4">
@@ -203,9 +569,26 @@ export default function MyProfile() {
                       <Text className="text-[13px] text-[#6B7280] mb-1">
                         Blood Type
                       </Text>
-                      <Text className="text-base font-semibold text-[#1F2937]">
-                        {currentUser.medicalProfile.bloodType}
-                      </Text>
+                      {isEditing ? (
+                        <TextInput
+                          className="text-base font-semibold text-[#1F2937] border-b border-[#E5E7EB] pb-1"
+                          value={editedUser?.medicalProfile?.bloodType || ""}
+                          onChangeText={(text) =>
+                            setEditedUser({
+                              ...editedUser,
+                              medicalProfile: {
+                                ...editedUser.medicalProfile,
+                                bloodType: text,
+                              },
+                            })
+                          }
+                          placeholder="Enter blood type"
+                        />
+                      ) : (
+                        <Text className="text-base font-semibold text-[#1F2937]">
+                          {currentUser.medicalProfile.bloodType}
+                        </Text>
+                      )}
                     </View>
                   </View>
                   <View className="h-px bg-[#F3F4F6] my-4" />
@@ -213,8 +596,10 @@ export default function MyProfile() {
               )}
 
               {/* Height & Weight */}
-              {(currentUser.medicalProfile.height ||
-                currentUser.medicalProfile.weight) && (
+              {((isEditing && editedUser?.medicalProfile) ||
+                (!isEditing &&
+                  (currentUser.medicalProfile?.height ||
+                    currentUser.medicalProfile?.weight))) && (
                 <>
                   <View className="flex-row items-center">
                     <View className="w-11 h-11 rounded-xl bg-[#F0F2FF] items-center justify-center mr-4">
@@ -225,24 +610,68 @@ export default function MyProfile() {
                       />
                     </View>
                     <View className="flex-1 flex-row justify-between">
-                      {currentUser.medicalProfile.height && (
-                        <View>
+                      {((isEditing && editedUser?.medicalProfile) ||
+                        (!isEditing && currentUser.medicalProfile?.height)) && (
+                        <View className={isEditing ? "flex-1 mr-4" : ""}>
                           <Text className="text-[13px] text-[#6B7280] mb-1">
                             Height
                           </Text>
-                          <Text className="text-base font-semibold text-[#1F2937]">
-                            {currentUser.medicalProfile.height} cm
-                          </Text>
+                          {isEditing ? (
+                            <TextInput
+                              className="text-base font-semibold text-[#1F2937] border-b border-[#E5E7EB] pb-1"
+                              value={
+                                editedUser?.medicalProfile?.height?.toString() ||
+                                ""
+                              }
+                              onChangeText={(text) =>
+                                setEditedUser({
+                                  ...editedUser,
+                                  medicalProfile: {
+                                    ...editedUser.medicalProfile,
+                                    height: text ? parseInt(text) : undefined,
+                                  },
+                                })
+                              }
+                              placeholder="Height in cm"
+                              keyboardType="numeric"
+                            />
+                          ) : (
+                            <Text className="text-base font-semibold text-[#1F2937]">
+                              {currentUser.medicalProfile.height} cm
+                            </Text>
+                          )}
                         </View>
                       )}
-                      {currentUser.medicalProfile.weight && (
-                        <View>
+                      {((isEditing && editedUser?.medicalProfile) ||
+                        (!isEditing && currentUser.medicalProfile?.weight)) && (
+                        <View className={isEditing ? "flex-1" : ""}>
                           <Text className="text-[13px] text-[#6B7280] mb-1">
                             Weight
                           </Text>
-                          <Text className="text-base font-semibold text-[#1F2937]">
-                            {currentUser.medicalProfile.weight} kg
-                          </Text>
+                          {isEditing ? (
+                            <TextInput
+                              className="text-base font-semibold text-[#1F2937] border-b border-[#E5E7EB] pb-1"
+                              value={
+                                editedUser?.medicalProfile?.weight?.toString() ||
+                                ""
+                              }
+                              onChangeText={(text) =>
+                                setEditedUser({
+                                  ...editedUser,
+                                  medicalProfile: {
+                                    ...editedUser.medicalProfile,
+                                    weight: text ? parseInt(text) : undefined,
+                                  },
+                                })
+                              }
+                              placeholder="Weight in kg"
+                              keyboardType="numeric"
+                            />
+                          ) : (
+                            <Text className="text-base font-semibold text-[#1F2937]">
+                              {currentUser.medicalProfile.weight} kg
+                            </Text>
+                          )}
                         </View>
                       )}
                     </View>
@@ -252,21 +681,47 @@ export default function MyProfile() {
               )}
 
               {/* Allergies */}
-              {currentUser.medicalProfile.allergies &&
-                currentUser.medicalProfile.allergies.length > 0 && (
-                  <>
-                    <View className="flex-row items-start">
-                      <View className="w-11 h-11 rounded-xl bg-[#F0F2FF] items-center justify-center mr-4">
-                        <Ionicons
-                          name="warning-outline"
-                          size={22}
-                          color="#4461F2"
+              {((isEditing && editedUser?.medicalProfile) ||
+                (!isEditing &&
+                  currentUser.medicalProfile?.allergies &&
+                  currentUser.medicalProfile.allergies.length > 0)) && (
+                <>
+                  <View className="flex-row items-start">
+                    <View className="w-11 h-11 rounded-xl bg-[#F0F2FF] items-center justify-center mr-4">
+                      <Ionicons
+                        name="warning-outline"
+                        size={22}
+                        color="#4461F2"
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-[13px] text-[#6B7280] mb-2">
+                        Allergies
+                      </Text>
+                      {isEditing ? (
+                        <TextInput
+                          className="text-base font-semibold text-[#1F2937] border-b border-[#E5E7EB] pb-1"
+                          value={
+                            editedUser?.medicalProfile?.allergies?.join(", ") ||
+                            ""
+                          }
+                          onChangeText={(text) =>
+                            setEditedUser({
+                              ...editedUser,
+                              medicalProfile: {
+                                ...editedUser.medicalProfile,
+                                allergies: text
+                                  ? text
+                                      .split(",")
+                                      .map((s) => s.trim())
+                                      .filter((s) => s)
+                                  : [],
+                              },
+                            })
+                          }
+                          placeholder="Enter allergies separated by commas"
                         />
-                      </View>
-                      <View className="flex-1">
-                        <Text className="text-[13px] text-[#6B7280] mb-2">
-                          Allergies
-                        </Text>
+                      ) : (
                         <View className="flex-row flex-wrap gap-2">
                           {currentUser.medicalProfile.allergies.map(
                             (allergy, index) => (
@@ -278,30 +733,58 @@ export default function MyProfile() {
                                   {allergy}
                                 </Text>
                               </View>
-                            ),
+                            )
                           )}
                         </View>
-                      </View>
+                      )}
                     </View>
-                    <View className="h-px bg-[#F3F4F6] my-4" />
-                  </>
-                )}
+                  </View>
+                  <View className="h-px bg-[#F3F4F6] my-4" />
+                </>
+              )}
 
               {/* Chronic Illnesses */}
-              {currentUser.medicalProfile.chronicIllnesses &&
-                currentUser.medicalProfile.chronicIllnesses.length > 0 && (
-                  <View className="flex-row items-start">
-                    <View className="w-11 h-11 rounded-xl bg-[#F0F2FF] items-center justify-center mr-4">
-                      <Ionicons
-                        name="medical-outline"
-                        size={22}
-                        color="#4461F2"
+              {((isEditing && editedUser?.medicalProfile) ||
+                (!isEditing &&
+                  currentUser.medicalProfile?.chronicIllnesses &&
+                  currentUser.medicalProfile.chronicIllnesses.length > 0)) && (
+                <View className="flex-row items-start">
+                  <View className="w-11 h-11 rounded-xl bg-[#F0F2FF] items-center justify-center mr-4">
+                    <Ionicons
+                      name="medical-outline"
+                      size={22}
+                      color="#4461F2"
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-[13px] text-[#6B7280] mb-2">
+                      Chronic Conditions
+                    </Text>
+                    {isEditing ? (
+                      <TextInput
+                        className="text-base font-semibold text-[#1F2937] border-b border-[#E5E7EB] pb-1"
+                        value={
+                          editedUser?.medicalProfile?.chronicIllnesses?.join(
+                            ", "
+                          ) || ""
+                        }
+                        onChangeText={(text) =>
+                          setEditedUser({
+                            ...editedUser,
+                            medicalProfile: {
+                              ...editedUser.medicalProfile,
+                              chronicIllnesses: text
+                                ? text
+                                    .split(",")
+                                    .map((s) => s.trim())
+                                    .filter((s) => s)
+                                : [],
+                            },
+                          })
+                        }
+                        placeholder="Enter chronic conditions separated by commas"
                       />
-                    </View>
-                    <View className="flex-1">
-                      <Text className="text-[13px] text-[#6B7280] mb-2">
-                        Chronic Conditions
-                      </Text>
+                    ) : (
                       <View className="flex-row flex-wrap gap-2">
                         {currentUser.medicalProfile.chronicIllnesses.map(
                           (illness, index) => (
@@ -313,19 +796,23 @@ export default function MyProfile() {
                                 {illness}
                               </Text>
                             </View>
-                          ),
+                          )
                         )}
                       </View>
-                    </View>
+                    )}
                   </View>
-                )}
+                </View>
+              )}
             </View>
           </View>
         )}
 
         {/* Action Buttons */}
         <View className="px-6">
-          <TouchableOpacity className="flex-row items-center bg-white rounded-xl p-4 mb-3 shadow-sm">
+          <TouchableOpacity
+            className="flex-row items-center bg-white rounded-xl p-4 mb-3 shadow-sm"
+            onPress={() => router.push("/profile/change-password")}
+          >
             <Ionicons name="key-outline" size={22} color="#4461F2" />
             <Text className="flex-1 text-[15px] font-medium text-[#374151] ml-3">
               Change Password
@@ -333,7 +820,10 @@ export default function MyProfile() {
             <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
           </TouchableOpacity>
 
-          <TouchableOpacity className="flex-row items-center bg-white rounded-xl p-4 mb-3 shadow-sm">
+          <TouchableOpacity
+            className="flex-row items-center bg-white rounded-xl p-4 mb-3 shadow-sm"
+            onPress={() => router.push("/profile/privacy-settings")}
+          >
             <Ionicons
               name="shield-checkmark-outline"
               size={22}
