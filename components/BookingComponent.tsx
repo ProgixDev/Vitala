@@ -266,7 +266,7 @@ export default function BookingComponent({
 
       // Prepare appointment data for API
       const appointmentData = {
-        service: service._id,
+        service: service.name,
         appointmentType: type,
         scheduledDate:
           type === "emergency"

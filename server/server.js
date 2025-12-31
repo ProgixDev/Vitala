@@ -113,6 +113,7 @@ app.use('/api/appointments', require('./routes/appointments'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/admin', require('./routes/admin'));
 app.use("/api/geocoding", require("./routes/geocoding"));
+app.use('/api/payments', require('./routes/payments'));
 
 // Health check
 app.get('/api/health', (req, res) => {

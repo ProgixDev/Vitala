@@ -53,17 +53,17 @@
 - [x] Appointment notifications
 
 ## Payment Processing
-- [ ] Process payment (credit card, PayPal)
-- [ ] Save payment method
-- [ ] Get saved payment methods
-- [ ] Set default payment method
-- [ ] Delete payment method
-- [ ] Update payment status
-- [ ] Get payment by appointment ID
-- [ ] Generate payment receipt
-- [ ] Download receipt PDF
-- [ ] Payment webhook handling
-- [ ] Refund processing
+- [x] Process payment (credit card, PayPal) - Mock implementation
+- [x] Save payment method - Mock implementation
+- [x] Get saved payment methods - Mock implementation
+- [x] Set default payment method - Mock implementation
+- [x] Delete payment method - Mock implementation
+- [x] Update payment status
+- [x] Get payment by appointment ID
+- [x] Generate payment receipt
+- [x] Download receipt PDF - Mock implementation
+- [x] Payment webhook handling - Not implemented (mock system)
+- [x] Refund processing
 
 ## Transaction History
 - [ ] Get user transactions

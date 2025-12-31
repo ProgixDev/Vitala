@@ -195,6 +195,13 @@ export async function changePassword(
   );
 }
 
+// Get user by ID
+export async function getUserById(token: string, userId: string) {
+  return apiFetch<{ success: boolean; data: any }>(`/api/users/${userId}`, {
+    token,
+  });
+}
+
 // Upload profile picture
 export async function uploadProfilePicture(token: string, formData: FormData) {
   return apiFetch<{ success: boolean; message: string; data: { url: string } }>(
@@ -549,6 +556,31 @@ export async function registerNurse(form: FormData) {
   }
 }
 
+// Process payment
+export async function processPayment(
+  token: string,
+  data: { appointmentId: string; paymentMethod: string; amount: number }
+) {
+  return apiFetch<{ success: boolean; message: string; payment: any }>(
+    "/api/payments/process",
+    {
+      method: "POST",
+      token,
+      body: data,
+    }
+  );
+}
+
+// Get payment by appointment
+export async function getPaymentByAppointment(token: string, appointmentId: string) {
+  return apiFetch<{ success: boolean; data: any }>(
+    `/api/payments/appointment/${appointmentId}`,
+    {
+      token,
+    }
+  );
+}
+
 export const api = {
   fetch: apiFetch,
   login,
@@ -563,6 +595,7 @@ export const api = {
   updateProfile,
   updateMedicalProfile,
   changePassword,
+  getUserById,
   uploadProfilePicture,
   registerNurse,
   getLocations,
@@ -590,5 +623,7 @@ export const api = {
   markAllNotificationsAsRead,
   deleteNotification,
   clearAllNotifications,
+  processPayment,
+  getPaymentByAppointment,
   baseUrl: API_BASE_URL,
 };

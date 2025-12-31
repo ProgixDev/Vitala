@@ -1,4 +1,5 @@
 import { authStorage } from "@/utils/auth";
+import { api } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -23,17 +24,18 @@ export default function NurseProfile() {
   useEffect(() => {
     const loadNurseData = async () => {
       try {
-        const users = await authStorage.getUsers();
-        const foundNurse = users.find((user) => user.email === id);
+        const { accessToken } = await authStorage.getTokens();
+        if (!accessToken) {
+          console.error("No access token");
+          setLoading(false);
+          return;
+        }
 
-        if (foundNurse) {
-          setNurse({
-            fullName: foundNurse.fullName,
-            email: foundNurse.email,
-            phoneNumber: foundNurse.phoneNumber,
-            userType: foundNurse.userType,
-            status: foundNurse.status,
-          });
+        const result = await api.getUserById(accessToken, id as string);
+        if (result.success) {
+          setNurse(result.data);
+        } else {
+          console.error("Failed to load nurse data:", result);
         }
       } catch (error) {
         console.error("Error loading nurse data:", error);
@@ -77,11 +79,6 @@ export default function NurseProfile() {
 
   const handleGoBack = () => {
     router.back();
-  };
-
-  const handleBookAppointment = () => {
-    // Navigate to appointment booking
-    router.push("/");
   };
 
   return (
@@ -356,18 +353,6 @@ export default function NurseProfile() {
           )}
         </View>
       </ScrollView>
-
-      {/* Bottom Button */}
-      <View className="absolute bottom-0 left-0 right-0 bg-white px-4 py-5 shadow-2xl">
-        <TouchableOpacity
-          className="bg-[#4461F2] py-4 rounded-full justify-center items-center shadow-lg"
-          onPress={handleBookAppointment}
-        >
-          <Text className="text-lg font-semibold text-white">
-            Book Appointment
-          </Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }

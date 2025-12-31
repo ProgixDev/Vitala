@@ -1,13 +1,12 @@
-import IllustrationSvg from "@/assets/images/schedule.svg";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/utils/api";
 import { authStorage } from "@/utils/auth";
+import { servicesData } from "@/utils/services";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  BackHandler,
   Image,
   RefreshControl,
   ScrollView,
@@ -21,6 +20,11 @@ export default function Schedule() {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<"upcoming" | "history">(
+    "upcoming"
+  );
+  const [paymentFilter, setPaymentFilter] = useState<"all" | "paid" | "pending" | "failed">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "completed" | "cancelled">("all");
 
   const loadAppointments = useCallback(async () => {
     try {
@@ -33,26 +37,33 @@ export default function Schedule() {
       const result = await api.getAppointments(accessToken);
       if (result.success) {
         // Transform API response to match frontend expectations
-        const transformedAppointments = result.data.map((appointment: any) => ({
-          id: appointment._id,
-          userEmail: appointment.patient?.email,
-          nurseEmail: appointment.nurse?.email,
-          serviceName: appointment.service,
-          date: appointment.scheduledDate
-            ? new Date(appointment.scheduledDate).toLocaleDateString()
-            : "",
-          time: appointment.scheduledTime?.start || "",
-          duration: appointment.duration,
-          type: appointment.appointmentType,
-          location: appointment.location,
-          status: appointment.status,
-          payment: appointment.payment || {
-            status: "pending",
-            amount: appointment.price || 0,
-            currency: "USD",
-          },
-          createdAt: appointment.createdAt,
-        }));
+        const transformedAppointments = result.data.map((appointment: any) => {
+          // Get service details from servicesData
+          const service = servicesData.find((s) => s._id === appointment.service);
+          
+          return {
+            id: appointment._id,
+            userEmail: appointment.patient?.email,
+            nurseEmail: appointment.nurse?.email,
+            serviceName: service?.name || appointment.serviceName || appointment.service || "Unknown Service",
+            serviceCategory: service?.category || "",
+            serviceId: appointment.service,
+            date: appointment.scheduledDate
+              ? new Date(appointment.scheduledDate).toLocaleDateString()
+              : "",
+            time: appointment.scheduledTime?.start || "",
+            duration: appointment.duration,
+            type: appointment.appointmentType,
+            location: appointment.location,
+            status: appointment.status,
+            payment: appointment.payment || {
+              status: "pending",
+              amount: appointment.price || 0,
+              currency: "USD",
+            },
+            createdAt: appointment.createdAt,
+          };
+        });
         setAppointments(transformedAppointments);
       }
     } catch (error) {
@@ -72,26 +83,66 @@ export default function Schedule() {
     loadAppointments();
   }, [loadAppointments]);
 
-  const getServiceIcon = (serviceName: string) => {
+  // Refresh appointments when screen comes into focus (e.g., after payment)
+  useFocusEffect(
+    useCallback(() => {
+      loadAppointments();
+    }, [loadAppointments])
+  );
+
+  const upcomingAppointments = appointments.filter((appointment) =>
+    ["pending", "confirmed", "on-the-way", "in-progress"].includes(
+      appointment.status
+    )
+  );
+
+  const historyAppointments = appointments
+    .filter((appointment) =>
+      ["completed", "cancelled"].includes(appointment.status)
+    )
+    .filter((appointment) => {
+      // Apply status filter
+      if (statusFilter !== "all" && appointment.status !== statusFilter) {
+        return false;
+      }
+      // Apply payment filter
+      if (paymentFilter !== "all") {
+        if (paymentFilter === "paid" && appointment.payment?.status !== "completed") {
+          return false;
+        }
+        if (paymentFilter === "pending" && appointment.payment?.status !== "pending") {
+          return false;
+        }
+        if (paymentFilter === "failed" && appointment.payment?.status !== "failed") {
+          return false;
+        }
+      }
+      return true;
+    });
+
+  const displayedAppointments =
+    activeTab === "upcoming" ? upcomingAppointments : historyAppointments;
+
+  const getServiceIcon = (serviceCategory: string) => {
     const iconMap: { [key: string]: string } = {
-      Rééducation: "accessibility",
-      Perfusion: "water",
-      Vaccination: "medical",
-      Analyses: "flask",
-      Consultation: "bandage",
-      Maternity: "heart",
-      Pediatric: "heart",
-      Medication: "hand-right",
-      "Wound Care": "medkit",
-      "Elderly Care": "heart",
-      Dialysis: "heart-circle",
-      Respiratory: "fitness",
-      "Post-Op Care": "bed",
-      Injection: "pulse",
-      Palliative: "leaf",
-      Nutrition: "nutrition",
+      reeducation: "accessibility",
+      perfusion: "water",
+      vaccination: "medical",
+      analyses: "flask",
+      consultation: "bandage",
+      maternity: "woman",
+      pediatric: "person",
+      medication: "hand-right",
+      "wound-care": "medkit",
+      "elderly-care": "walk",
+      dialysis: "heart-circle",
+      respiratory: "fitness",
+      "post-op-care": "bed",
+      injection: "pulse",
+      palliative: "leaf",
+      nutrition: "nutrition",
     };
-    return iconMap[serviceName] || "medical";
+    return iconMap[serviceCategory] || "medical";
   };
 
   const handleAppointmentPress = (appointmentId: string) => {
@@ -228,7 +279,13 @@ export default function Schedule() {
 
   return (
     <View className="flex-1 pt-6 px-4">
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         {/* Header */}
         <View className="py-5">
           <View>
@@ -241,16 +298,197 @@ export default function Schedule() {
           </View>
         </View>
 
-        {/* Appointments List */}
-        {appointments.length > 0 ? (
-          <View className="mb-[30px]">
-            <View className="flex-row justify-between items-center mb-5">
-              <Text className="text-xl font-semibold text-[#2D3142]">
-                Your Appointments
+        {/* Tab Bar */}
+        <View className="flex-row bg-white rounded-2xl p-1 mb-5">
+          <TouchableOpacity
+            className={`flex-1 py-3 px-4 rounded-xl ${
+              activeTab === "upcoming" ? "bg-[#4461F2]" : "bg-transparent"
+            }`}
+            onPress={() => setActiveTab("upcoming")}
+          >
+            <Text
+              className={`text-center font-semibold ${
+                activeTab === "upcoming" ? "text-white" : "text-[#6B7280]"
+              }`}
+            >
+              Upcoming ({upcomingAppointments.length})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            className={`flex-1 py-3 px-4 rounded-xl ${
+              activeTab === "history" ? "bg-[#4461F2]" : "bg-transparent"
+            }`}
+            onPress={() => setActiveTab("history")}
+          >
+            <Text
+              className={`text-center font-semibold ${
+                activeTab === "history" ? "text-white" : "text-[#6B7280]"
+              }`}
+            >
+              History ({historyAppointments.length})
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Filter Section - Only show in History tab */}
+        {activeTab === "history" && (
+          <View className="mb-5">
+            {/* Status Filter */}
+            <View className="mb-3">
+              <Text className="text-xs font-semibold text-[#6B7280] mb-2 px-1">
+                Appointment Status
               </Text>
+              <View className="flex-row gap-2">
+                <TouchableOpacity
+                  className={`px-4 py-2 rounded-full ${
+                    statusFilter === "all"
+                      ? "bg-[#4461F2]"
+                      : "bg-white border border-gray-200"
+                  }`}
+                  onPress={() => setStatusFilter("all")}
+                >
+                  <Text
+                    className={`text-sm font-medium ${
+                      statusFilter === "all" ? "text-white" : "text-[#6B7280]"
+                    }`}
+                  >
+                    All
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className={`px-4 py-2 rounded-full ${
+                    statusFilter === "completed"
+                      ? "bg-[#32CD32]"
+                      : "bg-white border border-gray-200"
+                  }`}
+                  onPress={() => setStatusFilter("completed")}
+                >
+                  <Text
+                    className={`text-sm font-medium ${
+                      statusFilter === "completed" ? "text-white" : "text-[#6B7280]"
+                    }`}
+                  >
+                    Completed
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className={`px-4 py-2 rounded-full ${
+                    statusFilter === "cancelled"
+                      ? "bg-[#FF3B30]"
+                      : "bg-white border border-gray-200"
+                  }`}
+                  onPress={() => setStatusFilter("cancelled")}
+                >
+                  <Text
+                    className={`text-sm font-medium ${
+                      statusFilter === "cancelled" ? "text-white" : "text-[#6B7280]"
+                    }`}
+                  >
+                    Cancelled
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
+
+            {/* Payment Filter */}
+            <View>
+              <Text className="text-xs font-semibold text-[#6B7280] mb-2 px-1">
+                Payment Status
+              </Text>
+              <View className="flex-row gap-2 flex-wrap">
+                <TouchableOpacity
+                  className={`px-4 py-2 rounded-full ${
+                    paymentFilter === "all"
+                      ? "bg-[#4461F2]"
+                      : "bg-white border border-gray-200"
+                  }`}
+                  onPress={() => setPaymentFilter("all")}
+                >
+                  <Text
+                    className={`text-sm font-medium ${
+                      paymentFilter === "all" ? "text-white" : "text-[#6B7280]"
+                    }`}
+                  >
+                    All
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className={`px-4 py-2 rounded-full ${
+                    paymentFilter === "paid"
+                      ? "bg-[#32CD32]"
+                      : "bg-white border border-gray-200"
+                  }`}
+                  onPress={() => setPaymentFilter("paid")}
+                >
+                  <Text
+                    className={`text-sm font-medium ${
+                      paymentFilter === "paid" ? "text-white" : "text-[#6B7280]"
+                    }`}
+                  >
+                    Paid
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className={`px-4 py-2 rounded-full ${
+                    paymentFilter === "pending"
+                      ? "bg-[#FFA500]"
+                      : "bg-white border border-gray-200"
+                  }`}
+                  onPress={() => setPaymentFilter("pending")}
+                >
+                  <Text
+                    className={`text-sm font-medium ${
+                      paymentFilter === "pending" ? "text-white" : "text-[#6B7280]"
+                    }`}
+                  >
+                    Payment Pending
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className={`px-4 py-2 rounded-full ${
+                    paymentFilter === "failed"
+                      ? "bg-[#FF3B30]"
+                      : "bg-white border border-gray-200"
+                  }`}
+                  onPress={() => setPaymentFilter("failed")}
+                >
+                  <Text
+                    className={`text-sm font-medium ${
+                      paymentFilter === "failed" ? "text-white" : "text-[#6B7280]"
+                    }`}
+                  >
+                    Failed
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Results Count & Reset */}
+            {(paymentFilter !== "all" || statusFilter !== "all") && (
+              <View className="flex-row items-center justify-between mt-3 px-1">
+                <Text className="text-xs text-[#6B7280]">
+                  Showing {historyAppointments.length} result{historyAppointments.length !== 1 ? "s" : ""}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setPaymentFilter("all");
+                    setStatusFilter("all");
+                  }}
+                >
+                  <Text className="text-xs font-semibold text-[#4461F2]">
+                    Clear Filters
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Appointments List */}
+        {displayedAppointments.length > 0 ? (
+          <View className="mb-[30px]">
             <View className="gap-4">
-              {appointments.map((appointment) => (
+              {displayedAppointments.map((appointment) => (
                 <TouchableOpacity
                   key={appointment.id}
                   className="bg-[#4461F2] rounded-3xl p-5 relative overflow-hidden"
@@ -260,42 +498,63 @@ export default function Schedule() {
                   <View className="flex-row justify-between items-start mb-5">
                     <View className="flex-1">
                       <Text className="text-lg font-semibold text-white mb-2">
-                        Upcoming Appointment
+                        {appointment.status === "completed"
+                          ? "Completed Appointment"
+                          : appointment.status === "cancelled"
+                            ? "Cancelled Appointment"
+                            : "Upcoming Appointment"}
                       </Text>
-                      {/* Payment Status Badge */}
-                      <View className="flex-row items-center gap-2">
-                        <View
-                          className={`px-3 py-1 rounded-full flex-row items-center gap-1 ${
-                            getPaymentStatusColor(appointment?.payment?.status)
-                              ?.bg
-                          }`}
-                        >
-                          <Ionicons
-                            name={
-                              getPaymentStatusColor(
-                                appointment?.payment?.status,
-                              )?.icon as any
-                            }
-                            size={14}
-                            color={
-                              getPaymentStatusColor(
-                                appointment?.payment?.status,
-                              )?.iconColor
-                            }
-                          />
-                          <Text
-                            className={`text-xs font-semibold ${
-                              getPaymentStatusColor(
-                                appointment?.payment?.status,
-                              )?.text
+                      {/* Payment Status Badge - Only show if not cancelled */}
+                      {appointment?.status !== "cancelled" && (
+                        <View className="flex-row items-center gap-2">
+                          <View
+                            className={`px-3 py-1 rounded-full flex-row items-center gap-1 ${
+                              getPaymentStatusColor(appointment?.payment?.status)
+                                ?.bg
                             }`}
                           >
-                            {getPaymentStatusLabel(
-                              appointment?.payment?.status,
-                            )}
-                          </Text>
+                            <Ionicons
+                              name={
+                                getPaymentStatusColor(
+                                  appointment?.payment?.status
+                                )?.icon as any
+                              }
+                              size={14}
+                              color={
+                                getPaymentStatusColor(
+                                  appointment?.payment?.status
+                                )?.iconColor
+                              }
+                            />
+                            <Text
+                              className={`text-xs font-semibold ${
+                                getPaymentStatusColor(
+                                  appointment?.payment?.status
+                                )?.text
+                              }`}
+                            >
+                              {getPaymentStatusLabel(
+                                appointment?.payment?.status
+                              )}
+                            </Text>
+                          </View>
                         </View>
-                      </View>
+                      )}
+                      {/* Show Cancelled Badge */}
+                      {appointment?.status === "cancelled" && (
+                        <View className="flex-row items-center gap-2">
+                          <View className="px-3 py-1 rounded-full flex-row items-center gap-1 bg-[#FF3B30]/10">
+                            <Ionicons
+                              name="close-circle"
+                              size={14}
+                              color="#FF3B30"
+                            />
+                            <Text className="text-xs font-semibold text-[#FF3B30]">
+                              Cancelled
+                            </Text>
+                          </View>
+                        </View>
+                      )}
                     </View>
                     <View className="flex-row gap-2 items-center">
                       {appointment.type === "emergency" && (
@@ -352,7 +611,7 @@ export default function Schedule() {
                   <View className="bg-white rounded-2xl p-4 flex-row items-center gap-3">
                     <View className="w-12 h-12 bg-[#E8EBFF] rounded-xl justify-center items-center">
                       <Ionicons
-                        name={getServiceIcon(appointment.serviceName) as any}
+                        name={getServiceIcon(appointment.serviceCategory) as any}
                         size={24}
                         color="#4461F2"
                       />
@@ -427,38 +686,30 @@ export default function Schedule() {
           <View className="bg-white rounded-[20px] p-8 mb-[30px] items-center">
             <Ionicons name="calendar-outline" size={48} color="#9E9E9E" />
             <Text className="text-base text-[#2D3142] font-semibold mt-4 mb-2">
-              No appointments yet
+              No {activeTab} appointments
             </Text>
             <Text className="text-sm text-[#9E9E9E] text-center">
-              Book your first appointment to get started
+              {activeTab === "upcoming"
+                ? "Book your first appointment to get started"
+                : paymentFilter !== "all" || statusFilter !== "all"
+                  ? "No appointments match your filters"
+                  : "Your completed and cancelled appointments will appear here"}
             </Text>
+            {activeTab === "history" && (paymentFilter !== "all" || statusFilter !== "all") && (
+              <TouchableOpacity
+                className="mt-4 bg-[#4461F2] px-6 py-3 rounded-full"
+                onPress={() => {
+                  setPaymentFilter("all");
+                  setStatusFilter("all");
+                }}
+              >
+                <Text className="text-white font-semibold text-sm">
+                  Reset Filters
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
-
-        {/* Stay Organized Card */}
-        <View className="bg-[#4461F2] rounded-3xl p-6 pb-[140px] relative overflow-hidden mb-5">
-          <Text className="text-xs text-white mb-3 opacity-90">
-            Trusted Nurses on your schedule 😊
-          </Text>
-          <Text className="text-[26px] font-bold text-white leading-8">
-            Stay Organized,
-          </Text>
-          <Text className="text-[26px] font-bold text-white leading-8">
-            Stay Ahead
-          </Text>
-
-          <TouchableOpacity className="flex-row items-center bg-white/20 py-3 px-5 rounded-xl self-start mt-5 gap-2">
-            <Ionicons name="calendar-outline" size={20} color="#FFFFFF" />
-            <Text className="text-sm font-semibold text-white">
-              Open Calendar
-            </Text>
-          </TouchableOpacity>
-
-          {/* Illustration */}
-          <View className="absolute -bottom-5 -right-5 w-[200px] h-[200px]">
-            <IllustrationSvg width={200} height={200} />
-          </View>
-        </View>
       </ScrollView>
     </View>
   );

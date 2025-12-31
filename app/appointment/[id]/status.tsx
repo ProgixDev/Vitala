@@ -1,21 +1,21 @@
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { authStorage } from "@/utils/auth";
 import { api } from "@/utils/api";
+import { authStorage } from "@/utils/auth";
+import { getServiceNameById } from "@/utils/services";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
-import Toast from "react-native-toast-message";
 import {
   ActivityIndicator,
-  BackHandler,
   Image,
+  Linking,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
-  Linking,
 } from "react-native";
+import Toast from "react-native-toast-message";
 
 const statusSteps = [
   {
@@ -89,6 +89,7 @@ export default function AppointmentStatus() {
           ...appointmentData,
           serviceName:
             appointmentData.serviceName ||
+            getServiceNameById(appointmentData.service) ||
             appointmentData.service ||
             "Unknown Service",
           date: appointmentData.scheduledDate
@@ -134,7 +135,10 @@ export default function AppointmentStatus() {
                 const fallback = {
                   id: found._id || found.id,
                   serviceName:
-                    found.service || found.serviceName || "Unknown Service",
+                    found.serviceName ||
+                    getServiceNameById(found.service) ||
+                    found.service ||
+                    "Unknown Service",
                   date: found.scheduledDate
                     ? new Date(found.scheduledDate).toLocaleDateString()
                     : "",
@@ -200,7 +204,10 @@ export default function AppointmentStatus() {
         const formatted = {
           ...updated,
           serviceName:
-            updated.serviceName || updated.service || "Unknown Service",
+            updated.serviceName ||
+            getServiceNameById(updated.service) ||
+            updated.service ||
+            "Unknown Service",
           date: updated.scheduledDate
             ? new Date(updated.scheduledDate).toLocaleDateString("en-US", {
                 weekday: "long",
@@ -240,7 +247,16 @@ export default function AppointmentStatus() {
   };
 
   const handleContinue = async () => {
-    if (!appointment) return;
+    console.log("=== handleContinue called ===");
+    console.log("Appointment:", appointment);
+    console.log("Appointment status:", appointment?.status);
+    console.log("Payment object:", appointment?.payment);
+    console.log("Payment status:", appointment?.payment?.status);
+
+    if (!appointment || !appointment.status) {
+      console.log("No appointment or status, returning early");
+      return;
+    }
 
     const statusOrder: Appointment["status"][] = [
       "pending",
@@ -251,8 +267,16 @@ export default function AppointmentStatus() {
     ];
 
     const currentIndex = statusOrder.indexOf(appointment.status);
+    console.log(
+      "Current status index:",
+      currentIndex,
+      "of",
+      statusOrder.length - 1
+    );
+    
     if (currentIndex < statusOrder.length - 1) {
       const newStatus = statusOrder[currentIndex + 1];
+      console.log("Updating status to:", newStatus);
 
       try {
         const { accessToken } = await authStorage.getTokens();
@@ -270,7 +294,10 @@ export default function AppointmentStatus() {
           const formatted = {
             ...updated,
             serviceName:
-              updated.serviceName || updated.service || "Unknown Service",
+              updated.serviceName ||
+              getServiceNameById(updated.service) ||
+              updated.service ||
+              "Unknown Service",
             date: updated.scheduledDate
               ? new Date(updated.scheduledDate).toLocaleDateString("en-US", {
                   weekday: "long",
@@ -311,19 +338,29 @@ export default function AppointmentStatus() {
         });
       }
     } else {
-      if (
-        appointment.payment.status === "pending" ||
-        appointment.payment.status === "failed"
-      )
-        router.replace(
-          `/appointment/${((appointment as any)._id as string) ?? appointment.id}/payment`
-        );
-      else router.replace("/(tabs)");
+      // Appointment is completed - navigate to payment if not already paid
+      const appointmentId =
+        ((appointment as any)._id as string) ?? appointment.id;
+      const paymentStatus = appointment.payment?.status;
+
+      console.log("Appointment completed, checking payment...");
+      console.log("Appointment ID for payment:", appointmentId);
+      console.log("Payment status:", paymentStatus);
+
+      // Navigate to payment page if payment is not completed
+      if (paymentStatus !== "completed") {
+        const paymentUrl = `/appointment/${appointmentId}/payment` as const;
+        console.log("Navigating to payment page:", paymentUrl);
+        router.replace(paymentUrl as any);
+      } else {
+        console.log("Payment already completed, going to schedule");
+        router.replace("/(tabs)/schedule");
+      }
     }
   };
 
   const getCurrentStepData = () => {
-    if (!appointment) return statusSteps[0];
+    if (!appointment || !appointment.status) return statusSteps[0];
     return (
       statusSteps.find((step) => step.key === appointment.status) ||
       statusSteps[0]
@@ -331,7 +368,7 @@ export default function AppointmentStatus() {
   };
 
   const getProgressDots = () => {
-    if (!appointment) return 0;
+    if (!appointment || !appointment.status) return 0;
     const statusOrder = [
       "pending",
       "confirmed",
@@ -345,7 +382,7 @@ export default function AppointmentStatus() {
 
   const handleNurseProfilePress = () => {
     if (nurse) {
-      router.push(`/profile/${nurse.email}`);
+      router.push(`/profile/${(nurse as any)._id || (nurse as any).id}`);
     }
   };
 
@@ -482,15 +519,15 @@ export default function AppointmentStatus() {
           <View className="w-64 h-64 bg-white rounded-full items-center justify-center">
             <Ionicons
               name={
-                appointment.status === "pending"
+                appointment?.status === "pending"
                   ? "hourglass-outline"
-                  : appointment.status === "confirmed"
+                  : appointment?.status === "confirmed"
                     ? "checkmark-circle"
-                    : appointment.status === "on-the-way"
+                    : appointment?.status === "on-the-way"
                       ? "car-outline"
-                      : appointment.status === "in-progress"
+                      : appointment?.status === "in-progress"
                         ? "medical"
-                        : appointment.status === "cancelled"
+                        : appointment?.status === "cancelled"
                           ? "close-circle"
                           : "checkmark-done-circle"
               }
@@ -524,7 +561,7 @@ export default function AppointmentStatus() {
 
         {/* Nurse Info Card - Only show when confirmed and nurse is assigned */}
         {currentUser?.userType === "patient" &&
-          appointment.status === "confirmed" &&
+          appointment?.status === "confirmed" &&
           nurse && (
             <TouchableOpacity
               className="bg-white rounded-[20px] p-5 mb-6 shadow-sm"
@@ -595,10 +632,10 @@ export default function AppointmentStatus() {
               <Text className="text-sm text-[#9E9E9E]">Location:</Text>
               <View className="flex-1 items-end ml-2">
                 <Text className="text-sm font-semibold text-[#2D3142] mb-1">
-                  {appointment.location.label}
+                  {appointment.location?.label || "N/A"}
                 </Text>
                 <Text className="text-xs text-[#9E9E9E] text-right">
-                  {appointment.location.address}
+                  {appointment.location?.address || ""}
                 </Text>
               </View>
             </View>
@@ -608,8 +645,8 @@ export default function AppointmentStatus() {
         {/* Action Buttons */}
         <View className="flex-row gap-3">
           {currentUser?.userType === "patient" &&
-            (appointment.status === "pending" ||
-              appointment.status === "confirmed") && (
+            (appointment?.status === "pending" ||
+              appointment?.status === "confirmed") && (
               <TouchableOpacity
                 className="flex-1 py-4 rounded-[28px] justify-center items-center bg-red-500"
                 onPress={handleCancel}
@@ -639,7 +676,7 @@ export default function AppointmentStatus() {
                 "Continue"
               ) : (
                 <>
-                  {appointment.payment.status === "completed"
+                  {appointment?.payment?.status === "completed"
                     ? "Done"
                     : "Pay Now"}
                 </>

@@ -455,3 +455,30 @@ exports.deleteAccount = async (req, res) => {
     });
   }
 };
+
+// @desc    Get user by ID
+// @route   GET /api/users/:id
+// @access  Private
+exports.getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password -refreshToken');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching user',
+      error: error.message,
+    });
+  }
+};

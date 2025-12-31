@@ -91,10 +91,39 @@ exports.getAppointments = async (req, res) => {
       .populate("patient nurse")
       .sort({ scheduledDate: -1 });
 
+    // Fetch payment data for each appointment
+    const Payment = require('../models/Payment');
+    const appointmentsWithPayments = await Promise.all(
+      appointments.map(async (appointment) => {
+        const payment = await Payment.findOne({ appointment: appointment._id });
+        const appointmentObj = appointment.toObject();
+        
+        if (payment) {
+          appointmentObj.payment = {
+            status: payment.status,
+            amount: payment.amount,
+            currency: payment.currency || 'USD',
+            method: payment.paymentMethod,
+            reference: payment.receiptNumber,
+            transactionDate: payment.createdAt
+          };
+        } else {
+          // Default payment object if no payment exists
+          appointmentObj.payment = {
+            status: 'pending',
+            amount: appointmentObj.price || 0,
+            currency: 'USD'
+          };
+        }
+        
+        return appointmentObj;
+      })
+    );
+
     res.status(200).json({
       success: true,
-      count: appointments.length,
-      data: appointments,
+      count: appointmentsWithPayments.length,
+      data: appointmentsWithPayments,
     });
   } catch (error) {
     res.status(500).json({
@@ -116,6 +145,10 @@ exports.getAppointmentById = async (req, res) => {
     const appointment = await Appointment.findById(req.params.id).populate(
       "patient nurse"
     );
+
+    // Fetch payment data separately
+    const Payment = require('../models/Payment');
+    const payment = await Payment.findOne({ appointment: req.params.id });
 
     console.log('Appointment found:', !!appointment);
     if (appointment) {
@@ -158,9 +191,26 @@ exports.getAppointmentById = async (req, res) => {
     }
     */
 
+    const appointmentObj = appointment.toObject();
+    
     res.status(200).json({
       success: true,
-      data: appointment,
+      data: {
+        ...appointmentObj,
+        payment: payment ? {
+          id: payment._id,
+          status: payment.status,
+          amount: payment.amount,
+          method: payment.paymentMethod,
+          currency: payment.currency || 'USD',
+          reference: payment.receiptNumber,
+          transactionDate: payment.createdAt
+        } : {
+          status: 'pending',
+          amount: appointmentObj.price || 0,
+          currency: 'USD'
+        },
+      },
     });
   } catch (error) {
     res.status(500).json({
