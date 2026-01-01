@@ -70,12 +70,6 @@ const notificationSchema = new mongoose.Schema(
         delivered: Boolean,
         error: String,
       },
-      sms: {
-        sent: Boolean,
-        sentAt: Date,
-        delivered: Boolean,
-        error: String,
-      },
     },
     
     // Metadata

@@ -73,16 +73,15 @@
 - [x] Calculate total refunds
 
 ## Notifications
-- [ ] Send push notification
-- [ ] Send email notification
-- [ ] Send SMS notification
-- [ ] Get user notifications
-- [ ] Mark notification as read
-- [ ] Mark all notifications as read
-- [ ] Delete notification
-- [ ] Clear all notifications
-- [ ] Update notification preferences
-- [ ] Notification delivery status
+- [x] Send push notification
+- [x] Send email notification
+- [x] Get user notifications
+- [x] Mark notification as read
+- [x] Mark all notifications as read
+- [x] Delete notification
+- [x] Clear all notifications
+- [x] Update notification preferences
+- [x] Notification delivery status
 
 ## Emergency Services
 - [ ] Create emergency nurse alert

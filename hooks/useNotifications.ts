@@ -1,0 +1,135 @@
+import { updatePushToken } from "@/utils/api";
+import { authStorage } from "@/utils/auth";
+import {
+    addNotificationReceivedListener,
+    addNotificationResponseListener,
+    getLastNotificationResponse,
+    NotificationData,
+    parseNotificationData,
+    registerForPushNotificationsAsync,
+} from "@/utils/notifications";
+import * as Notifications from "expo-notifications";
+import { router } from "expo-router";
+import { useEffect, useRef, useState } from "react";
+
+interface UseNotificationsReturn {
+  expoPushToken: string | null;
+  notification: Notifications.Notification | null;
+  registerPushNotifications: () => Promise<string | null>;
+}
+
+export function useNotifications(): UseNotificationsReturn {
+  const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
+  const [notification, setNotification] =
+    useState<Notifications.Notification | null>(null);
+  const notificationListener = useRef<Notifications.EventSubscription | null>(null);
+  const responseListener = useRef<Notifications.EventSubscription | null>(null);
+
+  // Handle notification navigation
+  const handleNotificationNavigation = (data: NotificationData) => {
+    if (data.url) {
+      // If there's a direct URL, navigate to it
+      router.push(data.url as any);
+      return;
+    }
+
+    // Navigate based on notification type
+    switch (data.type) {
+      case "appointment":
+        if (data.appointmentId) {
+          router.push(`/appointment/${data.appointmentId}` as any);
+        } else {
+          router.push("/(tabs)/" as any);
+        }
+        break;
+      case "payment":
+        if (data.paymentId) {
+          router.push(`/appointment/${data.appointmentId}/payment` as any);
+        } else {
+          router.push("/profile/transaction-history" as any);
+        }
+        break;
+      case "emergency":
+        router.push("/(tabs)/sos" as any);
+        break;
+      case "message":
+      case "system":
+      case "promotion":
+      case "verification":
+      default:
+        router.push("/profile/notifications" as any);
+        break;
+    }
+  };
+
+  // Register for push notifications and update server
+  const registerPushNotifications = async (): Promise<string | null> => {
+    try {
+      const token = await registerForPushNotificationsAsync();
+      
+      if (token) {
+        setExpoPushToken(token);
+        
+        // Update token on server if user is logged in
+        const { accessToken } = await authStorage.getTokens();
+        if (accessToken) {
+          try {
+            await updatePushToken(accessToken, token);
+            console.log("Push token updated on server");
+          } catch (error) {
+            console.error("Failed to update push token on server:", error);
+          }
+        }
+      }
+      
+      return token;
+    } catch (error) {
+      console.error("Error registering for push notifications:", error);
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    // Register for push notifications on mount
+    registerPushNotifications();
+
+    // Check for initial notification response (app opened from notification)
+    getLastNotificationResponse().then((response) => {
+      if (response) {
+        const data = parseNotificationData(response.notification);
+        // Small delay to ensure navigation is ready
+        setTimeout(() => handleNotificationNavigation(data), 100);
+      }
+    });
+
+    // Listen for incoming notifications while app is foregrounded
+    notificationListener.current = addNotificationReceivedListener(
+      (notification) => {
+        setNotification(notification);
+        console.log("Notification received:", notification);
+      }
+    );
+
+    // Listen for user interaction with notification
+    responseListener.current = addNotificationResponseListener((response) => {
+      const data = parseNotificationData(response.notification);
+      handleNotificationNavigation(data);
+    });
+
+    // Cleanup
+    return () => {
+      if (notificationListener.current) {
+        notificationListener.current.remove();
+      }
+      if (responseListener.current) {
+        responseListener.current.remove();
+      }
+    };
+  }, []);
+
+  return {
+    expoPushToken,
+    notification,
+    registerPushNotifications,
+  };
+}

@@ -1,5 +1,6 @@
-import { authStorage } from "@/utils/auth";
+import LoadingScreen from "@/components/LoadingScreen";
 import { getSettings, updateSettings } from "@/utils/api";
+import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -11,7 +12,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import LoadingScreen from "@/components/LoadingScreen";
 import Toast from "react-native-toast-message";
 
 interface SettingItemProps {
@@ -60,7 +60,6 @@ const SettingItem: React.FC<SettingItemProps> = ({
 export default function Settings() {
   const [pushNotifications, setPushNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
-  const [smsNotifications, setSmsNotifications] = useState(false);
   const [locationServices, setLocationServices] = useState(true);
   const [biometricAuth, setBiometricAuth] = useState(false);
   const [language, setLanguage] = useState("en");
@@ -78,7 +77,6 @@ export default function Settings() {
 
           setPushNotifications(settings.notifications?.push ?? true);
           setEmailNotifications(settings.notifications?.email ?? true);
-          setSmsNotifications(settings.notifications?.sms ?? false);
           setLocationServices(settings.privacy?.shareLocation ?? true);
           setBiometricAuth(settings.preferences?.biometricAuth ?? false);
           setLanguage(settings.preferences?.language ?? "en");
@@ -156,17 +154,6 @@ export default function Settings() {
       });
     } catch {
       setEmailNotifications(!value); // Revert on error
-    }
-  };
-
-  const handleSmsNotificationsToggle = async (value: boolean) => {
-    setSmsNotifications(value);
-    try {
-      await updateUserSettings({
-        notifications: { sms: value },
-      });
-    } catch {
-      setSmsNotifications(!value); // Revert on error
     }
   };
 
@@ -259,21 +246,6 @@ export default function Settings() {
                       onValueChange={handleEmailNotificationsToggle}
                       trackColor={{ false: "#D1D5DB", true: "#93C5FD" }}
                       thumbColor={emailNotifications ? "#4461F2" : "#F3F4F6"}
-                    />
-                  }
-                />
-                <View className="h-px bg-gray-100 ml-[68px]" />
-                <SettingItem
-                  icon="chatbubble-outline"
-                  title="SMS Notifications"
-                  subtitle="Receive SMS alerts"
-                  showArrow={false}
-                  rightElement={
-                    <Switch
-                      value={smsNotifications}
-                      onValueChange={handleSmsNotificationsToggle}
-                      trackColor={{ false: "#D1D5DB", true: "#93C5FD" }}
-                      thumbColor={smsNotifications ? "#4461F2" : "#F3F4F6"}
                     />
                   }
                 />

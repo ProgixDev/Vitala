@@ -120,7 +120,6 @@ const userSchema = new mongoose.Schema(
       notifications: {
         push: { type: Boolean, default: true },
         email: { type: Boolean, default: true },
-        sms: { type: Boolean, default: false },
       },
       privacy: {
         shareLocation: { type: Boolean, default: true },
@@ -146,6 +145,12 @@ const userSchema = new mongoose.Schema(
     isEmailVerified: {
       type: Boolean,
       default: false,
+    },
+
+    // Push notification token
+    expoPushToken: {
+      type: String,
+      default: null,
     },
   },
   {

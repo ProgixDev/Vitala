@@ -18,7 +18,8 @@
       "supportsTablet": true,
       "infoPlist": {
         "UIStatusBarHidden": true,
-        "UIViewControllerBasedStatusBarAppearance": false
+        "UIViewControllerBasedStatusBarAppearance": false,
+        "UIBackgroundModes": ["remote-notification"]
       }
     },
     "android": {
@@ -55,7 +56,15 @@
         }
       ],
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/favicon.png",
+          "color": "#4461F2",
+          "defaultChannel": "default"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

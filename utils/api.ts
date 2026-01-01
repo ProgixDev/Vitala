@@ -549,7 +549,7 @@ export async function markNotificationAsRead(
 
 export async function markAllNotificationsAsRead(token: string) {
   return apiFetch<{ success: boolean; message: string }>(
-    `/api/notifications/mark-all-read`,
+    `/api/notifications/read-all`,
     {
       method: "PUT",
       token,
@@ -577,6 +577,44 @@ export async function clearAllNotifications(token: string) {
       method: "DELETE",
       token,
     }
+  );
+}
+
+// Update notification preferences
+export async function updateNotificationPreferences(
+  token: string,
+  preferences: { push?: boolean; email?: boolean }
+) {
+  return apiFetch<{ success: boolean; data: any; message: string }>(
+    `/api/notifications/preferences`,
+    {
+      method: "PUT",
+      token,
+      body: preferences,
+    }
+  );
+}
+
+// Update push token
+export async function updatePushToken(token: string, expoPushToken: string) {
+  return apiFetch<{ success: boolean; message: string }>(
+    `/api/notifications/push-token`,
+    {
+      method: "PUT",
+      token,
+      body: { expoPushToken },
+    }
+  );
+}
+
+// Get notification delivery status
+export async function getNotificationDeliveryStatus(
+  token: string,
+  notificationId: string
+) {
+  return apiFetch<{ success: boolean; data: any }>(
+    `/api/notifications/${notificationId}/delivery-status`,
+    { token }
   );
 }
 
@@ -620,7 +658,10 @@ export async function processPayment(
 }
 
 // Get payment by appointment
-export async function getPaymentByAppointment(token: string, appointmentId: string) {
+export async function getPaymentByAppointment(
+  token: string,
+  appointmentId: string
+) {
   return apiFetch<{ success: boolean; data: any }>(
     `/api/payments/appointment/${appointmentId}`,
     {
@@ -673,6 +714,9 @@ export const api = {
   markAllNotificationsAsRead,
   deleteNotification,
   clearAllNotifications,
+  updateNotificationPreferences,
+  updatePushToken,
+  getNotificationDeliveryStatus,
   processPayment,
   getPaymentByAppointment,
   baseUrl: API_BASE_URL,

@@ -1,3 +1,4 @@
+import { useNotifications } from "@/hooks/useNotifications";
 import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -6,7 +7,22 @@ import "./global.css";
 // Initialize react-native-css
 import "react-native-css";
 
+// Initialize notification handler (must be outside component)
+import * as Notifications from "expo-notifications";
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
+
 export default function RootLayout() {
+  // Initialize push notifications
+  useNotifications();
+
   return (
     <SafeAreaProvider>
       <Stack
