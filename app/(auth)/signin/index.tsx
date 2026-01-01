@@ -165,19 +165,36 @@ export default function SignIn() {
     apiLogin // noop to keep imports used
     ;(async () => {
       try {
+        setIsLoading(true);
         const { forgotPassword } = await import("@/utils/api");
-        await forgotPassword(email);
+        const response = await forgotPassword(email);
+
+        setIsLoading(false);
+
+        // Navigate to verify reset code screen
+        router.push({
+          pathname: "/(auth)/verify-reset-code",
+          params: {
+            email,
+            // In development, include the reset code for easy testing
+            ...(response?.data?.resetCode &&
+              __DEV__ && { resetCode: response.data.resetCode }),
+          },
+        });
+
         Toast.show({
           type: "success",
-          text1: "Email sent",
-          text2: "Check your inbox for the reset link",
+          text1: "Code Sent",
+          text2: "Check your email for the reset code",
+          visibilityTime: 4000,
         });
-      } catch (err) {
+      } catch (err: any) {
+        setIsLoading(false);
         console.error("Forgot password error:", err);
         Toast.show({
           type: "error",
           text1: "Error",
-          text2: "Could not send reset email",
+          text2: err?.message || "Could not send reset code",
         });
       }
     })();

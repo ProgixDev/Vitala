@@ -1,7 +1,11 @@
 import Constants from "expo-constants";
 
+// Get API URL from environment variable or app config
+// Priority: EXPO_PUBLIC_API_URL > app.json extra.apiUrl > localhost
 const API_BASE_URL: string =
-  (Constants?.expoConfig?.extra as any)?.apiUrl || "http://localhost:5000";
+  process.env.EXPO_PUBLIC_API_URL ||
+  (Constants?.expoConfig?.extra as any)?.apiUrl ||
+  "http://localhost:5000";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 
@@ -113,7 +117,7 @@ export async function resendEmailVerification(email: string) {
 
 // Forgot password
 export async function forgotPassword(email: string) {
-  return apiFetch<{ success: boolean; message: string }>(
+  return apiFetch<{ success: boolean; message: string; resetCode?: string }>(
     "/api/auth/forgot-password",
     {
       method: "POST",
@@ -122,11 +126,29 @@ export async function forgotPassword(email: string) {
   );
 }
 
-// Reset password
-export async function resetPassword(tokenParam: string, newPassword: string) {
+// Reset password with code
+export async function resetPassword(
+  email: string,
+  code: string,
+  newPassword: string
+) {
   return apiFetch<{ success: boolean; message: string }>(
-    `/api/auth/reset-password/${encodeURIComponent(tokenParam)}`,
-    { method: "POST", body: { password: newPassword } }
+    "/api/auth/reset-password",
+    {
+      method: "POST",
+      body: { email, code, newPassword },
+    }
+  );
+}
+
+// Verify reset code
+export async function verifyResetCode(email: string, code: string) {
+  return apiFetch<{ success: boolean; message: string }>(
+    "/api/auth/verify-reset-code",
+    {
+      method: "POST",
+      body: { email, code },
+    }
   );
 }
 
@@ -465,11 +487,37 @@ export async function checkNurseAvailability(
 // Transactions
 export async function getTransactions(
   token: string,
-  filters?: { status?: string; type?: string }
+  filters?: { status?: string; type?: string; limit?: string }
 ) {
-  const queryParams = filters ? `?${new URLSearchParams(filters)}` : "";
+  const queryParams = filters ? `?${new URLSearchParams(filters as any)}` : "";
   return apiFetch<{ success: boolean; count: number; data: any[] }>(
-    `/api/transactions${queryParams}`,
+    `/api/payments/transactions${queryParams}`,
+    { token }
+  );
+}
+
+export async function getTransactionById(token: string, transactionId: string) {
+  return apiFetch<{ success: boolean; data: any }>(
+    `/api/payments/transactions/${transactionId}`,
+    { token }
+  );
+}
+
+export async function getUserStatistics(token: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    data: {
+      totalSpent: number;
+      totalRefunds: number;
+      netSpent: number;
+      totalTransactions: number;
+      completedCount: number;
+      pendingCount: number;
+      failedCount: number;
+      currency: string;
+    }
+  }>(
+    `/api/payments/statistics`,
     { token }
   );
 }
@@ -618,6 +666,8 @@ export const api = {
   getAvailableTimeSlots,
   checkNurseAvailability,
   getTransactions,
+  getTransactionById,
+  getUserStatistics,
   getNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,

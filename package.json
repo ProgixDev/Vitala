@@ -4,6 +4,8 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
+    "setup": "node setup-env.js",
+    "dev": "node setup-env.js && expo start",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
@@ -44,6 +46,7 @@
     "react-native-css": "^3.0.1",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-maps": "1.20.1",
+    "react-native-otp-entry": "^1.8.5",
     "react-native-reanimated": "~4.1.1",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",

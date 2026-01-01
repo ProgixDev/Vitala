@@ -66,11 +66,11 @@
 - [x] Refund processing
 
 ## Transaction History
-- [ ] Get user transactions
-- [ ] Filter transactions (all, completed, pending, failed)
-- [ ] Get transaction by ID
-- [ ] Calculate total spent
-- [ ] Calculate total refunds
+- [x] Get user transactions
+- [x] Filter transactions (all, completed, pending, failed)
+- [x] Get transaction by ID
+- [x] Calculate total spent
+- [x] Calculate total refunds
 
 ## Notifications
 - [ ] Send push notification

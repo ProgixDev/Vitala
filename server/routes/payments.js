@@ -10,7 +10,10 @@ const {
   getPaymentByAppointment,
   generateReceipt,
   downloadReceipt,
-  processRefund
+  processRefund,
+  getUserTransactions,
+  getTransactionById,
+  getUserStatistics
 } = require('../controllers/paymentController');
 const { protect } = require('../middleware/auth');
 
@@ -19,6 +22,11 @@ router.use(protect);
 
 // Payment processing
 router.post('/process', processPayment);
+
+// Transactions
+router.get('/transactions', getUserTransactions);
+router.get('/transactions/:transactionId', getTransactionById);
+router.get('/statistics', getUserStatistics);
 
 // Payment methods
 router.post('/methods', savePaymentMethod);

@@ -412,13 +412,13 @@ export default function PaymentPage() {
 
           {/* Credit Card Display */}
           <TouchableOpacity
-            className="bg-gradient-to-br from-gray-800 via-gray-900 to-black rounded-2xl p-6 mb-4 shadow-2xl border border-gray-700"
+            className="bg-linear-to-br from-gray-800 via-gray-900 to-black rounded-2xl p-6 mb-4 shadow-2xl border border-gray-700"
             onPress={() => setSelectedMethod("credit_card")}
           >
             {/* Card Header */}
             <View className="flex-row justify-between items-center mb-6">
               <View className="flex-row items-center">
-                <View className="w-12 h-8 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-md mr-3 flex-row items-center justify-center">
+                <View className="w-12 h-8 bg-linear-to-r from-yellow-400 to-yellow-500 rounded-md mr-3 flex-row items-center justify-center">
                   <Text className="text-black text-xs font-bold">VISA</Text>
                 </View>
                 <Ionicons name="wifi" size={20} color="white" />
@@ -445,7 +445,7 @@ export default function PaymentPage() {
                 <Text className="text-gray-300 text-xs mb-1">Expires</Text>
                 <Text className="text-white text-sm font-semibold">MM/YY</Text>
               </View>
-              <View className="w-16 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-md items-center justify-center">
+              <View className="w-16 h-10 bg-linear-to-r from-blue-500 to-blue-600 rounded-md items-center justify-center">
                 <Text className="text-white text-xs font-bold">VISA</Text>
               </View>
             </View>

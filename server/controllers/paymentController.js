@@ -355,6 +355,178 @@ const processRefund = async (req, res) => {
   }
 };
 
+// Get user transactions (payments)
+const getUserTransactions = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { status, type, limit = 50 } = req.query;
+
+    let query = { user: userId };
+
+    // Filter by status if provided
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+
+    // Get all payments for the user
+    const payments = await Payment.find(query)
+      .populate({
+        path: 'appointment',
+        select: 'service serviceName scheduledDate price',
+        populate: {
+          path: 'service',
+          select: 'name'
+        }
+      })
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit));
+
+    // Transform payments to transaction format
+    const transactions = payments.map(payment => {
+      const serviceName = payment.appointment?.serviceName || 
+                         payment.appointment?.service?.name || 
+                         payment.appointment?.service || 
+                         'Unknown Service';
+      
+      return {
+        id: payment._id,
+        type: payment.status === 'refunded' ? 'refund' : 'payment',
+        service: serviceName,
+        amount: payment.amount,
+        currency: payment.currency || 'USD',
+        date: payment.createdAt,
+        status: payment.status,
+        paymentMethod: payment.paymentMethod === 'credit_card' ? 'Credit Card' : 'PayPal',
+        receiptNumber: payment.receiptNumber,
+        appointmentId: payment.appointment?._id
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      count: transactions.length,
+      data: transactions
+    });
+  } catch (error) {
+    console.error('Get user transactions error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error', 
+      error: error.message 
+    });
+  }
+};
+
+// Get transaction by ID
+const getTransactionById = async (req, res) => {
+  try {
+    const { transactionId } = req.params;
+    const userId = req.user._id;
+
+    const payment = await Payment.findById(transactionId)
+      .populate({
+        path: 'appointment',
+        select: 'service serviceName scheduledDate price patient',
+        populate: {
+          path: 'service',
+          select: 'name'
+        }
+      });
+
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Transaction not found'
+      });
+    }
+
+    // Check if user owns this transaction
+    if (payment.user.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to view this transaction'
+      });
+    }
+
+    const serviceName = payment.appointment?.serviceName || 
+                       payment.appointment?.service?.name || 
+                       payment.appointment?.service || 
+                       'Unknown Service';
+
+    const transaction = {
+      id: payment._id,
+      type: payment.status === 'refunded' ? 'refund' : 'payment',
+      service: serviceName,
+      amount: payment.amount,
+      currency: payment.currency || 'USD',
+      date: payment.createdAt,
+      status: payment.status,
+      paymentMethod: payment.paymentMethod === 'credit_card' ? 'Credit Card' : 'PayPal',
+      receiptNumber: payment.receiptNumber,
+      appointmentId: payment.appointment?._id,
+      metadata: payment.metadata
+    };
+
+    res.status(200).json({
+      success: true,
+      data: transaction
+    });
+  } catch (error) {
+    console.error('Get transaction by ID error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error', 
+      error: error.message 
+    });
+  }
+};
+
+// Calculate user spending statistics
+const getUserStatistics = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Get all payments for the user
+    const payments = await Payment.find({ user: userId });
+
+    // Calculate total spent (completed payments only)
+    const totalSpent = payments
+      .filter(p => p.status === 'completed' && p.amount > 0)
+      .reduce((sum, p) => sum + p.amount, 0);
+
+    // Calculate total refunds
+    const totalRefunds = payments
+      .filter(p => p.status === 'refunded')
+      .reduce((sum, p) => sum + p.amount, 0);
+
+    // Count transactions by status
+    const completedCount = payments.filter(p => p.status === 'completed').length;
+    const pendingCount = payments.filter(p => p.status === 'pending').length;
+    const failedCount = payments.filter(p => p.status === 'failed').length;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalSpent,
+        totalRefunds,
+        netSpent: totalSpent - totalRefunds,
+        totalTransactions: payments.length,
+        completedCount,
+        pendingCount,
+        failedCount,
+        currency: 'USD'
+      }
+    });
+  } catch (error) {
+    console.error('Get user statistics error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error', 
+      error: error.message 
+    });
+  }
+};
+
 module.exports = {
   processPayment,
   savePaymentMethod,
@@ -365,5 +537,8 @@ module.exports = {
   getPaymentByAppointment,
   generateReceipt,
   downloadReceipt,
-  processRefund
+  processRefund,
+  getUserTransactions,
+  getTransactionById,
+  getUserStatistics
 };

@@ -7,6 +7,7 @@ const {
   verifyEmail,
   resendEmailVerification,
   forgotPassword,
+  verifyResetCode,
   resetPassword,
   refreshToken,
   logout,
@@ -29,8 +30,9 @@ router.post(
 router.post("/login", login);
 router.post("/verify-email", verifyEmail);
 router.post("/resend-verification", resendEmailVerification);
-router.post('/forgot-password', forgotPassword);
-router.post('/reset-password/:token', resetPassword);
+router.post("/forgot-password", forgotPassword);
+router.post("/verify-reset-code", verifyResetCode);
+router.post("/reset-password", resetPassword);
 router.post('/refresh-token', refreshToken);
 
 // Protected routes

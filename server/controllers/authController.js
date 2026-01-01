@@ -9,6 +9,7 @@ if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN &&
 const {
   generateToken,
   generateRefreshToken,
+  generateResetToken,
 } = require('../utils/tokenUtils');
 
 // @desc    Register patient
@@ -459,102 +460,175 @@ exports.forgotPassword = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'No user found with that email',
+        message: "No user found with that email",
       });
     }
 
-    // Generate reset token
-    const resetToken = generateResetToken();
-    const crypto = require('crypto');
-    const hashedToken = crypto
-      .createHash('sha256')
-      .update(resetToken)
-      .digest('hex');
+    // Generate 6-digit code
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const crypto = require("crypto");
+    const hashedCode = crypto
+      .createHash("sha256")
+      .update(resetCode)
+      .digest("hex");
 
-    user.passwordResetToken = hashedToken;
+    user.passwordResetToken = hashedCode;
     user.passwordResetExpires = Date.now() + 30 * 60 * 1000; // 30 minutes
     await user.save();
 
-    // Create reset URL
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
-
-    // Send email
+    // Send email with code
     try {
       await sendEmail({
         to: user.email,
-        subject: 'Password Reset Request',
+        subject: "Password Reset Code",
         html: `
-          <h1>Password Reset</h1>
-          <p>Hi ${user.fullName},</p>
-          <p>You requested a password reset. Click the link below to reset your password:</p>
-          <a href="${resetUrl}">${resetUrl}</a>
-          <p>This link will expire in 30 minutes.</p>
-          <p>If you didn't request this, please ignore this email.</p>
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #4461F2;">Password Reset Request</h1>
+            <p>Hi ${user.fullName},</p>
+            <p>You requested to reset your password. Use the code below to reset your password:</p>
+            <div style="background-color: #f5f5f5; padding: 20px; text-align: center; margin: 20px 0;">
+              <h2 style="color: #4461F2; letter-spacing: 5px; margin: 0;">${resetCode}</h2>
+            </div>
+            <p>This code will expire in 30 minutes.</p>
+            <p>If you didn't request this, please ignore this email and your password will remain unchanged.</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="color: #999; font-size: 12px;">This is an automated email from Vitala. Please do not reply.</p>
+          </div>
         `,
       });
 
       res.status(200).json({
         success: true,
-        message: 'Password reset email sent',
+        message: "Password reset code sent to your email",
       });
     } catch (emailError) {
+      console.error("Email sending failed:", emailError.message);
+
+      // In development mode, still return success but log the reset code
+      if (process.env.NODE_ENV === "development") {
+        console.log("\n=== DEVELOPMENT MODE ===");
+        console.log("Password Reset Code:", resetCode);
+        console.log("Valid for 30 minutes");
+        console.log("========================\n");
+
+        return res.status(200).json({
+          success: true,
+          message:
+            "Password reset code generated (check server console in dev mode)",
+          // Only include code in development for testing
+          ...(process.env.NODE_ENV === "development" && { resetCode }),
+        });
+      }
+
+      // In production, clear the token and return error
       user.passwordResetToken = undefined;
       user.passwordResetExpires = undefined;
       await user.save();
 
       return res.status(500).json({
         success: false,
-        message: 'Error sending email',
+        message: "Error sending email. Please try again later.",
       });
     }
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error processing forgot password',
+      message: "Error processing forgot password",
       error: error.message,
     });
   }
 };
 
-// @desc    Reset password
-// @route   POST /api/auth/reset-password/:token
+// @desc    Verify reset code
+// @route   POST /api/auth/verify-reset-code
 // @access  Public
-exports.resetPassword = async (req, res) => {
+exports.verifyResetCode = async (req, res) => {
   try {
-    const { token } = req.params;
-    const { password } = req.body;
+    const { email, code } = req.body;
 
-    // Hash token
-    const crypto = require('crypto');
-    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    if (!email || !code) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and code are required",
+      });
+    }
 
-    // Find user
+    // Hash code to compare
+    const crypto = require("crypto");
+    const hashedCode = crypto.createHash("sha256").update(code).digest("hex");
+
     const user = await User.findOne({
-      passwordResetToken: hashedToken,
+      email,
+      passwordResetToken: hashedCode,
       passwordResetExpires: { $gt: Date.now() },
     });
 
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid or expired reset token',
+        message: "Invalid or expired reset code",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Code verified successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error verifying code",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Reset password with code
+// @route   POST /api/auth/reset-password
+// @access  Public
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Email, code, and new password are required",
+      });
+    }
+
+    // Hash code
+    const crypto = require("crypto");
+    const hashedCode = crypto.createHash("sha256").update(code).digest("hex");
+
+    // Find user
+    const user = await User.findOne({
+      email,
+      passwordResetToken: hashedCode,
+      passwordResetExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired reset code",
       });
     }
 
     // Set new password
-    user.password = password;
+    user.password = newPassword;
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
     await user.save();
 
     res.status(200).json({
       success: true,
-      message: 'Password reset successful',
+      message: "Password reset successful",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error resetting password',
+      message: "Error resetting password",
       error: error.message,
     });
   }

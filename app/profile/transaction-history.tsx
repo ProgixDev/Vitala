@@ -1,10 +1,13 @@
 import LoadingScreen from "@/components/LoadingScreen";
+import { api } from "@/utils/api";
+import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   BackHandler,
   FlatList,
+  RefreshControl,
   Text,
   TouchableOpacity,
   View,
@@ -13,12 +16,15 @@ import Toast from "react-native-toast-message";
 
 interface Transaction {
   id: string;
-  type: "payment" | "refund" | "booking";
+  type: "payment" | "refund";
   service: string;
-  amount: string;
+  amount: number;
+  currency: string;
   date: string;
   status: "completed" | "pending" | "failed";
   paymentMethod: string;
+  receiptNumber?: string;
+  appointmentId?: string;
 }
 
 const getStatusColor = (status: string) => {
@@ -114,7 +120,8 @@ const TransactionItem: React.FC<TransactionItemProps> = ({
           }`}
         >
           {isRefund ? "+" : "-"}
-          {transaction.amount}
+          {transaction.currency === "USD" ? "$" : "€"}
+          {transaction.amount.toFixed(2)}
         </Text>
         <View
           className="px-2.5 py-1 rounded-xl"
@@ -136,94 +143,106 @@ const TransactionItem: React.FC<TransactionItemProps> = ({
 export default function TransactionHistory() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "completed" | "pending">("all");
+  const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState<"all" | "completed" | "pending" | "failed">("all");
+  const [statistics, setStatistics] = useState<{
+    totalSpent: number;
+    totalRefunds: number;
+    currency: string;
+  }>({
+    totalSpent: 0,
+    totalRefunds: 0,
+    currency: "USD"
+  });
 
-  // Fetch transactions on component mount
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        // For now, use mock data since backend is not implemented
-        // TODO: Replace with real API call when backend is ready
-        const mockTransactions: Transaction[] = [
-          {
-            id: "1",
-            type: "payment",
-            service: "Emergency Ambulance Service",
-            amount: "$150.00",
-            date: "Dec 15, 2024",
-            status: "completed",
-            paymentMethod: "Credit Card",
-          },
-          {
-            id: "2",
-            type: "booking",
-            service: "Medical Consultation",
-            amount: "$80.00",
-            date: "Dec 12, 2024",
-            status: "completed",
-            paymentMethod: "PayPal",
-          },
-          {
-            id: "3",
-            type: "payment",
-            service: "Health Checkup",
-            amount: "$120.00",
-            date: "Dec 10, 2024",
-            status: "pending",
-            paymentMethod: "Credit Card",
-          },
-          {
-            id: "4",
-            type: "refund",
-            service: "Cancelled Appointment",
-            amount: "$80.00",
-            date: "Dec 8, 2024",
-            status: "completed",
-            paymentMethod: "Credit Card",
-          },
-          {
-            id: "5",
-            type: "payment",
-            service: "Prescription Medicine",
-            amount: "$45.00",
-            date: "Dec 5, 2024",
-            status: "completed",
-            paymentMethod: "Debit Card",
-          },
-          {
-            id: "6",
-            type: "booking",
-            service: "Lab Test",
-            amount: "$95.00",
-            date: "Dec 3, 2024",
-            status: "failed",
-            paymentMethod: "Credit Card",
-          },
-          {
-            id: "7",
-            type: "payment",
-            service: "Physical Therapy",
-            amount: "$110.00",
-            date: "Dec 1, 2024",
-            status: "completed",
-            paymentMethod: "PayPal",
-          },
-        ];
-        setTransactions(mockTransactions);
-      } catch (error) {
-        console.error("Error fetching transactions:", error);
+  // Fetch transactions from API
+  const fetchTransactions = useCallback(async () => {
+    try {
+      const { accessToken } = await authStorage.getTokens();
+      if (!accessToken) {
+        Toast.show({
+          type: "error",
+          text1: "Authentication Error",
+          text2: "Please log in again",
+        });
+        return;
+      }
+
+      // Fetch transactions with filter
+      const filterParam = filter !== "all" ? { status: filter } : {};
+      const result = await api.getTransactions(accessToken, filterParam);
+
+      if (result.success) {
+        // Format transactions for display
+        const formattedTransactions = result.data.map((trans: any) => ({
+          ...trans,
+          date: new Date(trans.date).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          }),
+        }));
+        setTransactions(formattedTransactions);
+
+        // Fetch statistics
+        const statsResult = await api.getUserStatistics(accessToken);
+        if (statsResult.success) {
+          setStatistics({
+            totalSpent: statsResult.data.totalSpent,
+            totalRefunds: statsResult.data.totalRefunds,
+            currency: statsResult.data.currency,
+          });
+        }
+      } else {
         Toast.show({
           type: "error",
           text1: "Error",
           text2: "Failed to load transactions",
         });
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to load transactions",
+      });
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [filter]);
 
+  // Fetch on mount and when filter changes
+  useEffect(() => {
     fetchTransactions();
-  }, []);
+  }, [fetchTransactions]);
+
+  // Refresh when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchTransactions();
+    }, [fetchTransactions])
+  );
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchTransactions();
+  }, [fetchTransactions]);
+
+  const handleTransactionPress = (transactionId: string) => {
+    // Navigate to appointment details if appointmentId exists
+    const transaction = transactions.find(t => t.id === transactionId);
+    if (transaction?.appointmentId) {
+      router.push(`/appointment/${transaction.appointmentId}/status`);
+    } else {
+      Toast.show({
+        type: "info",
+        text1: "Transaction Details",
+        text2: `Receipt: ${transaction?.receiptNumber || 'N/A'}`,
+      });
+    }
+  };
 
   // Handle back button - go back to profile page
   useEffect(() => {
@@ -238,17 +257,7 @@ export default function TransactionHistory() {
     return () => backHandler.remove();
   }, []);
 
-  const filteredTransactions = transactions.filter((trans) =>
-    filter === "all" ? true : trans.status === filter
-  );
-
-  const totalSpent = transactions
-    .filter((t) => t.type !== "refund" && t.status === "completed")
-    .reduce((sum, t) => sum + parseFloat(t.amount.replace("$", "")), 0);
-
-  const totalRefunds = transactions
-    .filter((t) => t.type === "refund" && t.status === "completed")
-    .reduce((sum, t) => sum + parseFloat(t.amount.replace("$", "")), 0);
+  const filteredTransactions = transactions;
 
   return (
     <View className="flex-1 bg-[#F9FAFB]">
@@ -284,7 +293,8 @@ export default function TransactionHistory() {
                 Total Spent
               </Text>
               <Text className="text-xl font-bold text-[#1F2937]">
-                ${totalSpent.toFixed(2)}
+                {statistics.currency === "USD" ? "$" : "€"}
+                {statistics.totalSpent.toFixed(2)}
               </Text>
             </View>
             <View className="flex-1 bg-white rounded-2xl p-4 shadow-sm">
@@ -295,7 +305,8 @@ export default function TransactionHistory() {
                 Total Refunds
               </Text>
               <Text className="text-xl font-bold text-[#10B981]">
-                ${totalRefunds.toFixed(2)}
+                {statistics.currency === "USD" ? "$" : "€"}
+                {statistics.totalRefunds.toFixed(2)}
               </Text>
             </View>
           </View>
@@ -350,6 +361,22 @@ export default function TransactionHistory() {
                 Pending
               </Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              className={`flex-1 py-2.5 px-4 rounded-[10px] items-center border ${
+                filter === "failed"
+                  ? "bg-[#4461F2] border-[#4461F2]"
+                  : "bg-white border-[#E5E7EB]"
+              }`}
+              onPress={() => setFilter("failed")}
+            >
+              <Text
+                className={`text-sm font-medium ${
+                  filter === "failed" ? "text-white" : "text-[#6B7280]"
+                }`}
+              >
+                Failed
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {/* Transactions List */}
@@ -371,9 +398,17 @@ export default function TransactionHistory() {
               renderItem={({ item }) => (
                 <TransactionItem
                   transaction={item}
-                  onPress={() => console.log("Transaction details:", item.id)}
+                  onPress={() => handleTransactionPress(item.id)}
                 />
               )}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  colors={["#4461F2"]}
+                  tintColor="#4461F2"
+                />
+              }
               contentContainerStyle={{
                 paddingHorizontal: 24,
                 paddingBottom: 24,
