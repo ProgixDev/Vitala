@@ -1,11 +1,15 @@
+import { api } from "@/utils/api";
+import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   BackHandler,
   Modal,
+  RefreshControl,
   ScrollView,
   Text,
   TextInput,
@@ -16,6 +20,9 @@ import {
   GestureHandlerRootView,
   Swipeable,
 } from "react-native-gesture-handler";
+import Toast from "react-native-toast-message";
+
+const CARDS_STORAGE_KEY = "@vitala_saved_cards";
 
 interface Card {
   id: string;
@@ -35,16 +42,8 @@ interface Payment {
 }
 
 export default function PaymentdPage() {
-  const [cards, setCards] = useState<Card[]>([
-    {
-      id: "1",
-      lastFour: "1234",
-      type: "Visa",
-      expiryMonth: "12",
-      expiryYear: "26",
-      isDefault: true,
-    },
-  ]);
+  const [cards, setCards] = useState<Card[]>([]);
+  const [loadingCards, setLoadingCards] = useState(true);
 
   // Handle back button - go to home tab instead of back
   useEffect(() => {
@@ -53,35 +52,106 @@ export default function PaymentdPage() {
       () => {
         router.replace("/(tabs)");
         return true;
-      },
+      }
     );
 
     return () => backHandler.remove();
   }, []);
 
-  const [payments] = useState<Payment[]>([
-    {
-      id: "1",
-      description: "Appointment Payment",
-      date: "Oct 15, 2025",
-      amount: -50.0,
-      status: "completed",
-    },
-    {
-      id: "2",
-      description: "Consultation Fee",
-      date: "Oct 10, 2025",
-      amount: -75.0,
-      status: "completed",
-    },
-    {
-      id: "3",
-      description: "Emergency Service",
-      date: "Oct 5, 2025",
-      amount: -120.0,
-      status: "pending",
-    },
-  ]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [loadingPayments, setLoadingPayments] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Fetch recent payments
+  const fetchRecentPayments = useCallback(async () => {
+    try {
+      const { accessToken } = await authStorage.getTokens();
+      if (!accessToken) {
+        setLoadingPayments(false);
+        return;
+      }
+
+      const result = await api.getTransactions(accessToken, { limit: "5" });
+
+      if (result.success) {
+        const formattedPayments = result.data.map((trans: any) => ({
+          id: trans.id,
+          description: trans.service,
+          date: new Date(trans.date).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          }),
+          amount: trans.type === "refund" ? trans.amount : -trans.amount,
+          status: trans.status,
+        }));
+        setPayments(formattedPayments);
+      }
+    } catch (error) {
+      console.error("Error fetching payments:", error);
+    } finally {
+      setLoadingPayments(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  // Fetch payments on mount
+  useEffect(() => {
+    fetchRecentPayments();
+  }, [fetchRecentPayments]);
+
+  // Refresh when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchRecentPayments();
+    }, [fetchRecentPayments])
+  );
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchRecentPayments();
+  }, [fetchRecentPayments]);
+
+  // Load saved cards from AsyncStorage
+  const loadSavedCards = useCallback(async () => {
+    try {
+      const savedCards = await AsyncStorage.getItem(CARDS_STORAGE_KEY);
+      if (savedCards) {
+        setCards(JSON.parse(savedCards));
+      }
+    } catch (error) {
+      console.error("Error loading saved cards:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to load saved cards",
+      });
+    } finally {
+      setLoadingCards(false);
+    }
+  }, []);
+
+  // Save cards to AsyncStorage
+  const saveCardsToStorage = async (cardsToSave: Card[]) => {
+    try {
+      await AsyncStorage.setItem(
+        CARDS_STORAGE_KEY,
+        JSON.stringify(cardsToSave)
+      );
+    } catch (error) {
+      console.error("Error saving cards:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to save card",
+      });
+    }
+  };
+
+  // Load cards on mount
+  useEffect(() => {
+    loadSavedCards();
+  }, [loadSavedCards]);
 
   const [showAddCardModal, setShowAddCardModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -137,7 +207,10 @@ export default function PaymentdPage() {
         isDefault: cards.length === 0,
       };
 
-      setCards((prev) => [...prev, newCard]);
+      const updatedCards = [...cards, newCard];
+      setCards(updatedCards);
+      saveCardsToStorage(updatedCards);
+
       setCardForm({
         cardNumber: "",
         expiryMonth: "",
@@ -147,7 +220,11 @@ export default function PaymentdPage() {
       });
       setShowAddCardModal(false);
       setIsLoading(false);
-      Alert.alert("Success", "Card added successfully!");
+      Toast.show({
+        type: "success",
+        text1: "Success",
+        text2: "Card added successfully!",
+      });
     }, 1500);
   };
 
@@ -158,19 +235,31 @@ export default function PaymentdPage() {
         text: "Delete",
         style: "destructive",
         onPress: () => {
-          setCards((prev) => prev.filter((card) => card.id !== cardId));
+          const updatedCards = cards.filter((card) => card.id !== cardId);
+          setCards(updatedCards);
+          saveCardsToStorage(updatedCards);
+          Toast.show({
+            type: "success",
+            text1: "Card Deleted",
+            text2: "Card removed successfully",
+          });
         },
       },
     ]);
   };
 
   const handleSetDefaultCard = (cardId: string) => {
-    setCards((prev) =>
-      prev.map((card) => ({
-        ...card,
-        isDefault: card.id === cardId,
-      })),
-    );
+    const updatedCards = cards.map((card) => ({
+      ...card,
+      isDefault: card.id === cardId,
+    }));
+    setCards(updatedCards);
+    saveCardsToStorage(updatedCards);
+    Toast.show({
+      type: "success",
+      text1: "Default Card Updated",
+      text2: "Your default card has been changed",
+    });
   };
 
   const getStatusColor = (status: Payment["status"]) => {
@@ -220,7 +309,18 @@ export default function PaymentdPage() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View className="flex-1 pt-6 px-4">
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#4461F2"]}
+              tintColor="#4461F2"
+            />
+          }
+        >
           {/* Header */}
           <View className="py-5">
             <View>
@@ -238,7 +338,14 @@ export default function PaymentdPage() {
             <Text className="text-xl font-semibold text-[#2D3142] mb-5">
               Saved Cards ({cards.length})
             </Text>
-            {cards.length > 0 ? (
+            {loadingCards ? (
+              <View className="bg-white rounded-[20px] p-8 items-center">
+                <ActivityIndicator size="large" color="#4461F2" />
+                <Text className="text-sm text-[#9E9E9E] mt-3">
+                  Loading cards...
+                </Text>
+              </View>
+            ) : cards.length > 0 ? (
               <View className="gap-3">
                 {cards.map((card) => (
                   <Swipeable
@@ -320,49 +427,77 @@ export default function PaymentdPage() {
 
           {/* Recent Payments */}
           <View className="mb-[30px]">
-            <Text className="text-xl font-semibold text-[#2D3142] mb-5">
-              Recent Payments
-            </Text>
-            <View className="gap-3">
-              {payments.map((payment) => (
-                <View
-                  key={payment.id}
-                  className="bg-white rounded-[20px] p-4 shadow-sm"
-                >
-                  <View className="flex-row justify-between items-center">
-                    <View className="flex-1">
-                      <View className="flex-row items-center mb-1">
-                        <Ionicons
-                          name={getStatusIcon(payment.status) as any}
-                          size={16}
-                          color={
-                            payment.status === "completed"
-                              ? "#16a34a"
-                              : payment.status === "pending"
-                                ? "#ca8a04"
-                                : "#dc2626"
-                          }
-                        />
-                        <Text className="text-sm text-[#9E9E9E] ml-2 capitalize">
-                          {payment.status}
+            <View className="flex-row justify-between items-center mb-5">
+              <Text className="text-xl font-semibold text-[#2D3142]">
+                Recent Payments
+              </Text>
+              <TouchableOpacity
+                onPress={() => router.push("/profile/transaction-history")}
+              >
+                <Text className="text-sm font-medium text-[#4461F2]">
+                  View All
+                </Text>
+              </TouchableOpacity>
+            </View>
+            {loadingPayments ? (
+              <View className="bg-white rounded-[20px] p-8 items-center">
+                <ActivityIndicator size="large" color="#4461F2" />
+                <Text className="text-sm text-[#9E9E9E] mt-3">
+                  Loading payments...
+                </Text>
+              </View>
+            ) : payments.length === 0 ? (
+              <View className="bg-white rounded-[20px] p-8 items-center">
+                <Ionicons name="receipt-outline" size={48} color="#D1D5DB" />
+                <Text className="text-base font-semibold text-[#2D3142] mt-3 mb-1">
+                  No Payments Yet
+                </Text>
+                <Text className="text-sm text-[#9E9E9E] text-center">
+                  Your recent transactions will appear here
+                </Text>
+              </View>
+            ) : (
+              <View className="gap-3">
+                {payments.map((payment) => (
+                  <View
+                    key={payment.id}
+                    className="bg-white rounded-[20px] p-4 shadow-sm"
+                  >
+                    <View className="flex-row justify-between items-center">
+                      <View className="flex-1">
+                        <View className="flex-row items-center mb-1">
+                          <Ionicons
+                            name={getStatusIcon(payment.status) as any}
+                            size={16}
+                            color={
+                              payment.status === "completed"
+                                ? "#16a34a"
+                                : payment.status === "pending"
+                                  ? "#ca8a04"
+                                  : "#dc2626"
+                            }
+                          />
+                          <Text className="text-sm text-[#9E9E9E] ml-2 capitalize">
+                            {payment.status}
+                          </Text>
+                        </View>
+                        <Text className="text-base font-medium">
+                          {payment.description}
+                        </Text>
+                        <Text className="text-sm text-[#9E9E9E]">
+                          {payment.date}
                         </Text>
                       </View>
-                      <Text className="text-base font-medium">
-                        {payment.description}
-                      </Text>
-                      <Text className="text-sm text-[#9E9E9E]">
-                        {payment.date}
+                      <Text
+                        className={`text-base font-semibold ${getStatusColor(payment.status)}`}
+                      >
+                        ${Math.abs(payment.amount).toFixed(2)}
                       </Text>
                     </View>
-                    <Text
-                      className={`text-base font-semibold ${getStatusColor(payment.status)}`}
-                    >
-                      ${Math.abs(payment.amount).toFixed(2)}
-                    </Text>
                   </View>
-                </View>
-              ))}
-            </View>
+                ))}
+              </View>
+            )}
           </View>
 
           {/* Add Card Modal */}

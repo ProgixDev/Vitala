@@ -280,9 +280,9 @@ export default function PatientHomeUI() {
                   <Ionicons name="close-circle" size={20} color="#9E9E9E" />
                 </TouchableOpacity>
               )}
-              <TouchableOpacity className="w-9 h-9 bg-[#4461F2] rounded-[18px] justify-center items-center">
-                <Ionicons name="options" size={20} color="#FFFFFF" />
-              </TouchableOpacity>
+              <View className="w-9 h-9 bg-[#4461F2] rounded-[18px] justify-center items-center">
+                <Ionicons name="filter-outline" size={20} color="#FFFFFF" />
+              </View>
             </View>
           </View>
 
@@ -380,7 +380,7 @@ export default function PatientHomeUI() {
 
           {/* Consultation Banner */}
           {searchQuery.length === 0 && (
-            <TouchableOpacity className="flex-row bg-[#4461F2] rounded-[20px] mb-5 p-5 overflow-hidden">
+            <View className="flex-row bg-[#4461F2] rounded-[20px] mb-5 p-5 overflow-hidden">
               <View className="flex-1">
                 <Text className="text-xs text-white mb-3 opacity-90">
                   Trusted Nurses on your schedule 😊
@@ -412,12 +412,12 @@ export default function PatientHomeUI() {
                 className="w-36 h-[180px] absolute right-0 bottom-0"
                 resizeMode="contain"
               />
-            </TouchableOpacity>
+            </View>
           )}
 
           {/* Emergency Banner */}
           {searchQuery.length === 0 && (
-            <TouchableOpacity className="flex-row bg-[#FF4B8C] rounded-[20px] p-5 pr-0 pb-0 overflow-hidden mb-5">
+            <View className="flex-row bg-[#FF4B8C] rounded-[20px] p-5 pr-0 pb-0 overflow-hidden mb-5">
               <View className="flex-1">
                 <Text className="text-xs text-white mb-3 opacity-90">
                   Need Urgent Help?
@@ -431,7 +431,7 @@ export default function PatientHomeUI() {
                 className="h-[165px] relative -right-2.5 bottom-0"
                 resizeMode="contain"
               />
-            </TouchableOpacity>
+            </View>
           )}
         </>
       )}

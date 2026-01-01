@@ -125,18 +125,18 @@
 - [ ] Report inappropriate review
 
 ## Settings
-- [ ] Get user settings
-- [ ] Update notification preferences (push, email, SMS)
-- [ ] Update privacy settings
-- [ ] Update location services preference
-- [ ] Update biometric authentication preference
-- [ ] Update language preference
+- [x] Get user settings
+- [x] Update notification preferences (push, email, SMS)
+- [x] Update privacy settings
+- [x] Update location services preference
+- [x] Update biometric authentication preference
+- [x] Update language preference
 
 ## File Upload
-- [ ] Upload ID document (front)
-- [ ] Upload ID document (back)
-- [ ] Upload selfie
-- [ ] Upload profile picture
+- [x] Upload ID document (front)
+- [x] Upload ID document (back)
+- [x] Upload selfie
+- [x] Upload profile picture
 - [ ] Delete uploaded files
 
 ## Admin Functions

@@ -95,7 +95,7 @@ const TransactionItem: React.FC<TransactionItemProps> = ({
           <Ionicons
             name={iconName as keyof typeof Ionicons.glyphMap}
             size={24}
-            color={isRefund ? "#EF4444" : "#4461F2"}
+            color={statusColor}
           />
         </View>
         <View className="flex-1">
@@ -123,18 +123,6 @@ const TransactionItem: React.FC<TransactionItemProps> = ({
           {transaction.currency === "USD" ? "$" : "€"}
           {transaction.amount.toFixed(2)}
         </Text>
-        <View
-          className="px-2.5 py-1 rounded-xl"
-          style={{ backgroundColor: statusBgColor }}
-        >
-          <Text
-            className="text-xs font-semibold"
-            style={{ color: statusColor }}
-          >
-            {transaction.status.charAt(0).toUpperCase() +
-              transaction.status.slice(1)}
-          </Text>
-        </View>
       </View>
     </TouchableOpacity>
   );
@@ -275,12 +263,11 @@ export default function TransactionHistory() {
             <Text className="text-lg font-semibold text-[#1F2937]">
               Transaction History
             </Text>
-            <TouchableOpacity
+            <View
               className="w-10 h-10 items-center justify-center"
-              onPress={() => console.log("Filter")}
             >
-              <Ionicons name="funnel-outline" size={24} color="#1F2937" />
-            </TouchableOpacity>
+              <Ionicons name="receipt-outline" size={24} color="#1F2937" />
+            </View>
           </View>
 
           {/* Summary Cards */}
@@ -312,71 +299,90 @@ export default function TransactionHistory() {
           </View>
 
           {/* Filter Tabs */}
-          <View className="flex-row px-6 gap-3 mb-4">
-            <TouchableOpacity
-              className={`flex-1 py-2.5 px-4 rounded-[10px] items-center border ${
-                filter === "all"
-                  ? "bg-[#4461F2] border-[#4461F2]"
-                  : "bg-white border-[#E5E7EB]"
-              }`}
-              onPress={() => setFilter("all")}
-            >
-              <Text
-                className={`text-sm font-medium ${
-                  filter === "all" ? "text-white" : "text-[#6B7280]"
+          <View className="px-6 mb-4">
+            <Text className="text-xs font-semibold text-[#6B7280] mb-2 px-1">
+              Transaction Status
+            </Text>
+            <View className="flex-row gap-2 flex-wrap">
+              <TouchableOpacity
+                className={`px-4 py-2 rounded-full ${
+                  filter === "all"
+                    ? "bg-[#4461F2]"
+                    : "bg-white border border-gray-200"
                 }`}
+                onPress={() => setFilter("all")}
               >
-                All
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className={`flex-1 py-2.5 px-4 rounded-[10px] items-center border ${
-                filter === "completed"
-                  ? "bg-[#4461F2] border-[#4461F2]"
-                  : "bg-white border-[#E5E7EB]"
-              }`}
-              onPress={() => setFilter("completed")}
-            >
-              <Text
-                className={`text-sm font-medium ${
-                  filter === "completed" ? "text-white" : "text-[#6B7280]"
+                <Text
+                  className={`text-sm font-medium ${
+                    filter === "all" ? "text-white" : "text-[#6B7280]"
+                  }`}
+                >
+                  All
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`px-4 py-2 rounded-full ${
+                  filter === "completed"
+                    ? "bg-[#32CD32]"
+                    : "bg-white border border-gray-200"
                 }`}
+                onPress={() => setFilter("completed")}
               >
-                Completed
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className={`flex-1 py-2.5 px-4 rounded-[10px] items-center border ${
-                filter === "pending"
-                  ? "bg-[#4461F2] border-[#4461F2]"
-                  : "bg-white border-[#E5E7EB]"
-              }`}
-              onPress={() => setFilter("pending")}
-            >
-              <Text
-                className={`text-sm font-medium ${
-                  filter === "pending" ? "text-white" : "text-[#6B7280]"
+                <Text
+                  className={`text-sm font-medium ${
+                    filter === "completed" ? "text-white" : "text-[#6B7280]"
+                  }`}
+                >
+                  Completed
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`px-4 py-2 rounded-full ${
+                  filter === "pending"
+                    ? "bg-[#FFA500]"
+                    : "bg-white border border-gray-200"
                 }`}
+                onPress={() => setFilter("pending")}
               >
-                Pending
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className={`flex-1 py-2.5 px-4 rounded-[10px] items-center border ${
-                filter === "failed"
-                  ? "bg-[#4461F2] border-[#4461F2]"
-                  : "bg-white border-[#E5E7EB]"
-              }`}
-              onPress={() => setFilter("failed")}
-            >
-              <Text
-                className={`text-sm font-medium ${
-                  filter === "failed" ? "text-white" : "text-[#6B7280]"
+                <Text
+                  className={`text-sm font-medium ${
+                    filter === "pending" ? "text-white" : "text-[#6B7280]"
+                  }`}
+                >
+                  Pending
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`px-4 py-2 rounded-full ${
+                  filter === "failed"
+                    ? "bg-[#FF3B30]"
+                    : "bg-white border border-gray-200"
                 }`}
+                onPress={() => setFilter("failed")}
               >
-                Failed
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  className={`text-sm font-medium ${
+                    filter === "failed" ? "text-white" : "text-[#6B7280]"
+                  }`}
+                >
+                  Failed
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Results Count & Clear Filters */}
+            {filter !== "all" && (
+              <View className="flex-row items-center justify-between mt-3 px-1">
+                <Text className="text-xs text-[#6B7280]">
+                  Showing {filteredTransactions.length} result{filteredTransactions.length !== 1 ? "s" : ""}
+                </Text>
+                <TouchableOpacity onPress={() => setFilter("all")}>
+                  <Text className="text-xs font-semibold text-[#4461F2]">
+                    Clear Filters
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
 
           {/* Transactions List */}

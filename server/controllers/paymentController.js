@@ -2,6 +2,37 @@ const Payment = require('../models/Payment');
 const Appointment = require('../models/Appointment');
 const User = require('../models/User');
 
+// Service name mapping - matches frontend services data
+const serviceNameMap = {
+  '1': 'Rééducation',
+  '2': 'Perfusion',
+  '3': 'Vaccination',
+  '4': 'Analyses',
+  '5': 'Consultation',
+  '6': 'Maternity',
+  '7': 'Pediatric',
+  '8': 'Medication',
+  '9': 'Wound Care',
+  '10': 'Elderly Care',
+  '11': 'Dialysis',
+  '12': 'Respiratory',
+  '13': 'Post-Op Care',
+  '14': 'Injection',
+  '15': 'Palliative',
+  '16': 'Nutrition'
+};
+
+// Helper function to get service name from ID
+const getServiceName = (serviceId) => {
+  if (!serviceId) return 'Unknown Service';
+  // If it's already a name, return it
+  if (typeof serviceId === 'string' && !serviceId.match(/^\d+$/)) {
+    return serviceId;
+  }
+  // Look up the service name
+  return serviceNameMap[serviceId.toString()] || 'Unknown Service';
+};
+
 // Mock payment processing
 const processPayment = async (req, res) => {
   try {
@@ -383,10 +414,14 @@ const getUserTransactions = async (req, res) => {
 
     // Transform payments to transaction format
     const transactions = payments.map(payment => {
-      const serviceName = payment.appointment?.serviceName || 
-                         payment.appointment?.service?.name || 
-                         payment.appointment?.service || 
-                         'Unknown Service';
+      // Get service name from appointment
+      let serviceName = 'Unknown Service';
+      if (payment.appointment?.serviceName) {
+        serviceName = payment.appointment.serviceName;
+      } else if (payment.appointment?.service) {
+        // Use the service ID to look up the name
+        serviceName = getServiceName(payment.appointment.service);
+      }
       
       return {
         id: payment._id,
@@ -448,10 +483,14 @@ const getTransactionById = async (req, res) => {
       });
     }
 
-    const serviceName = payment.appointment?.serviceName || 
-                       payment.appointment?.service?.name || 
-                       payment.appointment?.service || 
-                       'Unknown Service';
+    // Get service name from appointment
+    let serviceName = 'Unknown Service';
+    if (payment.appointment?.serviceName) {
+      serviceName = payment.appointment.serviceName;
+    } else if (payment.appointment?.service) {
+      // Use the service ID to look up the name
+      serviceName = getServiceName(payment.appointment.service);
+    }
 
     const transaction = {
       id: payment._id,
