@@ -456,6 +456,118 @@ exports.deleteAccount = async (req, res) => {
   }
 };
 
+// @desc    Get user settings
+// @route   GET /api/users/settings
+// @access  Private
+exports.getSettings = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Return default settings if user doesn't have settings
+    const defaultSettings = {
+      notifications: {
+        push: true,
+        email: true,
+        sms: false,
+      },
+      privacy: {
+        shareLocation: true,
+      },
+      preferences: {
+        biometricAuth: false,
+        language: 'en',
+        darkMode: false,
+      },
+    };
+
+    const settings = user.settings || defaultSettings;
+
+    res.status(200).json({
+      success: true,
+      data: settings,
+    });
+  } catch (error) {
+    console.error('Error in getSettings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching settings',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Update user settings
+// @route   PUT /api/users/settings
+// @access  Private
+exports.updateSettings = async (req, res) => {
+  try {
+    const updates = req.body;
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Initialize settings if they don't exist
+    if (!user.settings) {
+      user.settings = {
+        notifications: {
+          push: true,
+          email: true,
+          sms: false,
+        },
+        privacy: {
+          shareLocation: true,
+        },
+        preferences: {
+          biometricAuth: false,
+          language: 'en',
+          darkMode: false,
+        },
+      };
+    }
+
+    // Update settings recursively
+    const updateNestedSettings = (target, source) => {
+      for (const key in source) {
+        if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+          if (!target[key]) target[key] = {};
+          updateNestedSettings(target[key], source[key]);
+        } else {
+          target[key] = source[key];
+        }
+      }
+    };
+
+    updateNestedSettings(user.settings, updates);
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Settings updated successfully',
+      data: user.settings,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error updating settings',
+      error: error.message,
+    });
+  }
+};
+
 // @desc    Get user by ID
 // @route   GET /api/users/:id
 // @access  Private

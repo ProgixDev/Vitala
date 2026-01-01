@@ -60,6 +60,7 @@ const SettingItem: React.FC<SettingItemProps> = ({
 export default function Settings() {
   const [pushNotifications, setPushNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
+  const [smsNotifications, setSmsNotifications] = useState(false);
   const [locationServices, setLocationServices] = useState(true);
   const [biometricAuth, setBiometricAuth] = useState(false);
   const [language, setLanguage] = useState("en");
@@ -77,6 +78,7 @@ export default function Settings() {
 
           setPushNotifications(settings.notifications?.push ?? true);
           setEmailNotifications(settings.notifications?.email ?? true);
+          setSmsNotifications(settings.notifications?.sms ?? false);
           setLocationServices(settings.privacy?.shareLocation ?? true);
           setBiometricAuth(settings.preferences?.biometricAuth ?? false);
           setLanguage(settings.preferences?.language ?? "en");
@@ -154,6 +156,17 @@ export default function Settings() {
       });
     } catch {
       setEmailNotifications(!value); // Revert on error
+    }
+  };
+
+  const handleSmsNotificationsToggle = async (value: boolean) => {
+    setSmsNotifications(value);
+    try {
+      await updateUserSettings({
+        notifications: { sms: value },
+      });
+    } catch {
+      setSmsNotifications(!value); // Revert on error
     }
   };
 
@@ -249,6 +262,21 @@ export default function Settings() {
                     />
                   }
                 />
+                <View className="h-px bg-gray-100 ml-[68px]" />
+                <SettingItem
+                  icon="chatbubble-outline"
+                  title="SMS Notifications"
+                  subtitle="Receive SMS alerts"
+                  showArrow={false}
+                  rightElement={
+                    <Switch
+                      value={smsNotifications}
+                      onValueChange={handleSmsNotificationsToggle}
+                      trackColor={{ false: "#D1D5DB", true: "#93C5FD" }}
+                      thumbColor={smsNotifications ? "#4461F2" : "#F3F4F6"}
+                    />
+                  }
+                />
               </View>
             </View>
             {/* Privacy */}
@@ -285,6 +313,20 @@ export default function Settings() {
                       thumbColor={biometricAuth ? "#4461F2" : "#F3F4F6"}
                     />
                   }
+                />
+              </View>
+            </View>
+            {/* Emergency */}
+            <View className="px-6 mt-6">
+              <Text className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wider">
+                Emergency
+              </Text>
+              <View className="bg-white rounded-2xl py-2 shadow-sm">
+                <SettingItem
+                  icon="people-outline"
+                  title="Emergency Contacts"
+                  subtitle="Manage emergency contacts"
+                  onPress={() => router.push('/profile/emergency-contacts')}
                 />
               </View>
             </View>

@@ -71,6 +71,9 @@
       "reactCompiler": true
     },
     "extra": {
+      "eas": {
+        "projectId": "your-project-id-here"
+      },
       "apiUrl": "http://localhost:5000"
     }
   }

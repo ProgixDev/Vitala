@@ -114,6 +114,8 @@ app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/admin', require('./routes/admin'));
 app.use("/api/geocoding", require("./routes/geocoding"));
 app.use('/api/payments', require('./routes/payments'));
+app.use('/api/emergency-contacts', require('./routes/emergencyContacts'));
+app.use('/api/emergency', require('./routes/emergency'));
 
 // Health check
 app.get('/api/health', (req, res) => {

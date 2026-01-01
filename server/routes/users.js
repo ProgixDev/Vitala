@@ -20,7 +20,10 @@ const upload = require("../middleware/upload");
 
 router.use(protect);
 
-router.get("/:id", getUserById);
+// Settings routes - MUST be before /:id route to avoid matching "settings" as an ID
+router.get('/settings', getSettings);
+router.put('/settings', updateSettings);
+
 router.get("/profile", getProfile);
 router.put("/profile", updateProfile);
 router.put("/medical-profile", updateMedicalProfile);
@@ -39,7 +42,7 @@ router.delete("/locations/:locationId", deleteLocation);
 
 router.delete("/account", deleteAccount);
 
-router.get('/settings', getSettings);
-router.put('/settings', updateSettings);
+// Dynamic ID route - MUST be last to avoid catching other routes
+router.get("/:id", getUserById);
 
 module.exports = router;

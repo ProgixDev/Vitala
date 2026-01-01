@@ -719,5 +719,14 @@ export const api = {
   getNotificationDeliveryStatus,
   processPayment,
   getPaymentByAppointment,
+  // Emergency services
+  getEmergencyContacts: (token: string) => apiFetch('/api/emergency-contacts', { token }),
+  addEmergencyContact: (token: string, data: any) => apiFetch('/api/emergency-contacts', { method: 'POST', token, body: data }),
+  updateEmergencyContact: (token: string, id: string, data: any) => apiFetch(`/api/emergency-contacts/${id}`, { method: 'PUT', token, body: data }),
+  deleteEmergencyContact: (token: string, id: string) => apiFetch(`/api/emergency-contacts/${id}`, { method: 'DELETE', token }),
+  createNurseAlert: (token: string, data: { description: string; location: any }) => apiFetch('/api/emergency/nurse-alert', { method: 'POST', token, body: data }),
+  createAmbulanceRequest: (token: string, data: { description: string; location: any }) => apiFetch('/api/emergency/ambulance', { method: 'POST', token, body: data }),
+  sendFamilyAlert: (token: string, data: { message?: string }) => apiFetch('/api/emergency/family-alert', { method: 'POST', token, body: data }),
+  getEmergencyStatus: (token: string, appointmentId: string) => apiFetch(`/api/emergency/status/${appointmentId}`, { token }),
   baseUrl: API_BASE_URL,
 };

@@ -1,26 +1,53 @@
-import * as Notifications from "expo-notifications";
-import * as Device from "expo-device";
-import Constants from "expo-constants";
-import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
+import * as Device from "expo-device";
+import { Platform } from "react-native";
 
-// Configure notification handler for foreground notifications
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+// Check if running in Expo Go (storeClient) - push notifications not supported since SDK 53
+const isExpoGo = Constants.executionEnvironment === "storeClient";
+
+// Conditionally import expo-notifications to avoid auto-registration errors in Expo Go
+let Notifications: typeof import("expo-notifications") | null = null;
+
+if (!isExpoGo) {
+  // Only import and configure notifications when NOT in Expo Go
+  Notifications = require("expo-notifications");
+
+  // Configure notification handler for foreground notifications
+  Notifications!.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
+}
 
 const PUSH_TOKEN_KEY = "expo_push_token";
+
+/**
+ * Check if push notifications are supported in current environment
+ */
+export function isPushNotificationsSupported(): boolean {
+  return !isExpoGo && Device.isDevice;
+}
 
 /**
  * Register for push notifications and get Expo push token
  * @returns Expo push token or null if registration fails
  */
-export async function registerForPushNotificationsAsync(): Promise<string | null> {
+export async function registerForPushNotificationsAsync(): Promise<
+  string | null
+> {
+  // Check if notifications are supported
+  if (!Notifications) {
+    console.log(
+      "Push notifications are not supported in Expo Go. Use a development build instead."
+    );
+    return null;
+  }
+
   let token: string | null = null;
 
   // Only works on physical devices
@@ -117,8 +144,9 @@ export async function clearStoredPushToken(): Promise<void> {
  * Add listener for incoming notifications (foreground)
  */
 export function addNotificationReceivedListener(
-  callback: (notification: Notifications.Notification) => void
-) {
+  callback: (notification: import("expo-notifications").Notification) => void
+): import("expo-notifications").EventSubscription | null {
+  if (!Notifications) return null;
   return Notifications.addNotificationReceivedListener(callback);
 }
 
@@ -126,15 +154,17 @@ export function addNotificationReceivedListener(
  * Add listener for notification responses (when user taps notification)
  */
 export function addNotificationResponseListener(
-  callback: (response: Notifications.NotificationResponse) => void
-) {
+  callback: (response: import("expo-notifications").NotificationResponse) => void
+): import("expo-notifications").EventSubscription | null {
+  if (!Notifications) return null;
   return Notifications.addNotificationResponseReceivedListener(callback);
 }
 
 /**
  * Get the last notification response (for deep linking on app open)
  */
-export async function getLastNotificationResponse(): Promise<Notifications.NotificationResponse | null> {
+export async function getLastNotificationResponse(): Promise<import("expo-notifications").NotificationResponse | null> {
+  if (!Notifications) return null;
   return Notifications.getLastNotificationResponseAsync();
 }
 
@@ -142,6 +172,7 @@ export async function getLastNotificationResponse(): Promise<Notifications.Notif
  * Get badge count
  */
 export async function getBadgeCount(): Promise<number> {
+  if (!Notifications) return 0;
   return Notifications.getBadgeCountAsync();
 }
 
@@ -149,6 +180,7 @@ export async function getBadgeCount(): Promise<number> {
  * Set badge count
  */
 export async function setBadgeCount(count: number): Promise<boolean> {
+  if (!Notifications) return false;
   return Notifications.setBadgeCountAsync(count);
 }
 
@@ -160,7 +192,8 @@ export async function scheduleLocalNotification(options: {
   body: string;
   data?: Record<string, unknown>;
   seconds?: number;
-}): Promise<string> {
+}): Promise<string | null> {
+  if (!Notifications) return null;
   const { title, body, data = {}, seconds = 1 } = options;
 
   return Notifications.scheduleNotificationAsync({
@@ -181,6 +214,7 @@ export async function scheduleLocalNotification(options: {
  * Cancel all scheduled notifications
  */
 export async function cancelAllScheduledNotifications(): Promise<void> {
+  if (!Notifications) return;
   await Notifications.cancelAllScheduledNotificationsAsync();
 }
 
@@ -188,6 +222,7 @@ export async function cancelAllScheduledNotifications(): Promise<void> {
  * Dismiss all notifications from notification center
  */
 export async function dismissAllNotifications(): Promise<void> {
+  if (!Notifications) return;
   await Notifications.dismissAllNotificationsAsync();
 }
 
@@ -196,7 +231,14 @@ export async function dismissAllNotifications(): Promise<void> {
  */
 export interface NotificationData {
   notificationId?: string;
-  type?: "appointment" | "payment" | "message" | "emergency" | "system" | "promotion" | "verification";
+  type?:
+    | "appointment"
+    | "payment"
+    | "message"
+    | "emergency"
+    | "system"
+    | "promotion"
+    | "verification";
   appointmentId?: string;
   paymentId?: string;
   url?: string;
@@ -207,7 +249,7 @@ export interface NotificationData {
  * Parse notification data from Expo notification
  */
 export function parseNotificationData(
-  notification: Notifications.Notification
+  notification: import("expo-notifications").Notification
 ): NotificationData {
   return (notification.request.content.data || {}) as NotificationData;
 }

@@ -1,29 +1,29 @@
-import { updatePushToken } from "@/utils/api";
+import { getSettings, updatePushToken } from "@/utils/api";
 import { authStorage } from "@/utils/auth";
 import {
-    addNotificationReceivedListener,
-    addNotificationResponseListener,
-    getLastNotificationResponse,
-    NotificationData,
-    parseNotificationData,
-    registerForPushNotificationsAsync,
+  addNotificationReceivedListener,
+  addNotificationResponseListener,
+  getLastNotificationResponse,
+  isPushNotificationsSupported,
+  NotificationData,
+  parseNotificationData,
+  registerForPushNotificationsAsync,
 } from "@/utils/notifications";
-import * as Notifications from "expo-notifications";
+import type { EventSubscription, Notification } from "expo-notifications";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 
 interface UseNotificationsReturn {
   expoPushToken: string | null;
-  notification: Notifications.Notification | null;
+  notification: Notification | null;
   registerPushNotifications: () => Promise<string | null>;
 }
 
 export function useNotifications(): UseNotificationsReturn {
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
-  const [notification, setNotification] =
-    useState<Notifications.Notification | null>(null);
-  const notificationListener = useRef<Notifications.EventSubscription | null>(null);
-  const responseListener = useRef<Notifications.EventSubscription | null>(null);
+  const [notification, setNotification] = useState<Notification | null>(null);
+  const notificationListener = useRef<EventSubscription | null>(null);
+  const responseListener = useRef<EventSubscription | null>(null);
 
   // Handle notification navigation
   const handleNotificationNavigation = (data: NotificationData) => {
@@ -65,11 +65,29 @@ export function useNotifications(): UseNotificationsReturn {
   // Register for push notifications and update server
   const registerPushNotifications = async (): Promise<string | null> => {
     try {
+      // Check user settings first
+      const { accessToken } = await authStorage.getTokens();
+      if (accessToken) {
+        try {
+          const settingsResponse = await getSettings(accessToken);
+          const settings = settingsResponse.data;
+
+          // If push notifications are disabled in settings, don't register
+          if (settings.notifications?.push === false) {
+            console.log("Push notifications disabled in user settings");
+            return null;
+          }
+        } catch (error) {
+          console.error("Failed to fetch settings:", error);
+          // Continue with registration if we can't fetch settings
+        }
+      }
+
       const token = await registerForPushNotificationsAsync();
-      
+
       if (token) {
         setExpoPushToken(token);
-        
+
         // Update token on server if user is logged in
         const { accessToken } = await authStorage.getTokens();
         if (accessToken) {
@@ -81,7 +99,7 @@ export function useNotifications(): UseNotificationsReturn {
           }
         }
       }
-      
+
       return token;
     } catch (error) {
       console.error("Error registering for push notifications:", error);
@@ -90,6 +108,11 @@ export function useNotifications(): UseNotificationsReturn {
   };
 
   useEffect(() => {
+    // Skip if notifications not supported (e.g., Expo Go)
+    if (!isPushNotificationsSupported()) {
+      return;
+    }
+
     // Register for push notifications on mount
     registerPushNotifications();
 

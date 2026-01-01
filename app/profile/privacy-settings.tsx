@@ -1,14 +1,18 @@
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { getSettings, updateSettings } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
+import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    ScrollView,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Linking,
+  ScrollView,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -24,6 +28,10 @@ interface PrivacySettings {
 export default function PrivacySettings() {
   const { currentUser } = useCurrentUser();
   const [loading, setLoading] = useState(false);
+  const [systemPermissions, setSystemPermissions] = useState({
+    location: false,
+    notifications: false,
+  });
   const [settings, setSettings] = useState<PrivacySettings>({
     profileVisibility: 'private',
     showMedicalInfo: false,
@@ -35,7 +43,21 @@ export default function PrivacySettings() {
 
   useEffect(() => {
     loadSettings();
+    checkSystemPermissions();
   }, []);
+
+  const checkSystemPermissions = async () => {
+    // Check location permission
+    const locationStatus = await Location.getForegroundPermissionsAsync();
+    
+    // Check notification permission
+    const notificationStatus = await Notifications.getPermissionsAsync();
+    
+    setSystemPermissions({
+      location: locationStatus.granted,
+      notifications: notificationStatus.granted,
+    });
+  };
 
   const loadSettings = async () => {
     if (!currentUser?.token) return;
@@ -52,6 +74,21 @@ export default function PrivacySettings() {
 
   const updateSetting = async (key: keyof PrivacySettings, value: any) => {
     if (!currentUser?.token) return;
+
+    // Handle permission-related settings specially
+    if (key === 'allowLocationTracking' && value) {
+      const hasPermission = await requestLocationPermission();
+      if (!hasPermission) {
+        return; // Don't update setting if permission denied
+      }
+    }
+
+    if (key === 'pushNotifications' && value) {
+      const hasPermission = await requestNotificationPermission();
+      if (!hasPermission) {
+        return; // Don't update setting if permission denied
+      }
+    }
 
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
@@ -71,6 +108,60 @@ export default function PrivacySettings() {
         text1: "Update Failed",
         text2: error.message || "Failed to update settings",
       });
+    }
+  };
+
+  const requestLocationPermission = async (): Promise<boolean> => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      
+      if (status === 'granted') {
+        setSystemPermissions(prev => ({ ...prev, location: true }));
+        return true;
+      } else {
+        Alert.alert(
+          "Location Permission Required",
+          "Please enable location services in your device settings to use this feature.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { 
+              text: "Open Settings", 
+              onPress: () => Linking.openSettings() 
+            }
+          ]
+        );
+        return false;
+      }
+    } catch (error) {
+      console.error("Error requesting location permission:", error);
+      return false;
+    }
+  };
+
+  const requestNotificationPermission = async (): Promise<boolean> => {
+    try {
+      const { status } = await Notifications.requestPermissionsAsync();
+      
+      if (status === 'granted') {
+        setSystemPermissions(prev => ({ ...prev, notifications: true }));
+        return true;
+      } else {
+        Alert.alert(
+          "Notification Permission Required",
+          "Please enable notifications in your device settings to receive updates.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { 
+              text: "Open Settings", 
+              onPress: () => Linking.openSettings() 
+            }
+          ]
+        );
+        return false;
+      }
+    } catch (error) {
+      console.error("Error requesting notification permission:", error);
+      return false;
     }
   };
 
@@ -178,12 +269,31 @@ export default function PrivacySettings() {
             <View className="p-5">
               <View className="flex-row items-center justify-between">
                 <View className="flex-1">
-                  <Text className="text-base font-medium text-[#1F2937] mb-1">
-                    Location Tracking
-                  </Text>
+                  <View className="flex-row items-center gap-2 mb-1">
+                    <Text className="text-base font-medium text-[#1F2937]">
+                      Location Tracking
+                    </Text>
+                    {!systemPermissions.location && settings.allowLocationTracking && (
+                      <View className="bg-orange-100 px-2 py-0.5 rounded-full">
+                        <Text className="text-xs text-orange-600 font-medium">
+                          No System Permission
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                   <Text className="text-sm text-[#6B7280]">
                     Allow the app to track your location for better service
                   </Text>
+                  {!systemPermissions.location && settings.allowLocationTracking && (
+                    <TouchableOpacity 
+                      onPress={() => Linking.openSettings()}
+                      className="mt-2"
+                    >
+                      <Text className="text-sm text-[#4461F2] font-medium">
+                        Tap to enable in device settings →
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
                 <Switch
                   value={settings.allowLocationTracking}
@@ -227,12 +337,31 @@ export default function PrivacySettings() {
             <View className="p-5 border-b border-[#F3F4F6]">
               <View className="flex-row items-center justify-between">
                 <View className="flex-1">
-                  <Text className="text-base font-medium text-[#1F2937] mb-1">
-                    Push Notifications
-                  </Text>
+                  <View className="flex-row items-center gap-2 mb-1">
+                    <Text className="text-base font-medium text-[#1F2937]">
+                      Push Notifications
+                    </Text>
+                    {!systemPermissions.notifications && settings.pushNotifications && (
+                      <View className="bg-orange-100 px-2 py-0.5 rounded-full">
+                        <Text className="text-xs text-orange-600 font-medium">
+                          No System Permission
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                   <Text className="text-sm text-[#6B7280]">
                     Receive push notifications for important updates
                   </Text>
+                  {!systemPermissions.notifications && settings.pushNotifications && (
+                    <TouchableOpacity 
+                      onPress={() => Linking.openSettings()}
+                      className="mt-2"
+                    >
+                      <Text className="text-sm text-[#4461F2] font-medium">
+                        Tap to enable in device settings →
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
                 <Switch
                   value={settings.pushNotifications}

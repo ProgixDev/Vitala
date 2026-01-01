@@ -84,14 +84,14 @@
 - [x] Notification delivery status
 
 ## Emergency Services
-- [ ] Create emergency nurse alert
-- [ ] Create ambulance service request
-- [ ] Send family alert notifications
-- [ ] Get emergency contacts
-- [ ] Add emergency contact
-- [ ] Update emergency contact
-- [ ] Delete emergency contact
-- [ ] Emergency service status tracking
+- [x] Create emergency nurse alert
+- [x] Create ambulance service request
+- [x] Send family alert notifications
+- [x] Get emergency contacts
+- [x] Add emergency contact
+- [x] Update emergency contact
+- [x] Delete emergency contact
+- [x] Emergency service status tracking
 
 ## Nurse Management
 - [ ] Get nurse profile

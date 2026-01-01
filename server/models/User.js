@@ -120,6 +120,7 @@ const userSchema = new mongoose.Schema(
       notifications: {
         push: { type: Boolean, default: true },
         email: { type: Boolean, default: true },
+        sms: { type: Boolean, default: false },
       },
       privacy: {
         shareLocation: { type: Boolean, default: true },

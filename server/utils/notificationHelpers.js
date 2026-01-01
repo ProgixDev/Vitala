@@ -1,6 +1,25 @@
 const { Expo } = require('expo-server-sdk');
 const sendEmail = require('../config/email');
-const Notification = require('../models/Notification');
+const twilio = require("twilio");
+const Notification = require("../models/Notification");
+
+// Initialize Twilio client (only if credentials are properly configured)
+let twilioClient = null;
+const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
+const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
+
+if (twilioAccountSid && twilioAuthToken && twilioAccountSid.startsWith("AC")) {
+  try {
+    twilioClient = new twilio(twilioAccountSid, twilioAuthToken);
+    console.log("Twilio SMS service initialized successfully");
+  } catch (error) {
+    console.warn("Failed to initialize Twilio client:", error.message);
+  }
+} else {
+  console.warn(
+    "Twilio credentials not configured. SMS notifications will be disabled."
+  );
+}
 
 // Create a new Expo SDK client
 const expo = new Expo({
@@ -24,8 +43,8 @@ const sendPushNotification = async ({
   title,
   body,
   data = {},
-  sound = 'default',
-  priority = 'default',
+  sound = "default",
+  priority = "default",
 }) => {
   const deliveryStatus = {
     sent: false,
@@ -37,8 +56,10 @@ const sendPushNotification = async ({
   try {
     // Validate Expo push token
     if (!Expo.isExpoPushToken(expoPushToken)) {
-      deliveryStatus.error = 'Invalid Expo push token';
-      console.error(`Push token ${expoPushToken} is not a valid Expo push token`);
+      deliveryStatus.error = "Invalid Expo push token";
+      console.error(
+        `Push token ${expoPushToken} is not a valid Expo push token`
+      );
       return deliveryStatus;
     }
 
@@ -58,15 +79,15 @@ const sendPushNotification = async ({
 
     deliveryStatus.sentAt = new Date();
 
-    if (ticket.status === 'ok') {
+    if (ticket.status === "ok") {
       deliveryStatus.sent = true;
       deliveryStatus.delivered = true;
-      console.log('Push notification sent successfully:', ticket.id);
-    } else if (ticket.status === 'error') {
+      console.log("Push notification sent successfully:", ticket.id);
+    } else if (ticket.status === "error") {
       deliveryStatus.sent = true;
-      deliveryStatus.error = ticket.message || 'Unknown error';
-      console.error('Error sending push notification:', ticket.message);
-      
+      deliveryStatus.error = ticket.message || "Unknown error";
+      console.error("Error sending push notification:", ticket.message);
+
       if (ticket.details?.error) {
         deliveryStatus.error = `${ticket.message} - ${ticket.details.error}`;
       }
@@ -75,7 +96,57 @@ const sendPushNotification = async ({
     return deliveryStatus;
   } catch (error) {
     deliveryStatus.error = error.message;
-    console.error('Failed to send push notification:', error);
+    console.error("Failed to send push notification:", error);
+    return deliveryStatus;
+  }
+};
+
+/**
+ * Send SMS notification via Twilio
+ * @param {Object} options - SMS options
+ * @param {string} options.to - Recipient phone number
+ * @param {string} options.message - SMS message
+ * @returns {Promise<Object>} Delivery status
+ */
+const sendSMSNotification = async ({ to, message }) => {
+  const deliveryStatus = {
+    sent: false,
+    sentAt: null,
+    delivered: false,
+    error: null,
+  };
+
+  // Check if Twilio is configured
+  if (!twilioClient) {
+    deliveryStatus.error = "Twilio SMS service not configured";
+    console.warn("SMS notification skipped - Twilio not configured");
+    return deliveryStatus;
+  }
+
+  try {
+    // Format phone number (ensure it has country code)
+    let formattedNumber = to;
+    if (!formattedNumber.startsWith("+")) {
+      // Assume US number if no country code
+      formattedNumber = `+1${formattedNumber.replace(/\D/g, "")}`;
+    }
+
+    const sms = await twilioClient.messages.create({
+      body: message,
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: formattedNumber,
+    });
+
+    deliveryStatus.sent = true;
+    deliveryStatus.sentAt = new Date();
+    deliveryStatus.delivered = sms.status === "delivered";
+
+    console.log(`SMS notification sent to ${formattedNumber}, SID: ${sms.sid}`);
+    return deliveryStatus;
+  } catch (error) {
+    deliveryStatus.sent = false;
+    deliveryStatus.error = error.message;
+    console.error("Failed to send SMS notification:", error);
     return deliveryStatus;
   }
 };
@@ -106,15 +177,15 @@ const sendEmailNotification = async ({ to, subject, text, html }) => {
     });
 
     deliveryStatus.sent = true;
-    deliveryStatus.delivered = true;
     deliveryStatus.sentAt = new Date();
+    deliveryStatus.delivered = true; // Email delivery status is harder to track
+
     console.log(`Email notification sent to ${to}`);
     return deliveryStatus;
   } catch (error) {
-    deliveryStatus.sent = true;
+    deliveryStatus.sent = false;
     deliveryStatus.error = error.message;
-    deliveryStatus.sentAt = new Date();
-    console.error('Failed to send email notification:', error);
+    console.error("Failed to send email notification:", error);
     return deliveryStatus;
   }
 };
@@ -131,6 +202,7 @@ const sendEmailNotification = async ({ to, subject, text, html }) => {
  * @param {Object} options.userPreferences - User notification preferences
  * @param {string} options.expoPushToken - User's Expo push token
  * @param {string} options.email - User's email
+ * @param {string} options.phoneNumber - User's phone number
  * @returns {Promise<Object>} Created notification
  */
 const createAndSendNotification = async ({
@@ -138,11 +210,12 @@ const createAndSendNotification = async ({
   title,
   message,
   type,
-  priority = 'medium',
+  priority = "medium",
   data = {},
   userPreferences = {},
   expoPushToken = null,
   email = null,
+  phoneNumber = null,
   relatedAppointment = null,
   relatedPayment = null,
 }) => {
@@ -162,6 +235,7 @@ const createAndSendNotification = async ({
     const deliveryStatus = {
       push: null,
       email: null,
+      sms: null,
     };
 
     // Send push notification if enabled and token exists
@@ -175,7 +249,7 @@ const createAndSendNotification = async ({
           type,
           ...data,
         },
-        priority: priority === 'urgent' ? 'high' : 'default',
+        priority: priority === "urgent" ? "high" : "default",
       });
     }
 
@@ -201,6 +275,14 @@ const createAndSendNotification = async ({
       });
     }
 
+    // Send SMS notification if enabled and phone number exists
+    if (userPreferences.sms && phoneNumber) {
+      deliveryStatus.sms = await sendSMSNotification({
+        to: phoneNumber,
+        message: `${title}: ${message}`,
+      });
+    }
+
     // Update notification with delivery status
     notification.deliveryStatus = deliveryStatus;
     await notification.save();
@@ -208,7 +290,7 @@ const createAndSendNotification = async ({
     console.log(`Notification created and sent for user ${userId}`);
     return notification;
   } catch (error) {
-    console.error('Failed to create and send notification:', error);
+    console.error("Failed to create and send notification:", error);
     throw error;
   }
 };
@@ -216,5 +298,6 @@ const createAndSendNotification = async ({
 module.exports = {
   sendPushNotification,
   sendEmailNotification,
+  sendSMSNotification,
   createAndSendNotification,
 };
