@@ -167,7 +167,7 @@ export default function NurseSignUp() {
     } else if (step === "review") {
       try {
         setIsLoading(true);
-        
+
         if (!idFrontUri || !idBackUri || !selfieUri) {
           throw new Error("Missing ID/selfie files");
         }
@@ -231,7 +231,10 @@ export default function NurseSignUp() {
         router.replace("/(tabs)");
       } catch (error) {
         console.error("Error completing nurse signup:", error);
-        const msg = error instanceof Error ? error.message : "Error completing signup. Please try again.";
+        const msg =
+          error instanceof Error
+            ? error.message
+            : "Error completing signup. Please try again.";
         Toast.show({ type: "error", text1: "Error", text2: msg });
       } finally {
         setIsLoading(false);

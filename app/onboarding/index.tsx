@@ -251,7 +251,7 @@ export const Onboarding = ({ onComplete, onLogin }: OnboardingProps) => {
       () => {
         // Return false to allow default back behavior
         return false;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -264,7 +264,7 @@ export const Onboarding = ({ onComplete, onLogin }: OnboardingProps) => {
       () => {
         // Return false to allow default back behavior
         return false;
-      }
+      },
     );
 
     return () => backHandler.remove();

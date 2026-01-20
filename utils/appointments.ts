@@ -26,7 +26,7 @@ export const appointmentStorage = {
    * @returns Promise<void>
    */
   saveAppointment: async (
-    appointment: Omit<Appointment, "id" | "createdAt" | "payment">
+    appointment: Omit<Appointment, "id" | "createdAt" | "payment">,
   ): Promise<void> => {
     // Removed AsyncStorage - use API to save appointment
     throw new Error("Use API to save appointments");
@@ -40,7 +40,7 @@ export const appointmentStorage = {
    */
   updateAppointmentPayment: async (
     appointmentId: string,
-    payment: Payment
+    payment: Payment,
   ): Promise<void> => {
     // TODO: Implement API call to update appointment payment
     throw new Error("Use API to update appointment payment");

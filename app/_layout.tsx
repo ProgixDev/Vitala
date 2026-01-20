@@ -2,12 +2,12 @@
 if (__DEV__) {
   const originalError = console.error;
   const originalWarn = console.warn;
-  
+
   console.error = (...args: any[]) => {
     if (
-      typeof args[0] === 'string' &&
-      (args[0].includes('expo-notifications: Android Push notifications') ||
-       args[0].includes('removed from Expo Go with the release of SDK 53'))
+      typeof args[0] === "string" &&
+      (args[0].includes("expo-notifications: Android Push notifications") ||
+        args[0].includes("removed from Expo Go with the release of SDK 53"))
     ) {
       return;
     }
@@ -15,10 +15,7 @@ if (__DEV__) {
   };
 
   console.warn = (...args: any[]) => {
-    if (
-      typeof args[0] === 'string' &&
-      args[0].includes('expo-notifications')
-    ) {
+    if (typeof args[0] === "string" && args[0].includes("expo-notifications")) {
       return;
     }
     originalWarn.apply(console, args);

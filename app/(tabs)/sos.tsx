@@ -51,7 +51,7 @@ export default function SOS() {
       () => {
         router.replace("/(tabs)");
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -104,7 +104,7 @@ export default function SOS() {
             "Family Alert Sent",
             response.message ||
               `Emergency alert sent to ${response.data?.contactsNotified || "your"} contact(s)`,
-            [{ text: "OK" }]
+            [{ text: "OK" }],
           );
           setEmergencyRequestLoading(false);
           return; // Exit early since no appointment tracking needed
@@ -119,7 +119,7 @@ export default function SOS() {
       Alert.alert(
         "Emergency Request Sent",
         "Your emergency request has been submitted. Help is on the way.",
-        [{ text: "OK" }]
+        [{ text: "OK" }],
       );
     } catch (error: any) {
       // Special handling for missing emergency contacts
@@ -130,18 +130,19 @@ export default function SOS() {
           "Please add emergency contacts before using this feature. Go to Settings > Emergency Contacts to add contacts.",
           [
             { text: "Cancel", style: "cancel" },
-            { 
-              text: "Add Contacts", 
-              onPress: () => router.push("/profile/emergency-contacts")
-            }
-          ]
+            {
+              text: "Add Contacts",
+              onPress: () => router.push("/profile/emergency-contacts"),
+            },
+          ],
         );
       } else {
         // Log unexpected errors for debugging
         console.error("Emergency request error:", error);
         Alert.alert(
           "Error",
-          error.message || "Failed to send emergency request. Please try again."
+          error.message ||
+            "Failed to send emergency request. Please try again.",
         );
       }
     } finally {

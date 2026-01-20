@@ -32,14 +32,16 @@ export default function VerifyEmail() {
       Toast.show({
         type: "success",
         text1: "Email Verified",
-        text2: "Your email has been successfully verified. You can now sign in.",
+        text2:
+          "Your email has been successfully verified. You can now sign in.",
       });
     } catch (error) {
       console.error("Email verification error:", error);
       Toast.show({
         type: "error",
         text1: "Verification Failed",
-        text2: "The verification link is invalid or has expired. Please try signing up again.",
+        text2:
+          "The verification link is invalid or has expired. Please try signing up again.",
       });
     } finally {
       setIsLoading(false);
@@ -51,9 +53,7 @@ export default function VerifyEmail() {
   };
 
   if (isLoading) {
-    return (
-      <LoadingScreen visible={true} message="Verifying your email..." />
-    );
+    return <LoadingScreen visible={true} message="Verifying your email..." />;
   }
 
   return (
@@ -77,8 +77,7 @@ export default function VerifyEmail() {
             <Text className="text-gray-600 text-center leading-6">
               {isVerified
                 ? "Your email has been successfully verified. You can now sign in to your account."
-                : "We're verifying your email address. Please wait..."
-              }
+                : "We're verifying your email address. Please wait..."}
             </Text>
           </View>
 
@@ -87,9 +86,7 @@ export default function VerifyEmail() {
               className="bg-[#4461F2] rounded-[28px] h-14 justify-center items-center shadow-lg mb-8"
               onPress={handleSignIn}
             >
-              <Text className="text-lg font-semibold text-white">
-                Sign In
-              </Text>
+              <Text className="text-lg font-semibold text-white">Sign In</Text>
             </TouchableOpacity>
           )}
         </View>

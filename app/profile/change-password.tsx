@@ -4,11 +4,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -241,10 +241,9 @@ export default function ChangePassword() {
                   Password Security Tips
                 </Text>
                 <Text className="text-sm text-[#3B82F6] leading-5">
-                  • Use at least 8 characters{"\n"}
-                  • Include uppercase and lowercase letters{"\n"}
-                  • Add numbers and special characters{"\n"}
-                  • Avoid using personal information
+                  • Use at least 8 characters{"\n"}• Include uppercase and
+                  lowercase letters{"\n"}• Add numbers and special characters
+                  {"\n"}• Avoid using personal information
                 </Text>
               </View>
             </View>

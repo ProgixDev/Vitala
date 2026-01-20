@@ -1,10 +1,10 @@
 import React, { useRef } from "react";
 import {
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -55,11 +55,9 @@ export default function EmailVerificationStep({
     <SafeAreaView style={styles.container} edges={["bottom"]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>
-          Verify Your Email
-        </Text>
+        <Text style={styles.title}>Verify Your Email</Text>
         <Text style={styles.subtitle}>
-          We've sent a 6-digit verification code to{"\n"}
+          We&apos;ve sent a 6-digit verification code to{"\n"}
           <Text style={styles.email}>{email}</Text>
         </Text>
       </View>
@@ -88,16 +86,20 @@ export default function EmailVerificationStep({
 
       {/* Resend Code */}
       <View style={styles.resendContainer}>
-        <Text style={styles.resendText}>
-          Didn't receive the code?
-        </Text>
+        <Text style={styles.resendText}>Didn&apos;t receive the code?</Text>
         <TouchableOpacity
           onPress={onResend}
           disabled={timer > 0}
-          style={[styles.resendButton, timer > 0 && styles.resendButtonDisabled]}
+          style={[
+            styles.resendButton,
+            timer > 0 && styles.resendButtonDisabled,
+          ]}
         >
           <Text
-            style={[styles.resendButtonText, timer > 0 && styles.resendButtonTextDisabled]}
+            style={[
+              styles.resendButtonText,
+              timer > 0 && styles.resendButtonTextDisabled,
+            ]}
           >
             {timer > 0 ? `Resend in ${timer}s` : "Resend Code"}
           </Text>
@@ -114,7 +116,11 @@ export default function EmailVerificationStep({
 
       {/* Verify Button */}
       <TouchableOpacity
-        style={[styles.verifyButton, (isLoading || safeCode.some((digit) => !digit)) && styles.verifyButtonDisabled]}
+        style={[
+          styles.verifyButton,
+          (isLoading || safeCode.some((digit) => !digit)) &&
+            styles.verifyButtonDisabled,
+        ]}
         onPress={onVerify}
         disabled={isLoading || safeCode.some((digit) => !digit)}
       >
@@ -137,79 +143,79 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#2D3142',
+    fontWeight: "bold",
+    color: "#2D3142",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 15,
-    color: '#666',
+    color: "#666",
     lineHeight: 22,
   },
   email: {
-    fontWeight: '600',
-    color: '#2D3142',
+    fontWeight: "600",
+    color: "#2D3142",
   },
   codeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 32,
   },
   codeInput: {
     width: 48,
     height: 48,
     borderWidth: 2,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 8,
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2D3142',
+    fontWeight: "bold",
+    color: "#2D3142",
   },
   resendContainer: {
     marginBottom: 32,
   },
   resendText: {
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 15,
-    color: '#666',
+    color: "#666",
     marginBottom: 16,
   },
   resendButton: {
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
-    backgroundColor: '#4461F2',
+    backgroundColor: "#4461F2",
   },
   resendButtonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: "#ccc",
   },
   resendButtonText: {
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 16,
-    fontWeight: '600',
-    color: 'white',
+    fontWeight: "600",
+    color: "white",
   },
   resendButtonTextDisabled: {
-    color: '#999',
+    color: "#999",
   },
   instructions: {
-    backgroundColor: '#E6F4FE',
+    backgroundColor: "#E6F4FE",
     padding: 16,
     borderRadius: 8,
     marginBottom: 32,
   },
   instructionsText: {
     fontSize: 14,
-    color: '#0066CC',
+    color: "#0066CC",
   },
   verifyButton: {
-    backgroundColor: '#4461F2',
+    backgroundColor: "#4461F2",
     borderRadius: 28,
     height: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -220,7 +226,7 @@ const styles = StyleSheet.create({
   },
   verifyButtonText: {
     fontSize: 18,
-    fontWeight: '600',
-    color: 'white',
+    fontWeight: "600",
+    color: "white",
   },
 });

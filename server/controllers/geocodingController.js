@@ -1,4 +1,4 @@
-const geocoder = require('../config/geocoding');
+const geocoder = require("../config/geocoding");
 
 // @desc    Geocode address to coordinates
 // @route   GET /api/geocoding/geocode
@@ -10,7 +10,7 @@ exports.geocodeAddress = async (req, res) => {
     if (!address) {
       return res.status(400).json({
         success: false,
-        message: 'Address is required',
+        message: "Address is required",
       });
     }
 
@@ -19,7 +19,7 @@ exports.geocodeAddress = async (req, res) => {
     if (!result || result.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Address not found',
+        message: "Address not found",
       });
     }
 
@@ -36,10 +36,10 @@ exports.geocodeAddress = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Geocoding error:', error);
+    console.error("Geocoding error:", error);
     res.status(500).json({
       success: false,
-      message: 'Error geocoding address',
+      message: "Error geocoding address",
       error: error.message,
     });
   }
@@ -55,17 +55,22 @@ exports.reverseGeocode = async (req, res) => {
     if (!lat || !lng) {
       return res.status(400).json({
         success: false,
-        message: 'Latitude and longitude are required',
+        message: "Latitude and longitude are required",
       });
     }
 
     const latitude = parseFloat(lat);
     const longitude = parseFloat(lng);
 
-    if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+    if (
+      latitude < -90 ||
+      latitude > 90 ||
+      longitude < -180 ||
+      longitude > 180
+    ) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid latitude or longitude values',
+        message: "Invalid latitude or longitude values",
       });
     }
 
@@ -74,7 +79,7 @@ exports.reverseGeocode = async (req, res) => {
     if (!result || result.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Address not found for these coordinates',
+        message: "Address not found for these coordinates",
       });
     }
 
@@ -91,10 +96,10 @@ exports.reverseGeocode = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Reverse geocoding error:', error);
+    console.error("Reverse geocoding error:", error);
     res.status(500).json({
       success: false,
-      message: 'Error reverse geocoding coordinates',
+      message: "Error reverse geocoding coordinates",
       error: error.message,
     });
   }

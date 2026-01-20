@@ -62,7 +62,9 @@ export default function EditEmergencyContact() {
       return;
     }
     try {
-      const response = await api.getEmergencyContacts(currentUser.token) as { data: EmergencyContact[] };
+      const response = (await api.getEmergencyContacts(currentUser.token)) as {
+        data: EmergencyContact[];
+      };
       const contact = response.data.find((c: EmergencyContact) => c._id === id);
       if (contact) {
         setFormData({
@@ -76,7 +78,7 @@ export default function EditEmergencyContact() {
         });
       }
     } catch (error) {
-      console.error('Error loading contact details:', error);
+      console.error("Error loading contact details:", error);
       Alert.alert("Error", "Failed to load contact details");
       router.back();
     } finally {
@@ -91,19 +93,26 @@ export default function EditEmergencyContact() {
     }
 
     if (!currentUser?.token) {
-      Alert.alert("Error", "You must be logged in to update emergency contacts");
+      Alert.alert(
+        "Error",
+        "You must be logged in to update emergency contacts",
+      );
       return;
     }
     setLoading(true);
     try {
-      await api.updateEmergencyContact(currentUser.token, id as string, formData);
+      await api.updateEmergencyContact(
+        currentUser.token,
+        id as string,
+        formData,
+      );
       Alert.alert("Success", "Emergency contact updated successfully", [
         { text: "OK", onPress: () => router.back() },
       ]);
     } catch (error: any) {
       Alert.alert(
         "Error",
-        error.message || "Failed to update emergency contact"
+        error.message || "Failed to update emergency contact",
       );
     } finally {
       setLoading(false);
@@ -144,150 +153,150 @@ export default function EditEmergencyContact() {
         showsVerticalScrollIndicator={false}
       >
         <View className="px-6 mt-6">
-        <View className="bg-white rounded-2xl p-4 shadow-sm mb-4">
-          {/* Name */}
-          <View className="mb-4">
-            <Text className="text-sm font-medium text-[#374151] mb-2">
-              Name *
-            </Text>
-            <TextInput
-              className="border border-[#E5E7EB] bg-white rounded-lg px-4 py-3 text-base text-[#1F2937]"
-              placeholder="Full name"
-              placeholderTextColor="#9CA3AF"
-              value={formData.name}
-              onChangeText={(value) => updateFormData("name", value)}
-            />
-          </View>
+          <View className="bg-white rounded-2xl p-4 shadow-sm mb-4">
+            {/* Name */}
+            <View className="mb-4">
+              <Text className="text-sm font-medium text-[#374151] mb-2">
+                Name *
+              </Text>
+              <TextInput
+                className="border border-[#E5E7EB] bg-white rounded-lg px-4 py-3 text-base text-[#1F2937]"
+                placeholder="Full name"
+                placeholderTextColor="#9CA3AF"
+                value={formData.name}
+                onChangeText={(value) => updateFormData("name", value)}
+              />
+            </View>
 
-          {/* Relationship */}
-          <View className="mb-4">
-            <Text className="text-sm font-medium text-[#374151] mb-2">
-              Relationship *
-            </Text>
-            <View className="flex-row flex-wrap">
-              {relationships.map((rel) => (
-                <TouchableOpacity
-                  key={rel}
-                  onPress={() => updateFormData("relationship", rel)}
-                  className={`border rounded-lg px-4 py-2 mr-2 mb-2 ${
-                    formData.relationship === rel
-                      ? "border-[#4461F2] bg-[#EEF2FF]"
-                      : "border-[#E5E7EB]"
-                  }`}
-                >
-                  <Text
-                    className={`capitalize ${
+            {/* Relationship */}
+            <View className="mb-4">
+              <Text className="text-sm font-medium text-[#374151] mb-2">
+                Relationship *
+              </Text>
+              <View className="flex-row flex-wrap">
+                {relationships.map((rel) => (
+                  <TouchableOpacity
+                    key={rel}
+                    onPress={() => updateFormData("relationship", rel)}
+                    className={`border rounded-lg px-4 py-2 mr-2 mb-2 ${
                       formData.relationship === rel
-                        ? "text-[#4461F2] font-medium"
-                        : "text-[#6B7280]"
+                        ? "border-[#4461F2] bg-[#EEF2FF]"
+                        : "border-[#E5E7EB]"
                     }`}
                   >
-                    {rel}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* Phone Number */}
-          <View className="mb-4">
-            <Text className="text-sm font-medium text-[#374151] mb-2">
-              Phone Number *
-            </Text>
-            <TextInput
-              className="border border-[#E5E7EB] bg-white rounded-lg px-4 py-3 text-base text-[#1F2937]"
-              placeholder="+1 (555) 123-4567"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="phone-pad"
-              value={formData.phoneNumber}
-              onChangeText={(value) => updateFormData("phoneNumber", value)}
-            />
-          </View>
-
-          {/* Email */}
-          <View className="mb-4">
-            <Text className="text-sm font-medium text-[#374151] mb-2">
-              Email (Optional)
-            </Text>
-            <TextInput
-              className="border border-[#E5E7EB] bg-white rounded-lg px-4 py-3 text-base text-[#1F2937]"
-              placeholder="email@example.com"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={formData.email}
-              onChangeText={(value) => updateFormData("email", value)}
-            />
-          </View>
-
-          {/* Primary Contact */}
-          <View className="bg-white border border-[#E5E7EB] p-4 rounded-lg mb-4">
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1">
-                <Text className="text-sm font-medium text-[#374151]">
-                  Primary Contact
-                </Text>
-                <Text className="text-xs text-[#6B7280] mt-1">
-                  This person will be contacted first in emergencies
-                </Text>
+                    <Text
+                      className={`capitalize ${
+                        formData.relationship === rel
+                          ? "text-[#4461F2] font-medium"
+                          : "text-[#6B7280]"
+                      }`}
+                    >
+                      {rel}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-              <Switch
-                value={formData.isPrimary}
-                onValueChange={(value) => updateFormData("isPrimary", value)}
-                trackColor={{ false: "#E5E7EB", true: "#93C5FD" }}
-                thumbColor={formData.isPrimary ? "#4461F2" : "#F3F4F6"}
+            </View>
+
+            {/* Phone Number */}
+            <View className="mb-4">
+              <Text className="text-sm font-medium text-[#374151] mb-2">
+                Phone Number *
+              </Text>
+              <TextInput
+                className="border border-[#E5E7EB] bg-white rounded-lg px-4 py-3 text-base text-[#1F2937]"
+                placeholder="+1 (555) 123-4567"
+                placeholderTextColor="#9CA3AF"
+                keyboardType="phone-pad"
+                value={formData.phoneNumber}
+                onChangeText={(value) => updateFormData("phoneNumber", value)}
+              />
+            </View>
+
+            {/* Email */}
+            <View className="mb-4">
+              <Text className="text-sm font-medium text-[#374151] mb-2">
+                Email (Optional)
+              </Text>
+              <TextInput
+                className="border border-[#E5E7EB] bg-white rounded-lg px-4 py-3 text-base text-[#1F2937]"
+                placeholder="email@example.com"
+                placeholderTextColor="#9CA3AF"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={formData.email}
+                onChangeText={(value) => updateFormData("email", value)}
+              />
+            </View>
+
+            {/* Primary Contact */}
+            <View className="bg-white border border-[#E5E7EB] p-4 rounded-lg mb-4">
+              <View className="flex-row items-center justify-between">
+                <View className="flex-1">
+                  <Text className="text-sm font-medium text-[#374151]">
+                    Primary Contact
+                  </Text>
+                  <Text className="text-xs text-[#6B7280] mt-1">
+                    This person will be contacted first in emergencies
+                  </Text>
+                </View>
+                <Switch
+                  value={formData.isPrimary}
+                  onValueChange={(value) => updateFormData("isPrimary", value)}
+                  trackColor={{ false: "#E5E7EB", true: "#93C5FD" }}
+                  thumbColor={formData.isPrimary ? "#4461F2" : "#F3F4F6"}
+                />
+              </View>
+            </View>
+
+            {/* Address */}
+            <View className="mb-4">
+              <Text className="text-sm font-medium text-[#374151] mb-2">
+                Address (Optional)
+              </Text>
+              <TextInput
+                className="border border-[#E5E7EB] bg-white rounded-lg px-4 py-3 text-base text-[#1F2937]"
+                placeholder="Street address, city, state, zip"
+                placeholderTextColor="#9CA3AF"
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+                value={formData.address}
+                onChangeText={(value) => updateFormData("address", value)}
+              />
+            </View>
+
+            {/* Notes */}
+            <View className="mb-4">
+              <Text className="text-sm font-medium text-[#374151] mb-2">
+                Notes (Optional)
+              </Text>
+              <TextInput
+                className="border border-[#E5E7EB] bg-white rounded-lg px-4 py-3 text-base text-[#1F2937]"
+                placeholder="Any additional information..."
+                placeholderTextColor="#9CA3AF"
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+                value={formData.notes}
+                onChangeText={(value) => updateFormData("notes", value)}
               />
             </View>
           </View>
 
-          {/* Address */}
-          <View className="mb-4">
-            <Text className="text-sm font-medium text-[#374151] mb-2">
-              Address (Optional)
+          <TouchableOpacity
+            onPress={handleSubmit}
+            disabled={loading}
+            className={`py-4 rounded-xl ${
+              loading ? "bg-gray-400" : "bg-[#4461F2]"
+            }`}
+          >
+            <Text className="text-white text-center font-semibold text-base">
+              {loading ? "Updating Contact..." : "Update Emergency Contact"}
             </Text>
-            <TextInput
-              className="border border-[#E5E7EB] bg-white rounded-lg px-4 py-3 text-base text-[#1F2937]"
-              placeholder="Street address, city, state, zip"
-              placeholderTextColor="#9CA3AF"
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-              value={formData.address}
-              onChangeText={(value) => updateFormData("address", value)}
-            />
-          </View>
-
-          {/* Notes */}
-          <View className="mb-4">
-            <Text className="text-sm font-medium text-[#374151] mb-2">
-              Notes (Optional)
-            </Text>
-            <TextInput
-              className="border border-[#E5E7EB] bg-white rounded-lg px-4 py-3 text-base text-[#1F2937]"
-              placeholder="Any additional information..."
-              placeholderTextColor="#9CA3AF"
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-              value={formData.notes}
-              onChangeText={(value) => updateFormData("notes", value)}
-            />
-          </View>
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          onPress={handleSubmit}
-          disabled={loading}
-          className={`py-4 rounded-xl ${
-            loading ? "bg-gray-400" : "bg-[#4461F2]"
-          }`}
-        >
-          <Text className="text-white text-center font-semibold text-base">
-            {loading ? "Updating Contact..." : "Update Emergency Contact"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+      </ScrollView>
     </View>
   );
 }

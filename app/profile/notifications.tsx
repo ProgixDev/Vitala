@@ -199,7 +199,7 @@ export default function Notifications() {
         setRefreshing(false);
       }
     },
-    [currentUser?.token]
+    [currentUser?.token],
   );
 
   // Fetch notifications on component mount
@@ -214,7 +214,7 @@ export default function Notifications() {
       () => {
         router.replace("/(tabs)/profile");
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -227,7 +227,7 @@ export default function Notifications() {
   }, [fetchNotifications]);
 
   const filteredNotifications = notifications.filter((notif) =>
-    filter === "all" ? true : !notif.isRead
+    filter === "all" ? true : !notif.isRead,
   );
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
@@ -238,8 +238,8 @@ export default function Notifications() {
     // Optimistic update
     setNotifications((prev) =>
       prev.map((notif) =>
-        notif._id === id ? { ...notif, isRead: true } : notif
-      )
+        notif._id === id ? { ...notif, isRead: true } : notif,
+      ),
     );
 
     try {
@@ -249,8 +249,8 @@ export default function Notifications() {
       // Revert on error
       setNotifications((prev) =>
         prev.map((notif) =>
-          notif._id === id ? { ...notif, isRead: false } : notif
-        )
+          notif._id === id ? { ...notif, isRead: false } : notif,
+        ),
       );
     }
   };
@@ -287,7 +287,7 @@ export default function Notifications() {
     // Optimistic update
     const prevNotifications = [...notifications];
     setNotifications((prev) =>
-      prev.map((notif) => ({ ...notif, isRead: true }))
+      prev.map((notif) => ({ ...notif, isRead: true })),
     );
 
     try {

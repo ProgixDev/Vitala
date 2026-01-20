@@ -1,10 +1,10 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const notificationSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
     },
     title: {
@@ -18,44 +18,44 @@ const notificationSchema = new mongoose.Schema(
     type: {
       type: String,
       enum: [
-        'appointment',
-        'payment',
-        'message',
-        'emergency',
-        'system',
-        'promotion',
-        'verification',
+        "appointment",
+        "payment",
+        "message",
+        "emergency",
+        "system",
+        "promotion",
+        "verification",
       ],
       required: true,
     },
     priority: {
       type: String,
-      enum: ['low', 'medium', 'high', 'urgent'],
-      default: 'medium',
+      enum: ["low", "medium", "high", "urgent"],
+      default: "medium",
     },
     isRead: {
       type: Boolean,
       default: false,
     },
     readAt: Date,
-    
+
     // Related data
     relatedAppointment: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Appointment',
+      ref: "Appointment",
     },
     relatedPayment: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Payment',
+      ref: "Payment",
     },
-    
+
     // Action button
     action: {
       type: String,
       url: String,
       label: String,
     },
-    
+
     // Delivery status
     deliveryStatus: {
       push: {
@@ -77,7 +77,7 @@ const notificationSchema = new mongoose.Schema(
         error: String,
       },
     },
-    
+
     // Metadata
     metadata: {
       type: Map,
@@ -86,10 +86,10 @@ const notificationSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Index for efficient queries
 notificationSchema.index({ user: 1, isRead: 1, createdAt: -1 });
 
-module.exports = mongoose.model('Notification', notificationSchema);
+module.exports = mongoose.model("Notification", notificationSchema);

@@ -30,7 +30,7 @@ export default function SignIn() {
       () => {
         // Return true to prevent default back behavior (exit app)
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -49,7 +49,7 @@ export default function SignIn() {
 
     try {
       setIsLoading(true);
-      
+
       // Try backend login first
       try {
         const resp = await apiLogin(email, password);
@@ -82,7 +82,10 @@ export default function SignIn() {
         return;
       } catch (apiErr: any) {
         // Check if email verification is required
-        if (apiErr.message?.includes("Email not verified") || apiErr.message?.includes("403")) {
+        if (
+          apiErr.message?.includes("Email not verified") ||
+          apiErr.message?.includes("403")
+        ) {
           // Store the email for verification flow
           await authStorage.setCurrentUser({
             email: email,
@@ -91,21 +94,21 @@ export default function SignIn() {
             userType: "patient",
             status: "pending",
           });
-          
+
           Toast.show({
             type: "info",
             text1: "Email Verification Required",
             text2: "Redirecting to email verification...",
           });
-          
+
           // Navigate to signup verification step
           router.replace({
             pathname: "/(auth)/signup",
-            params: { step: "verification", email: email }
+            params: { step: "verification", email: email },
           });
           return;
         }
-        
+
         console.warn("API login failed, falling back to local:", apiErr);
       }
 
@@ -162,8 +165,8 @@ export default function SignIn() {
       });
       return;
     }
-    apiLogin // noop to keep imports used
-    ;(async () => {
+    apiLogin; // noop to keep imports used
+    (async () => {
       try {
         setIsLoading(true);
         const { forgotPassword } = await import("@/utils/api");
@@ -177,8 +180,8 @@ export default function SignIn() {
           params: {
             email,
             // In development, include the reset code for easy testing
-            ...(response?.data?.resetCode &&
-              __DEV__ && { resetCode: response.data.resetCode }),
+            ...(response?.resetCode &&
+              __DEV__ && { resetCode: response.resetCode }),
           },
         });
 
@@ -221,7 +224,7 @@ export default function SignIn() {
 
         {/* Email Input */}
         <View className="mb-5">
-          <View className="flex-row items-center bg-white rounded-2xl px-4 h-[60px] shadow-sm">
+          <View className="flex-row items-center bg-white rounded-2xl px-4 h-15 shadow-sm">
             <Ionicons
               name="person-outline"
               size={24}

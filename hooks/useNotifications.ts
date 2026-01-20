@@ -130,7 +130,7 @@ export function useNotifications(): UseNotificationsReturn {
       (notification) => {
         setNotification(notification);
         console.log("Notification received:", notification);
-      }
+      },
     );
 
     // Listen for user interaction with notification

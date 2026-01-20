@@ -16,7 +16,10 @@ import { router, useLocalSearchParams } from "expo-router";
 import Toast from "react-native-toast-message";
 
 export default function SetNewPassword() {
-  const { email, code } = useLocalSearchParams<{ email: string; code: string }>();
+  const { email, code } = useLocalSearchParams<{
+    email: string;
+    code: string;
+  }>();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -142,7 +145,12 @@ export default function SetNewPassword() {
                 : "bg-[#4461F2]"
             }`}
             onPress={handleResetPassword}
-            disabled={!newPassword || !confirmPassword || passwordsDoNotMatch || isLoading}
+            disabled={
+              !newPassword ||
+              !confirmPassword ||
+              passwordsDoNotMatch ||
+              isLoading
+            }
           >
             <Text className="text-lg font-semibold text-white">
               Reset Password

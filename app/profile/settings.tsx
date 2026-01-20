@@ -106,7 +106,7 @@ export default function Settings() {
       () => {
         router.replace("/(tabs)/profile");
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -326,7 +326,7 @@ export default function Settings() {
                   icon="people-outline"
                   title="Emergency Contacts"
                   subtitle="Manage emergency contacts"
-                  onPress={() => router.push('/profile/emergency-contacts')}
+                  onPress={() => router.push("/profile/emergency-contacts")}
                 />
               </View>
             </View>

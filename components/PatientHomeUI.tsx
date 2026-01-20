@@ -184,8 +184,8 @@ const servicesData: Service[] = [
 ];
 
 export default function PatientHomeUI() {
-  const [services, setServices] = useState<Service[]>(servicesData);
-  const [loading, setLoading] = useState(false);
+  const [services] = useState<Service[]>(servicesData);
+  const [loading] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [showAllServices, setShowAllServices] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -324,7 +324,7 @@ export default function PatientHomeUI() {
                         {service.name}
                       </Text>
                     </TouchableOpacity>
-                  )
+                  ),
                 )}
               </View>
             </View>

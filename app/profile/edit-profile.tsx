@@ -4,11 +4,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -18,17 +18,33 @@ export default function EditProfile() {
 
   // Personal info state
   const [fullName, setFullName] = useState(currentUser?.fullName || "");
-  const [phoneNumber, setPhoneNumber] = useState(currentUser?.phoneNumber || "");
+  const [phoneNumber, setPhoneNumber] = useState(
+    currentUser?.phoneNumber || "",
+  );
   const [email, setEmail] = useState(currentUser?.email || "");
 
   // Medical info state
-  const [gender, setGender] = useState(currentUser?.medicalProfile?.gender || "");
-  const [dateOfBirth, setDateOfBirth] = useState(currentUser?.medicalProfile?.dateOfBirth || "");
-  const [bloodType, setBloodType] = useState(currentUser?.medicalProfile?.bloodType || "");
-  const [height, setHeight] = useState(currentUser?.medicalProfile?.height?.toString() || "");
-  const [weight, setWeight] = useState(currentUser?.medicalProfile?.weight?.toString() || "");
-  const [allergies, setAllergies] = useState(currentUser?.medicalProfile?.allergies?.join(", ") || "");
-  const [chronicIllnesses, setChronicIllnesses] = useState(currentUser?.medicalProfile?.chronicIllnesses?.join(", ") || "");
+  const [gender, setGender] = useState(
+    currentUser?.medicalProfile?.gender || "",
+  );
+  const [dateOfBirth, setDateOfBirth] = useState(
+    currentUser?.medicalProfile?.dateOfBirth || "",
+  );
+  const [bloodType, setBloodType] = useState(
+    currentUser?.medicalProfile?.bloodType || "",
+  );
+  const [height, setHeight] = useState(
+    currentUser?.medicalProfile?.height?.toString() || "",
+  );
+  const [weight, setWeight] = useState(
+    currentUser?.medicalProfile?.weight?.toString() || "",
+  );
+  const [allergies, setAllergies] = useState(
+    currentUser?.medicalProfile?.allergies?.join(", ") || "",
+  );
+  const [chronicIllnesses, setChronicIllnesses] = useState(
+    currentUser?.medicalProfile?.chronicIllnesses?.join(", ") || "",
+  );
 
   const handleSave = async () => {
     if (!currentUser?.token) return;
@@ -43,15 +59,25 @@ export default function EditProfile() {
       });
 
       // Update medical profile if user is a patient
-      if (currentUser.userType === 'patient') {
+      if (currentUser.userType === "patient") {
         const medicalData: any = {
           gender: gender.trim() || undefined,
           dateOfBirth: dateOfBirth.trim() || undefined,
           bloodType: bloodType.trim() || undefined,
           height: height ? parseFloat(height) : undefined,
           weight: weight ? parseFloat(weight) : undefined,
-          allergies: allergies ? allergies.split(",").map(a => a.trim()).filter(a => a) : [],
-          chronicIllnesses: chronicIllnesses ? chronicIllnesses.split(",").map(c => c.trim()).filter(c => c) : [],
+          allergies: allergies
+            ? allergies
+                .split(",")
+                .map((a) => a.trim())
+                .filter((a) => a)
+            : [],
+          chronicIllnesses: chronicIllnesses
+            ? chronicIllnesses
+                .split(",")
+                .map((c) => c.trim())
+                .filter((c) => c)
+            : [],
         };
 
         await updateMedicalProfile(currentUser.token, medicalData);
@@ -145,7 +171,9 @@ export default function EditProfile() {
 
             {/* Phone Number */}
             <View className="mb-0">
-              <Text className="text-[13px] text-[#6B7280] mb-2">Phone Number</Text>
+              <Text className="text-[13px] text-[#6B7280] mb-2">
+                Phone Number
+              </Text>
               <TextInput
                 className="border border-[#D1D5DB] rounded-lg px-4 py-3 text-base"
                 value={phoneNumber}
@@ -158,7 +186,7 @@ export default function EditProfile() {
         </View>
 
         {/* Medical Information */}
-        {currentUser?.userType === 'patient' && (
+        {currentUser?.userType === "patient" && (
           <View className="px-6 mt-6">
             <Text className="text-base font-semibold text-[#1F2937] mb-3">
               Medical Information
@@ -195,7 +223,9 @@ export default function EditProfile() {
 
               {/* Date of Birth */}
               <View className="mb-4">
-                <Text className="text-[13px] text-[#6B7280] mb-2">Date of Birth</Text>
+                <Text className="text-[13px] text-[#6B7280] mb-2">
+                  Date of Birth
+                </Text>
                 <TextInput
                   className="border border-[#D1D5DB] rounded-lg px-4 py-3 text-base"
                   value={dateOfBirth}
@@ -206,7 +236,9 @@ export default function EditProfile() {
 
               {/* Blood Type */}
               <View className="mb-4">
-                <Text className="text-[13px] text-[#6B7280] mb-2">Blood Type</Text>
+                <Text className="text-[13px] text-[#6B7280] mb-2">
+                  Blood Type
+                </Text>
                 <View className="flex-row flex-wrap gap-2">
                   {bloodTypes.map((type) => (
                     <TouchableOpacity
@@ -235,7 +267,9 @@ export default function EditProfile() {
               {/* Height & Weight */}
               <View className="flex-row gap-3 mb-4">
                 <View className="flex-1">
-                  <Text className="text-[13px] text-[#6B7280] mb-2">Height (cm)</Text>
+                  <Text className="text-[13px] text-[#6B7280] mb-2">
+                    Height (cm)
+                  </Text>
                   <TextInput
                     className="border border-[#D1D5DB] rounded-lg px-4 py-3 text-base"
                     value={height}
@@ -245,7 +279,9 @@ export default function EditProfile() {
                   />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-[13px] text-[#6B7280] mb-2">Weight (kg)</Text>
+                  <Text className="text-[13px] text-[#6B7280] mb-2">
+                    Weight (kg)
+                  </Text>
                   <TextInput
                     className="border border-[#D1D5DB] rounded-lg px-4 py-3 text-base"
                     value={weight}

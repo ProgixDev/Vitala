@@ -158,12 +158,12 @@ export default function App() {
       Alert.alert("Loading", "Getting your location...");
       return;
     }
-    
+
     if (!userLocation || !mapRef.current) {
       Alert.alert("Error", "Unable to get your current location");
       return;
     }
-    
+
     const region: Region = {
       latitude: userLocation.coords.latitude,
       longitude: userLocation.coords.longitude,
@@ -195,7 +195,7 @@ export default function App() {
         style={styles.map}
         initialRegion={{
           latitude: userLocation?.coords.latitude || 40.7128, // Default to New York
-          longitude: userLocation?.coords.longitude || -74.0060,
+          longitude: userLocation?.coords.longitude || -74.006,
           latitudeDelta: 0.1,
           longitudeDelta: 0.1,
         }}

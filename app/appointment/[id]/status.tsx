@@ -68,7 +68,7 @@ export default function AppointmentStatus() {
   const [loading, setLoading] = useState(true);
   const [nurse, setNurse] = useState<User | null>(null);
   const [partialAppointment, setPartialAppointment] = useState<any | null>(
-    null
+    null,
   );
   const [error, setError] = useState<string | null>(null);
 
@@ -100,7 +100,7 @@ export default function AppointmentStatus() {
                   year: "numeric",
                   month: "long",
                   day: "numeric",
-                }
+                },
               )
             : "",
           time: appointmentData.scheduledTime?.start || "",
@@ -129,7 +129,7 @@ export default function AppointmentStatus() {
             const listRes = await api.getAppointments(accessToken);
             if (listRes.success) {
               const found = listRes.data.find(
-                (a: any) => a._id === id || a.id === id
+                (a: any) => a._id === id || a.id === id,
               );
               if (found) {
                 const fallback = {
@@ -153,7 +153,7 @@ export default function AppointmentStatus() {
                 };
                 setPartialAppointment(fallback);
                 setError(
-                  "Limited access: some details are hidden. Here is what we can show."
+                  "Limited access: some details are hidden. Here is what we can show.",
                 );
               } else {
                 setError("Not authorized to view this appointment");
@@ -197,7 +197,7 @@ export default function AppointmentStatus() {
       const res = await api.cancelAppointment(
         accessToken,
         appointmentId,
-        "Cancelled by user"
+        "Cancelled by user",
       );
       if (res.success) {
         const updated = res.data;
@@ -271,9 +271,9 @@ export default function AppointmentStatus() {
       "Current status index:",
       currentIndex,
       "of",
-      statusOrder.length - 1
+      statusOrder.length - 1,
     );
-    
+
     if (currentIndex < statusOrder.length - 1) {
       const newStatus = statusOrder[currentIndex + 1];
       console.log("Updating status to:", newStatus);
@@ -287,7 +287,7 @@ export default function AppointmentStatus() {
         const res = await api.updateAppointmentStatus(
           accessToken,
           appointmentId,
-          newStatus
+          newStatus,
         );
         if (res.success) {
           const updated = res.data;
@@ -437,7 +437,7 @@ export default function AppointmentStatus() {
                 onPress={() =>
                   Linking.openURL(
                     "mailto:support@vitala.app?subject=Appointment%20Access%20Request&body=I%20need%20access%20to%20appointment%20ID%20" +
-                      id
+                      id,
                   )
                 }
               >

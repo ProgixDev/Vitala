@@ -1,6 +1,7 @@
 # Backend Functionalities TODO List
 
 ## Authentication & Authorization
+
 - [x] User login (email/password authentication)
 - [x] Patient sign up (full name, email, phone number)
 - [x] Patient password creation and validation
@@ -18,6 +19,7 @@
 - [x] Token refresh
 
 ## User Management
+
 - [x] Get current user profile
 - [x] Update user profile (name, email, phone)
 - [x] Update medical profile
@@ -29,6 +31,7 @@
 - [x] User role management
 
 ## Location Management
+
 - [x] Save user location (coordinate, address, label)
 - [x] Get user locations
 - [x] Update location
@@ -37,6 +40,7 @@
 - [x] Reverse geocoding (coordinates to address)
 
 ## Appointments
+
 - [x] Create appointment (normal booking)
 - [x] Create emergency appointment
 - [x] Get user appointments (patient)
@@ -53,6 +57,7 @@
 - [x] Appointment notifications
 
 ## Payment Processing
+
 - [x] Process payment (credit card, PayPal) - Mock implementation
 - [x] Save payment method - Mock implementation
 - [x] Get saved payment methods - Mock implementation
@@ -66,6 +71,7 @@
 - [x] Refund processing
 
 ## Transaction History
+
 - [x] Get user transactions
 - [x] Filter transactions (all, completed, pending, failed)
 - [x] Get transaction by ID
@@ -73,6 +79,7 @@
 - [x] Calculate total refunds
 
 ## Notifications
+
 - [x] Send push notification
 - [x] Send email notification
 - [x] Get user notifications
@@ -84,6 +91,7 @@
 - [x] Notification delivery status
 
 ## Emergency Services
+
 - [x] Create emergency nurse alert
 - [x] Create ambulance service request
 - [x] Send family alert notifications
@@ -94,6 +102,7 @@
 - [x] Emergency service status tracking
 
 ## Nurse Management
+
 - [ ] Get nurse profile
 - [ ] Update nurse profile
 - [ ] Get nurse availability
@@ -107,6 +116,7 @@
 - [ ] Get nearby nurses
 
 ## Services
+
 - [ ] Get all services
 - [ ] Get service by ID
 - [ ] Search services
@@ -115,6 +125,7 @@
 - [ ] Get service availability
 
 ## Ratings & Reviews
+
 - [ ] Submit rating for nurse
 - [ ] Submit review for nurse
 - [ ] Get nurse ratings
@@ -124,6 +135,7 @@
 - [ ] Report inappropriate review
 
 ## Settings
+
 - [x] Get user settings
 - [x] Update notification preferences (push, email, SMS)
 - [x] Update privacy settings
@@ -132,6 +144,7 @@
 - [x] Update language preference
 
 ## File Upload
+
 - [x] Upload ID document (front)
 - [x] Upload ID document (back)
 - [x] Upload selfie
@@ -139,6 +152,7 @@
 - [ ] Delete uploaded files
 
 ## Admin Functions
+
 - [ ] Admin login
 - [ ] Verify nurse account
 - [ ] Reject nurse account
@@ -149,15 +163,16 @@
 - [ ] Manage services
 
 ## Real-time Features
+
 - [ ] Real-time appointment status updates
 - [ ] Real-time nurse location tracking
 - [ ] Real-time chat between patient and nurse
 - [ ] Real-time notifications
 
 ## Analytics & Reporting
+
 - [ ] Appointment analytics
 - [ ] User analytics
 - [ ] Revenue analytics
 - [ ] Service popularity metrics
 - [ ] Nurse performance metrics
-

@@ -1,13 +1,15 @@
-const EmergencyContact = require('../models/EmergencyContact');
-const { createAndSendNotification } = require('../utils/notificationHelpers');
+const EmergencyContact = require("../models/EmergencyContact");
+const { createAndSendNotification } = require("../utils/notificationHelpers");
 
 // @desc    Get user's emergency contacts
 // @route   GET /api/emergency-contacts
 // @access  Private
 exports.getEmergencyContacts = async (req, res) => {
   try {
-    const contacts = await EmergencyContact.find({ user: req.user._id })
-      .sort({ isPrimary: -1, createdAt: -1 });
+    const contacts = await EmergencyContact.find({ user: req.user._id }).sort({
+      isPrimary: -1,
+      createdAt: -1,
+    });
 
     res.status(200).json({
       success: true,
@@ -17,7 +19,7 @@ exports.getEmergencyContacts = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching emergency contacts',
+      message: "Error fetching emergency contacts",
       error: error.message,
     });
   }
@@ -28,13 +30,21 @@ exports.getEmergencyContacts = async (req, res) => {
 // @access  Private
 exports.addEmergencyContact = async (req, res) => {
   try {
-    const { name, relationship, phoneNumber, email, isPrimary, address, notes } = req.body;
+    const {
+      name,
+      relationship,
+      phoneNumber,
+      email,
+      isPrimary,
+      address,
+      notes,
+    } = req.body;
 
     // If setting as primary, unset other primary contacts
     if (isPrimary) {
       await EmergencyContact.updateMany(
         { user: req.user._id, isPrimary: true },
-        { isPrimary: false }
+        { isPrimary: false },
       );
     }
 
@@ -56,7 +66,7 @@ exports.addEmergencyContact = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error adding emergency contact',
+      message: "Error adding emergency contact",
       error: error.message,
     });
   }
@@ -75,7 +85,7 @@ exports.updateEmergencyContact = async (req, res) => {
     if (!contact) {
       return res.status(404).json({
         success: false,
-        message: 'Emergency contact not found',
+        message: "Emergency contact not found",
       });
     }
 
@@ -85,14 +95,14 @@ exports.updateEmergencyContact = async (req, res) => {
     if (isPrimary) {
       await EmergencyContact.updateMany(
         { user: req.user._id, _id: { $ne: req.params.id }, isPrimary: true },
-        { isPrimary: false }
+        { isPrimary: false },
       );
     }
 
     const updatedContact = await EmergencyContact.findByIdAndUpdate(
       req.params.id,
       { ...updateData, isPrimary: isPrimary || false },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     res.status(200).json({
@@ -102,7 +112,7 @@ exports.updateEmergencyContact = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error updating emergency contact',
+      message: "Error updating emergency contact",
       error: error.message,
     });
   }
@@ -121,18 +131,18 @@ exports.deleteEmergencyContact = async (req, res) => {
     if (!contact) {
       return res.status(404).json({
         success: false,
-        message: 'Emergency contact not found',
+        message: "Emergency contact not found",
       });
     }
 
     res.status(200).json({
       success: true,
-      message: 'Emergency contact deleted successfully',
+      message: "Emergency contact deleted successfully",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error deleting emergency contact',
+      message: "Error deleting emergency contact",
       error: error.message,
     });
   }

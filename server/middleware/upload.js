@@ -1,6 +1,6 @@
-const multer = require('multer');
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const multer = require("multer");
+const cloudinary = require("cloudinary").v2;
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -12,35 +12,42 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'vitala/documents',
-    resource_type: 'auto',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'pdf'],
+    folder: "vitala/documents",
+    resource_type: "auto",
+    allowed_formats: ["jpg", "jpeg", "png", "pdf"],
   },
 });
 
 // Local storage for profile pictures (will be uploaded to Cloudinary manually)
 const profileStorage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/temp/');
+    cb(null, "uploads/temp/");
   },
   filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'profile-' + uniqueSuffix + '.' + file.originalname.split('.').pop());
-  }
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(
+      null,
+      "profile-" + uniqueSuffix + "." + file.originalname.split(".").pop(),
+    );
+  },
 });
 
 // File filter for profile pictures
 const profileFileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png/;
   const extname = allowedTypes.test(
-    file.originalname.split('.').pop().toLowerCase()
+    file.originalname.split(".").pop().toLowerCase(),
   );
   const mimetype = allowedTypes.test(file.mimetype);
 
   if (mimetype && extname) {
     return cb(null, true);
   } else {
-    cb(new Error('Invalid file type. Only JPEG and PNG images are allowed for profile pictures.'));
+    cb(
+      new Error(
+        "Invalid file type. Only JPEG and PNG images are allowed for profile pictures.",
+      ),
+    );
   }
 };
 
@@ -49,14 +56,14 @@ const fileFilter = (req, file, cb) => {
   // Allowed file types
   const allowedTypes = /jpeg|jpg|png|pdf/;
   const extname = allowedTypes.test(
-    file.originalname.split('.').pop().toLowerCase()
+    file.originalname.split(".").pop().toLowerCase(),
   );
   const mimetype = allowedTypes.test(file.mimetype);
 
   if (mimetype && extname) {
     return cb(null, true);
   } else {
-    cb(new Error('Invalid file type. Only JPEG, PNG, and PDF are allowed.'));
+    cb(new Error("Invalid file type. Only JPEG, PNG, and PDF are allowed."));
   }
 };
 

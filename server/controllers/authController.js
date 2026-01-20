@@ -1,16 +1,22 @@
-const User = require('../models/User');
-const sendEmail = require('../config/email');
+const User = require("../models/User");
+const sendEmail = require("../config/email");
 // Initialize Twilio only if credentials are properly configured
 let twilio = null;
-if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN &&
-    process.env.TWILIO_ACCOUNT_SID.startsWith('AC')) {
-  twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+if (
+  process.env.TWILIO_ACCOUNT_SID &&
+  process.env.TWILIO_AUTH_TOKEN &&
+  process.env.TWILIO_ACCOUNT_SID.startsWith("AC")
+) {
+  twilio = require("twilio")(
+    process.env.TWILIO_ACCOUNT_SID,
+    process.env.TWILIO_AUTH_TOKEN,
+  );
 }
 const {
   generateToken,
   generateRefreshToken,
   generateResetToken,
-} = require('../utils/tokenUtils');
+} = require("../utils/tokenUtils");
 
 // @desc    Register patient
 // @route   POST /api/auth/register/patient
@@ -30,7 +36,9 @@ exports.registerPatient = async (req, res) => {
     }
 
     // Generate email verification code
-    const emailVerificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const emailVerificationCode = Math.floor(
+      100000 + Math.random() * 900000,
+    ).toString();
     const emailVerificationExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     console.log("Creating user with data:", {
@@ -57,7 +65,7 @@ exports.registerPatient = async (req, res) => {
     // Send email verification code
     try {
       console.log(
-        `Sending verification email to ${email} with code ${emailVerificationCode}`
+        `Sending verification email to ${email} with code ${emailVerificationCode}`,
       );
       await sendEmail({
         to: email,
@@ -269,7 +277,9 @@ exports.login = async (req, res) => {
       });
     }
 
-    console.log(`Login attempt for user: ${user.email}, isEmailVerified: ${user.isEmailVerified}`);
+    console.log(
+      `Login attempt for user: ${user.email}, isEmailVerified: ${user.isEmailVerified}`,
+    );
 
     // Check password
     const isMatch = await user.comparePassword(password);
@@ -392,19 +402,21 @@ exports.resendEmailVerification = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found',
+        message: "User not found",
       });
     }
 
     if (user.isEmailVerified) {
       return res.status(400).json({
         success: false,
-        message: 'Email is already verified',
+        message: "Email is already verified",
       });
     }
 
     // Generate new verification code
-    const emailVerificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const emailVerificationCode = Math.floor(
+      100000 + Math.random() * 900000,
+    ).toString();
     const emailVerificationExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     user.emailVerificationToken = emailVerificationCode;
@@ -430,19 +442,19 @@ exports.resendEmailVerification = async (req, res) => {
 
       res.status(200).json({
         success: true,
-        message: 'Verification code sent successfully',
+        message: "Verification code sent successfully",
       });
     } catch (emailError) {
-      console.error('Error sending verification email:', emailError);
+      console.error("Error sending verification email:", emailError);
       return res.status(500).json({
         success: false,
-        message: 'Error sending verification email',
+        message: "Error sending verification email",
       });
     }
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error resending verification code',
+      message: "Error resending verification code",
       error: error.message,
     });
   }
@@ -644,12 +656,12 @@ exports.refreshToken = async (req, res) => {
     if (!refreshToken) {
       return res.status(401).json({
         success: false,
-        message: 'Refresh token required',
+        message: "Refresh token required",
       });
     }
 
     // Verify refresh token
-    const jwt = require('jsonwebtoken');
+    const jwt = require("jsonwebtoken");
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
 
     // Find user
@@ -658,7 +670,7 @@ exports.refreshToken = async (req, res) => {
     if (!user || user.refreshToken !== refreshToken) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid refresh token',
+        message: "Invalid refresh token",
       });
     }
 
@@ -680,7 +692,7 @@ exports.refreshToken = async (req, res) => {
   } catch (error) {
     res.status(401).json({
       success: false,
-      message: 'Invalid refresh token',
+      message: "Invalid refresh token",
       error: error.message,
     });
   }
@@ -701,12 +713,12 @@ exports.logout = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Logout successful',
+      message: "Logout successful",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error logging out',
+      message: "Error logging out",
       error: error.message,
     });
   }
@@ -723,7 +735,7 @@ exports.getMe = async (req, res) => {
     if (!user.isEmailVerified) {
       return res.status(403).json({
         success: false,
-        message: 'Email not verified',
+        message: "Email not verified",
         requiresEmailVerification: true,
       });
     }
@@ -735,7 +747,7 @@ exports.getMe = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching user',
+      message: "Error fetching user",
       error: error.message,
     });
   }

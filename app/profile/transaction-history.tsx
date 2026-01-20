@@ -132,7 +132,9 @@ export default function TransactionHistory() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<"all" | "completed" | "pending" | "failed">("all");
+  const [filter, setFilter] = useState<
+    "all" | "completed" | "pending" | "failed"
+  >("all");
   const [statistics, setStatistics] = useState<{
     totalSpent: number;
     totalRefunds: number;
@@ -140,7 +142,7 @@ export default function TransactionHistory() {
   }>({
     totalSpent: 0,
     totalRefunds: 0,
-    currency: "USD"
+    currency: "USD",
   });
 
   // Fetch transactions from API
@@ -210,7 +212,7 @@ export default function TransactionHistory() {
   useFocusEffect(
     useCallback(() => {
       fetchTransactions();
-    }, [fetchTransactions])
+    }, [fetchTransactions]),
   );
 
   const onRefresh = useCallback(() => {
@@ -220,14 +222,14 @@ export default function TransactionHistory() {
 
   const handleTransactionPress = (transactionId: string) => {
     // Navigate to appointment details if appointmentId exists
-    const transaction = transactions.find(t => t.id === transactionId);
+    const transaction = transactions.find((t) => t.id === transactionId);
     if (transaction?.appointmentId) {
       router.push(`/appointment/${transaction.appointmentId}/status`);
     } else {
       Toast.show({
         type: "info",
         text1: "Transaction Details",
-        text2: `Receipt: ${transaction?.receiptNumber || 'N/A'}`,
+        text2: `Receipt: ${transaction?.receiptNumber || "N/A"}`,
       });
     }
   };
@@ -239,7 +241,7 @@ export default function TransactionHistory() {
       () => {
         router.replace("/(tabs)/profile");
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -263,9 +265,7 @@ export default function TransactionHistory() {
             <Text className="text-lg font-semibold text-[#1F2937]">
               Transaction History
             </Text>
-            <View
-              className="w-10 h-10 items-center justify-center"
-            >
+            <View className="w-10 h-10 items-center justify-center">
               <Ionicons name="receipt-outline" size={24} color="#1F2937" />
             </View>
           </View>
@@ -374,7 +374,8 @@ export default function TransactionHistory() {
             {filter !== "all" && (
               <View className="flex-row items-center justify-between mt-3 px-1">
                 <Text className="text-xs text-[#6B7280]">
-                  Showing {filteredTransactions.length} result{filteredTransactions.length !== 1 ? "s" : ""}
+                  Showing {filteredTransactions.length} result
+                  {filteredTransactions.length !== 1 ? "s" : ""}
                 </Text>
                 <TouchableOpacity onPress={() => setFilter("all")}>
                   <Text className="text-xs font-semibold text-[#4461F2]">

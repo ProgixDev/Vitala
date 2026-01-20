@@ -1,5 +1,5 @@
-const { Expo } = require('expo-server-sdk');
-const sendEmail = require('../config/email');
+const { Expo } = require("expo-server-sdk");
+const sendEmail = require("../config/email");
 const twilio = require("twilio");
 const Notification = require("../models/Notification");
 
@@ -17,7 +17,7 @@ if (twilioAccountSid && twilioAuthToken && twilioAccountSid.startsWith("AC")) {
   }
 } else {
   console.warn(
-    "Twilio credentials not configured. SMS notifications will be disabled."
+    "Twilio credentials not configured. SMS notifications will be disabled.",
   );
 }
 
@@ -58,7 +58,7 @@ const sendPushNotification = async ({
     if (!Expo.isExpoPushToken(expoPushToken)) {
       deliveryStatus.error = "Invalid Expo push token";
       console.error(
-        `Push token ${expoPushToken} is not a valid Expo push token`
+        `Push token ${expoPushToken} is not a valid Expo push token`,
       );
       return deliveryStatus;
     }

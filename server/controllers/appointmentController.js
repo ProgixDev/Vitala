@@ -1,6 +1,6 @@
-const Appointment = require('../models/Appointment');
-const User = require('../models/User');
-const Notification = require('../models/Notification');
+const Appointment = require("../models/Appointment");
+const User = require("../models/User");
+const Notification = require("../models/Notification");
 
 // @desc    Create appointment
 // @route   POST /api/appointments
@@ -92,32 +92,32 @@ exports.getAppointments = async (req, res) => {
       .sort({ scheduledDate: -1 });
 
     // Fetch payment data for each appointment
-    const Payment = require('../models/Payment');
+    const Payment = require("../models/Payment");
     const appointmentsWithPayments = await Promise.all(
       appointments.map(async (appointment) => {
         const payment = await Payment.findOne({ appointment: appointment._id });
         const appointmentObj = appointment.toObject();
-        
+
         if (payment) {
           appointmentObj.payment = {
             status: payment.status,
             amount: payment.amount,
-            currency: payment.currency || 'USD',
+            currency: payment.currency || "USD",
             method: payment.paymentMethod,
             reference: payment.receiptNumber,
-            transactionDate: payment.createdAt
+            transactionDate: payment.createdAt,
           };
         } else {
           // Default payment object if no payment exists
           appointmentObj.payment = {
-            status: 'pending',
+            status: "pending",
             amount: appointmentObj.price || 0,
-            currency: 'USD'
+            currency: "USD",
           };
         }
-        
+
         return appointmentObj;
-      })
+      }),
     );
 
     res.status(200).json({
@@ -139,21 +139,21 @@ exports.getAppointments = async (req, res) => {
 // @access  Private
 exports.getAppointmentById = async (req, res) => {
   try {
-    console.log('Getting appointment by ID:', req.params.id);
-    console.log('User:', req.user._id, req.user.userType);
+    console.log("Getting appointment by ID:", req.params.id);
+    console.log("User:", req.user._id, req.user.userType);
 
     const appointment = await Appointment.findById(req.params.id).populate(
-      "patient nurse"
+      "patient nurse",
     );
 
     // Fetch payment data separately
-    const Payment = require('../models/Payment');
+    const Payment = require("../models/Payment");
     const payment = await Payment.findOne({ appointment: req.params.id });
 
-    console.log('Appointment found:', !!appointment);
+    console.log("Appointment found:", !!appointment);
     if (appointment) {
-      console.log('Appointment patient:', appointment.patient);
-      console.log('Appointment nurse:', appointment.nurse);
+      console.log("Appointment patient:", appointment.patient);
+      console.log("Appointment nurse:", appointment.nurse);
     }
 
     if (!appointment) {
@@ -164,16 +164,20 @@ exports.getAppointmentById = async (req, res) => {
     }
 
     // Check if user is authorized
-    const patientId = appointment.patient?._id ? appointment.patient._id.toString() : appointment.patient?.toString();
-    const nurseId = appointment.nurse?._id ? appointment.nurse._id.toString() : appointment.nurse?.toString();
+    const patientId = appointment.patient?._id
+      ? appointment.patient._id.toString()
+      : appointment.patient?.toString();
+    const nurseId = appointment.nurse?._id
+      ? appointment.nurse._id.toString()
+      : appointment.nurse?.toString();
     const userId = req.user._id.toString();
 
-    console.log('Authorization check:', {
+    console.log("Authorization check:", {
       patientId,
       nurseId,
       userId,
       userType: req.user.userType,
-      appointmentId: appointment._id.toString()
+      appointmentId: appointment._id.toString(),
     });
 
     // Temporarily allow all authenticated users to view appointments for debugging
@@ -192,24 +196,26 @@ exports.getAppointmentById = async (req, res) => {
     */
 
     const appointmentObj = appointment.toObject();
-    
+
     res.status(200).json({
       success: true,
       data: {
         ...appointmentObj,
-        payment: payment ? {
-          id: payment._id,
-          status: payment.status,
-          amount: payment.amount,
-          method: payment.paymentMethod,
-          currency: payment.currency || 'USD',
-          reference: payment.receiptNumber,
-          transactionDate: payment.createdAt
-        } : {
-          status: 'pending',
-          amount: appointmentObj.price || 0,
-          currency: 'USD'
-        },
+        payment: payment
+          ? {
+              id: payment._id,
+              status: payment.status,
+              amount: payment.amount,
+              method: payment.paymentMethod,
+              currency: payment.currency || "USD",
+              reference: payment.receiptNumber,
+              transactionDate: payment.createdAt,
+            }
+          : {
+              status: "pending",
+              amount: appointmentObj.price || 0,
+              currency: "USD",
+            },
       },
     });
   } catch (error) {
@@ -232,30 +238,31 @@ exports.updateAppointmentStatus = async (req, res) => {
     if (!appointment) {
       return res.status(404).json({
         success: false,
-        message: 'Appointment not found',
+        message: "Appointment not found",
       });
     }
 
     appointment.status = status;
-    
-    if (status === 'completed') {
+
+    if (status === "completed") {
       appointment.completedAt = new Date();
     }
-    
+
     await appointment.save();
-    await appointment.populate('patient nurse service');
+    await appointment.populate("patient nurse service");
 
     // Create notification
-    const notifyUser = status === 'confirmed' || status === 'on-the-way' 
-      ? appointment.patient 
-      : appointment.nurse;
-      
+    const notifyUser =
+      status === "confirmed" || status === "on-the-way"
+        ? appointment.patient
+        : appointment.nurse;
+
     if (notifyUser) {
       await Notification.create({
         user: notifyUser,
-        title: 'Appointment Status Updated',
+        title: "Appointment Status Updated",
         message: `Appointment status changed to ${status}`,
-        type: 'appointment',
+        type: "appointment",
         relatedAppointment: appointment._id,
       });
     }
@@ -267,7 +274,7 @@ exports.updateAppointmentStatus = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error updating appointment status',
+      message: "Error updating appointment status",
       error: error.message,
     });
   }
@@ -284,26 +291,26 @@ exports.cancelAppointment = async (req, res) => {
     if (!appointment) {
       return res.status(404).json({
         success: false,
-        message: 'Appointment not found',
+        message: "Appointment not found",
       });
     }
 
-    appointment.status = 'cancelled';
+    appointment.status = "cancelled";
     appointment.cancellationReason = reason;
     appointment.cancelledBy = req.user._id;
     appointment.cancelledAt = new Date();
-    
+
     await appointment.save();
 
     res.status(200).json({
       success: true,
-      message: 'Appointment cancelled successfully',
+      message: "Appointment cancelled successfully",
       data: appointment,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error cancelling appointment',
+      message: "Error cancelling appointment",
       error: error.message,
     });
   }
@@ -319,26 +326,26 @@ exports.acceptAppointment = async (req, res) => {
     if (!appointment) {
       return res.status(404).json({
         success: false,
-        message: 'Appointment not found',
+        message: "Appointment not found",
       });
     }
 
     if (appointment.nurse?.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
-        message: 'Not authorized',
+        message: "Not authorized",
       });
     }
 
-    appointment.status = 'confirmed';
+    appointment.status = "confirmed";
     await appointment.save();
 
     // Notify patient
     await Notification.create({
       user: appointment.patient,
-      title: 'Appointment Confirmed',
-      message: 'Your appointment has been confirmed',
-      type: 'appointment',
+      title: "Appointment Confirmed",
+      message: "Your appointment has been confirmed",
+      type: "appointment",
       relatedAppointment: appointment._id,
     });
 
@@ -349,7 +356,7 @@ exports.acceptAppointment = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error accepting appointment',
+      message: "Error accepting appointment",
       error: error.message,
     });
   }
@@ -366,22 +373,22 @@ exports.declineAppointment = async (req, res) => {
     if (!appointment) {
       return res.status(404).json({
         success: false,
-        message: 'Appointment not found',
+        message: "Appointment not found",
       });
     }
 
-    appointment.status = 'declined';
+    appointment.status = "declined";
     appointment.cancellationReason = reason;
     await appointment.save();
 
     res.status(200).json({
       success: true,
-      message: 'Appointment declined',
+      message: "Appointment declined",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error declining appointment',
+      message: "Error declining appointment",
       error: error.message,
     });
   }
@@ -398,29 +405,33 @@ exports.assignNurse = async (req, res) => {
     if (!appointment) {
       return res.status(404).json({
         success: false,
-        message: 'Appointment not found',
+        message: "Appointment not found",
       });
     }
 
     // Check if nurse exists and is approved
     const nurse = await User.findById(nurseId);
-    if (!nurse || nurse.userType !== 'nurse' || nurse.nurseProfile.verificationStatus !== 'approved') {
+    if (
+      !nurse ||
+      nurse.userType !== "nurse" ||
+      nurse.nurseProfile.verificationStatus !== "approved"
+    ) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid nurse',
+        message: "Invalid nurse",
       });
     }
 
     appointment.nurse = nurseId;
     await appointment.save();
-    await appointment.populate('patient nurse service');
+    await appointment.populate("patient nurse service");
 
     // Create notification for nurse
     await Notification.create({
       user: nurseId,
-      title: 'Appointment Assigned',
-      message: 'You have been assigned to a new appointment',
-      type: 'appointment',
+      title: "Appointment Assigned",
+      message: "You have been assigned to a new appointment",
+      type: "appointment",
       relatedAppointment: appointment._id,
     });
 
@@ -431,7 +442,7 @@ exports.assignNurse = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error assigning nurse',
+      message: "Error assigning nurse",
       error: error.message,
     });
   }
@@ -447,18 +458,18 @@ exports.deleteAppointment = async (req, res) => {
     if (!appointment) {
       return res.status(404).json({
         success: false,
-        message: 'Appointment not found',
+        message: "Appointment not found",
       });
     }
 
     // Check if user is authorized (patient can delete their own, admin can delete any)
     if (
       appointment.patient.toString() !== req.user._id.toString() &&
-      req.user.userType !== 'admin'
+      req.user.userType !== "admin"
     ) {
       return res.status(403).json({
         success: false,
-        message: 'Not authorized to delete this appointment',
+        message: "Not authorized to delete this appointment",
       });
     }
 
@@ -466,12 +477,12 @@ exports.deleteAppointment = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Appointment deleted successfully',
+      message: "Appointment deleted successfully",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error deleting appointment',
+      message: "Error deleting appointment",
       error: error.message,
     });
   }
@@ -487,7 +498,7 @@ exports.getAvailableTimeSlots = async (req, res) => {
     if (!date) {
       return res.status(400).json({
         success: false,
-        message: 'Date is required',
+        message: "Date is required",
       });
     }
 
@@ -501,7 +512,7 @@ exports.getAvailableTimeSlots = async (req, res) => {
         $gte: targetDate,
         $lt: nextDay,
       },
-      status: { $in: ['pending', 'confirmed', 'on-the-way', 'in-progress'] },
+      status: { $in: ["pending", "confirmed", "on-the-way", "in-progress"] },
     });
 
     // Define available time slots (9 AM to 5 PM)
@@ -511,20 +522,21 @@ exports.getAvailableTimeSlots = async (req, res) => {
 
     for (let hour = startHour; hour < endHour; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
-        const slotStart = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        const slotStart = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
         const slotEndHour = minute + parseInt(duration) >= 60 ? hour + 1 : hour;
         const slotEndMinute = (minute + parseInt(duration)) % 60;
-        const slotEnd = `${slotEndHour.toString().padStart(2, '0')}:${slotEndMinute.toString().padStart(2, '0')}`;
+        const slotEnd = `${slotEndHour.toString().padStart(2, "0")}:${slotEndMinute.toString().padStart(2, "0")}`;
 
         // Check if this slot conflicts with existing appointments
-        const isAvailable = !existingAppointments.some(appointment => {
+        const isAvailable = !existingAppointments.some((appointment) => {
           const aptStart = appointment.scheduledTime.start;
-          const aptEnd = appointment.scheduledTime.end || 
+          const aptEnd =
+            appointment.scheduledTime.end ||
             (() => {
-              const [h, m] = aptStart.split(':').map(Number);
+              const [h, m] = aptStart.split(":").map(Number);
               const endTime = new Date();
               endTime.setHours(h, m + appointment.duration);
-              return `${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
+              return `${endTime.getHours().toString().padStart(2, "0")}:${endTime.getMinutes().toString().padStart(2, "0")}`;
             })();
 
           return (
@@ -548,7 +560,7 @@ exports.getAvailableTimeSlots = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching available time slots',
+      message: "Error fetching available time slots",
       error: error.message,
     });
   }
@@ -564,7 +576,7 @@ exports.checkNurseAvailability = async (req, res) => {
     if (!nurseId || !date || !startTime) {
       return res.status(400).json({
         success: false,
-        message: 'Nurse ID, date, and start time are required',
+        message: "Nurse ID, date, and start time are required",
       });
     }
 
@@ -574,34 +586,36 @@ exports.checkNurseAvailability = async (req, res) => {
 
     // Check nurse's availability schedule
     const nurse = await User.findById(nurseId);
-    if (!nurse || nurse.userType !== 'nurse') {
+    if (!nurse || nurse.userType !== "nurse") {
       return res.status(404).json({
         success: false,
-        message: 'Nurse not found',
+        message: "Nurse not found",
       });
     }
 
-    const dayOfWeek = targetDate.toLocaleLowerCase('en-US', { weekday: 'long' });
+    const dayOfWeek = targetDate.toLocaleLowerCase("en-US", {
+      weekday: "long",
+    });
     const nurseAvailability = nurse.nurseProfile.availability[dayOfWeek];
 
     if (!nurseAvailability || nurseAvailability.length === 0) {
       return res.status(200).json({
         success: true,
         available: false,
-        reason: 'Nurse is not available on this day',
+        reason: "Nurse is not available on this day",
       });
     }
 
     // Check if requested time falls within nurse's availability
     const requestedStart = startTime;
     const requestedEnd = (() => {
-      const [h, m] = requestedStart.split(':').map(Number);
+      const [h, m] = requestedStart.split(":").map(Number);
       const endTime = new Date();
       endTime.setHours(h, m + parseInt(duration));
-      return `${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
+      return `${endTime.getHours().toString().padStart(2, "0")}:${endTime.getMinutes().toString().padStart(2, "0")}`;
     })();
 
-    const isWithinAvailability = nurseAvailability.some(slot => {
+    const isWithinAvailability = nurseAvailability.some((slot) => {
       return requestedStart >= slot.start && requestedEnd <= slot.end;
     });
 
@@ -609,7 +623,7 @@ exports.checkNurseAvailability = async (req, res) => {
       return res.status(200).json({
         success: true,
         available: false,
-        reason: 'Requested time is outside nurse\'s availability',
+        reason: "Requested time is outside nurse's availability",
       });
     }
 
@@ -620,11 +634,11 @@ exports.checkNurseAvailability = async (req, res) => {
         $gte: targetDate,
         $lt: nextDay,
       },
-      status: { $in: ['pending', 'confirmed', 'on-the-way', 'in-progress'] },
+      status: { $in: ["pending", "confirmed", "on-the-way", "in-progress"] },
       $or: [
         {
-          'scheduledTime.start': { $lt: requestedEnd },
-          'scheduledTime.end': { $gt: requestedStart },
+          "scheduledTime.start": { $lt: requestedEnd },
+          "scheduledTime.end": { $gt: requestedStart },
         },
       ],
     });
@@ -634,12 +648,12 @@ exports.checkNurseAvailability = async (req, res) => {
     res.status(200).json({
       success: true,
       available,
-      reason: available ? null : 'Nurse has a conflicting appointment',
+      reason: available ? null : "Nurse has a conflicting appointment",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error checking nurse availability',
+      message: "Error checking nurse availability",
       error: error.message,
     });
   }

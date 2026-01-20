@@ -18,7 +18,7 @@ interface FetchOptions {
 
 async function apiFetch<T>(
   path: string,
-  options: FetchOptions = {}
+  options: FetchOptions = {},
 ): Promise<T> {
   const { method = "GET", body, token, headers = {} } = options;
 
@@ -100,7 +100,7 @@ export async function verifyEmail(code: string) {
     {
       method: "POST",
       body: { code },
-    }
+    },
   );
 }
 
@@ -111,7 +111,7 @@ export async function resendEmailVerification(email: string) {
     {
       method: "POST",
       body: { email },
-    }
+    },
   );
 }
 
@@ -122,7 +122,7 @@ export async function forgotPassword(email: string) {
     {
       method: "POST",
       body: { email },
-    }
+    },
   );
 }
 
@@ -130,14 +130,14 @@ export async function forgotPassword(email: string) {
 export async function resetPassword(
   email: string,
   code: string,
-  newPassword: string
+  newPassword: string,
 ) {
   return apiFetch<{ success: boolean; message: string }>(
     "/api/auth/reset-password",
     {
       method: "POST",
       body: { email, code, newPassword },
-    }
+    },
   );
 }
 
@@ -148,7 +148,7 @@ export async function verifyResetCode(email: string, code: string) {
     {
       method: "POST",
       body: { email, code },
-    }
+    },
   );
 }
 
@@ -178,7 +178,7 @@ export async function getProfile(token: string) {
 // Update user profile
 export async function updateProfile(
   token: string,
-  data: { fullName?: string; email?: string; phoneNumber?: string }
+  data: { fullName?: string; email?: string; phoneNumber?: string },
 ) {
   return apiFetch<{ success: boolean; message: string; data: any }>(
     "/api/users/profile",
@@ -186,7 +186,7 @@ export async function updateProfile(
       method: "PUT",
       token,
       body: data,
-    }
+    },
   );
 }
 
@@ -198,14 +198,14 @@ export async function updateMedicalProfile(token: string, data: any) {
       method: "PUT",
       token,
       body: data,
-    }
+    },
   );
 }
 
 // Change password
 export async function changePassword(
   token: string,
-  data: { currentPassword: string; newPassword: string }
+  data: { currentPassword: string; newPassword: string },
 ) {
   return apiFetch<{ success: boolean; message: string }>(
     "/api/users/change-password",
@@ -213,7 +213,7 @@ export async function changePassword(
       method: "PUT",
       token,
       body: data,
-    }
+    },
   );
 }
 
@@ -232,7 +232,7 @@ export async function uploadProfilePicture(token: string, formData: FormData) {
       method: "POST",
       token,
       body: formData,
-    }
+    },
   );
 }
 
@@ -250,7 +250,7 @@ export async function addLocation(
     address: string;
     coordinates?: { latitude: number; longitude: number };
     isDefault?: boolean;
-  }
+  },
 ) {
   return apiFetch<{ success: boolean; message: string; data: any[] }>(
     "/api/users/locations",
@@ -258,7 +258,7 @@ export async function addLocation(
       method: "POST",
       token,
       body: data,
-    }
+    },
   );
 }
 
@@ -270,7 +270,7 @@ export async function updateLocation(
     address?: string;
     coordinates?: { latitude: number; longitude: number };
     isDefault?: boolean;
-  }
+  },
 ) {
   return apiFetch<{ success: boolean; message: string; data: any }>(
     `/api/users/locations/${locationId}`,
@@ -278,7 +278,7 @@ export async function updateLocation(
       method: "PUT",
       token,
       body: data,
-    }
+    },
   );
 }
 
@@ -288,7 +288,7 @@ export async function deleteLocation(token: string, locationId: string) {
     {
       method: "DELETE",
       token,
-    }
+    },
   );
 }
 
@@ -306,7 +306,7 @@ export async function updateSettings(token: string, data: any) {
       method: "PUT",
       token,
       body: data,
-    }
+    },
   );
 }
 
@@ -345,7 +345,7 @@ export async function createAppointment(
     price: number;
     duration: number;
     nurse?: string;
-  }
+  },
 ) {
   return apiFetch<{ success: boolean; data: any }>(`/api/appointments`, {
     method: "POST",
@@ -356,26 +356,26 @@ export async function createAppointment(
 
 export async function getAppointments(
   token: string,
-  filters?: { status?: string; type?: string }
+  filters?: { status?: string; type?: string },
 ) {
   const queryParams = filters ? `?${new URLSearchParams(filters)}` : "";
   return apiFetch<{ success: boolean; count: number; data: any[] }>(
     `/api/appointments${queryParams}`,
-    { token }
+    { token },
   );
 }
 
 export async function getAppointmentById(token: string, appointmentId: string) {
   return apiFetch<{ success: boolean; data: any }>(
     `/api/appointments/${appointmentId}`,
-    { token }
+    { token },
   );
 }
 
 export async function updateAppointmentStatus(
   token: string,
   appointmentId: string,
-  status: string
+  status: string,
 ) {
   return apiFetch<{ success: boolean; data: any }>(
     `/api/appointments/${appointmentId}/status`,
@@ -383,14 +383,14 @@ export async function updateAppointmentStatus(
       method: "PUT",
       token,
       body: { status },
-    }
+    },
   );
 }
 
 export async function cancelAppointment(
   token: string,
   appointmentId: string,
-  reason?: string
+  reason?: string,
 ) {
   return apiFetch<{ success: boolean; message: string; data: any }>(
     `/api/appointments/${appointmentId}/cancel`,
@@ -398,7 +398,7 @@ export async function cancelAppointment(
       method: "PUT",
       token,
       body: { reason },
-    }
+    },
   );
 }
 
@@ -408,14 +408,14 @@ export async function acceptAppointment(token: string, appointmentId: string) {
     {
       method: "PUT",
       token,
-    }
+    },
   );
 }
 
 export async function declineAppointment(
   token: string,
   appointmentId: string,
-  reason?: string
+  reason?: string,
 ) {
   return apiFetch<{ success: boolean; message: string }>(
     `/api/appointments/${appointmentId}/decline`,
@@ -423,14 +423,14 @@ export async function declineAppointment(
       method: "PUT",
       token,
       body: { reason },
-    }
+    },
   );
 }
 
 export async function assignNurse(
   token: string,
   appointmentId: string,
-  nurseId: string
+  nurseId: string,
 ) {
   return apiFetch<{ success: boolean; data: any }>(
     `/api/appointments/${appointmentId}/assign-nurse`,
@@ -438,7 +438,7 @@ export async function assignNurse(
       method: "PUT",
       token,
       body: { nurseId },
-    }
+    },
   );
 }
 
@@ -448,7 +448,7 @@ export async function deleteAppointment(token: string, appointmentId: string) {
     {
       method: "DELETE",
       token,
-    }
+    },
   );
 }
 
@@ -456,7 +456,7 @@ export async function getAvailableTimeSlots(
   token: string,
   date: string,
   serviceId?: string,
-  duration?: number
+  duration?: number,
 ) {
   const params = new URLSearchParams({ date });
   if (serviceId) params.append("serviceId", serviceId);
@@ -473,39 +473,39 @@ export async function checkNurseAvailability(
   nurseId: string,
   date: string,
   startTime: string,
-  duration?: number
+  duration?: number,
 ) {
   const params = new URLSearchParams({ nurseId, date, startTime });
   if (duration) params.append("duration", duration.toString());
 
   return apiFetch<{ success: boolean; available: boolean; reason?: string }>(
     `/api/appointments/check-availability?${params}`,
-    { token }
+    { token },
   );
 }
 
 // Transactions
 export async function getTransactions(
   token: string,
-  filters?: { status?: string; type?: string; limit?: string }
+  filters?: { status?: string; type?: string; limit?: string },
 ) {
   const queryParams = filters ? `?${new URLSearchParams(filters as any)}` : "";
   return apiFetch<{ success: boolean; count: number; data: any[] }>(
     `/api/payments/transactions${queryParams}`,
-    { token }
+    { token },
   );
 }
 
 export async function getTransactionById(token: string, transactionId: string) {
   return apiFetch<{ success: boolean; data: any }>(
     `/api/payments/transactions/${transactionId}`,
-    { token }
+    { token },
   );
 }
 
 export async function getUserStatistics(token: string) {
-  return apiFetch<{ 
-    success: boolean; 
+  return apiFetch<{
+    success: boolean;
     data: {
       totalSpent: number;
       totalRefunds: number;
@@ -515,35 +515,32 @@ export async function getUserStatistics(token: string) {
       pendingCount: number;
       failedCount: number;
       currency: string;
-    }
-  }>(
-    `/api/payments/statistics`,
-    { token }
-  );
+    };
+  }>(`/api/payments/statistics`, { token });
 }
 
 // Notifications
 export async function getNotifications(
   token: string,
-  filters?: { read?: boolean; type?: string }
+  filters?: { read?: boolean; type?: string },
 ) {
   const queryParams = filters ? `?${new URLSearchParams(filters as any)}` : "";
   return apiFetch<{ success: boolean; count: number; data: any[] }>(
     `/api/notifications${queryParams}`,
-    { token }
+    { token },
   );
 }
 
 export async function markNotificationAsRead(
   token: string,
-  notificationId: string
+  notificationId: string,
 ) {
   return apiFetch<{ success: boolean; message: string }>(
     `/api/notifications/${notificationId}/read`,
     {
       method: "PUT",
       token,
-    }
+    },
   );
 }
 
@@ -553,20 +550,20 @@ export async function markAllNotificationsAsRead(token: string) {
     {
       method: "PUT",
       token,
-    }
+    },
   );
 }
 
 export async function deleteNotification(
   token: string,
-  notificationId: string
+  notificationId: string,
 ) {
   return apiFetch<{ success: boolean; message: string }>(
     `/api/notifications/${notificationId}`,
     {
       method: "DELETE",
       token,
-    }
+    },
   );
 }
 
@@ -576,14 +573,14 @@ export async function clearAllNotifications(token: string) {
     {
       method: "DELETE",
       token,
-    }
+    },
   );
 }
 
 // Update notification preferences
 export async function updateNotificationPreferences(
   token: string,
-  preferences: { push?: boolean; email?: boolean }
+  preferences: { push?: boolean; email?: boolean },
 ) {
   return apiFetch<{ success: boolean; data: any; message: string }>(
     `/api/notifications/preferences`,
@@ -591,7 +588,7 @@ export async function updateNotificationPreferences(
       method: "PUT",
       token,
       body: preferences,
-    }
+    },
   );
 }
 
@@ -603,18 +600,18 @@ export async function updatePushToken(token: string, expoPushToken: string) {
       method: "PUT",
       token,
       body: { expoPushToken },
-    }
+    },
   );
 }
 
 // Get notification delivery status
 export async function getNotificationDeliveryStatus(
   token: string,
-  notificationId: string
+  notificationId: string,
 ) {
   return apiFetch<{ success: boolean; data: any }>(
     `/api/notifications/${notificationId}/delivery-status`,
-    { token }
+    { token },
   );
 }
 
@@ -645,7 +642,7 @@ export async function registerNurse(form: FormData) {
 // Process payment
 export async function processPayment(
   token: string,
-  data: { appointmentId: string; paymentMethod: string; amount: number }
+  data: { appointmentId: string; paymentMethod: string; amount: number },
 ) {
   return apiFetch<{ success: boolean; message: string; payment: any }>(
     "/api/payments/process",
@@ -653,20 +650,20 @@ export async function processPayment(
       method: "POST",
       token,
       body: data,
-    }
+    },
   );
 }
 
 // Get payment by appointment
 export async function getPaymentByAppointment(
   token: string,
-  appointmentId: string
+  appointmentId: string,
 ) {
   return apiFetch<{ success: boolean; data: any }>(
     `/api/payments/appointment/${appointmentId}`,
     {
       token,
-    }
+    },
   );
 }
 
@@ -720,13 +717,39 @@ export const api = {
   processPayment,
   getPaymentByAppointment,
   // Emergency services
-  getEmergencyContacts: (token: string) => apiFetch('/api/emergency-contacts', { token }),
-  addEmergencyContact: (token: string, data: any) => apiFetch('/api/emergency-contacts', { method: 'POST', token, body: data }),
-  updateEmergencyContact: (token: string, id: string, data: any) => apiFetch(`/api/emergency-contacts/${id}`, { method: 'PUT', token, body: data }),
-  deleteEmergencyContact: (token: string, id: string) => apiFetch(`/api/emergency-contacts/${id}`, { method: 'DELETE', token }),
-  createNurseAlert: (token: string, data: { description: string; location: any }) => apiFetch('/api/emergency/nurse-alert', { method: 'POST', token, body: data }),
-  createAmbulanceRequest: (token: string, data: { description: string; location: any }) => apiFetch('/api/emergency/ambulance', { method: 'POST', token, body: data }),
-  sendFamilyAlert: (token: string, data: { message?: string }) => apiFetch('/api/emergency/family-alert', { method: 'POST', token, body: data }),
-  getEmergencyStatus: (token: string, appointmentId: string) => apiFetch(`/api/emergency/status/${appointmentId}`, { token }),
+  getEmergencyContacts: (token: string) =>
+    apiFetch("/api/emergency-contacts", { token }),
+  addEmergencyContact: (token: string, data: any) =>
+    apiFetch("/api/emergency-contacts", { method: "POST", token, body: data }),
+  updateEmergencyContact: (token: string, id: string, data: any) =>
+    apiFetch(`/api/emergency-contacts/${id}`, {
+      method: "PUT",
+      token,
+      body: data,
+    }),
+  deleteEmergencyContact: (token: string, id: string) =>
+    apiFetch(`/api/emergency-contacts/${id}`, { method: "DELETE", token }),
+  createNurseAlert: (
+    token: string,
+    data: { description: string; location: any },
+  ) =>
+    apiFetch("/api/emergency/nurse-alert", {
+      method: "POST",
+      token,
+      body: data,
+    }),
+  createAmbulanceRequest: (
+    token: string,
+    data: { description: string; location: any },
+  ) =>
+    apiFetch("/api/emergency/ambulance", { method: "POST", token, body: data }),
+  sendFamilyAlert: (token: string, data: { message?: string }) =>
+    apiFetch("/api/emergency/family-alert", {
+      method: "POST",
+      token,
+      body: data,
+    }),
+  getEmergencyStatus: (token: string, appointmentId: string) =>
+    apiFetch(`/api/emergency/status/${appointmentId}`, { token }),
   baseUrl: API_BASE_URL,
 };

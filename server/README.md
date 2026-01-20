@@ -42,11 +42,13 @@ Healthcare nursing application backend built with Node.js, Express, and MongoDB.
 ## Installation
 
 1. Navigate to server directory:
+
 ```bash
 cd server
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
@@ -56,6 +58,7 @@ npm install
    - Update MongoDB URI and other credentials
 
 4. Create uploads directory:
+
 ```bash
 mkdir uploads
 ```
@@ -63,11 +66,13 @@ mkdir uploads
 5. Run the server:
 
 Development mode:
+
 ```bash
 npm run dev
 ```
 
 Production mode:
+
 ```bash
 npm start
 ```
@@ -143,6 +148,7 @@ See `.env.example` for required environment variables.
 ## TODO
 
 Additional features to implement:
+
 - Payment processing (Stripe integration)
 - Services management
 - Reviews and ratings

@@ -21,10 +21,14 @@ export default function Schedule() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<"upcoming" | "history">(
-    "upcoming"
+    "upcoming",
   );
-  const [paymentFilter, setPaymentFilter] = useState<"all" | "paid" | "pending" | "failed">("all");
-  const [statusFilter, setStatusFilter] = useState<"all" | "completed" | "cancelled">("all");
+  const [paymentFilter, setPaymentFilter] = useState<
+    "all" | "paid" | "pending" | "failed"
+  >("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "completed" | "cancelled"
+  >("all");
 
   const loadAppointments = useCallback(async () => {
     try {
@@ -39,13 +43,19 @@ export default function Schedule() {
         // Transform API response to match frontend expectations
         const transformedAppointments = result.data.map((appointment: any) => {
           // Get service details from servicesData
-          const service = servicesData.find((s) => s._id === appointment.service);
-          
+          const service = servicesData.find(
+            (s) => s._id === appointment.service,
+          );
+
           return {
             id: appointment._id,
             userEmail: appointment.patient?.email,
             nurseEmail: appointment.nurse?.email,
-            serviceName: service?.name || appointment.serviceName || appointment.service || "Unknown Service",
+            serviceName:
+              service?.name ||
+              appointment.serviceName ||
+              appointment.service ||
+              "Unknown Service",
             serviceCategory: service?.category || "",
             serviceId: appointment.service,
             date: appointment.scheduledDate
@@ -87,18 +97,18 @@ export default function Schedule() {
   useFocusEffect(
     useCallback(() => {
       loadAppointments();
-    }, [loadAppointments])
+    }, [loadAppointments]),
   );
 
   const upcomingAppointments = appointments.filter((appointment) =>
     ["pending", "confirmed", "on-the-way", "in-progress"].includes(
-      appointment.status
-    )
+      appointment.status,
+    ),
   );
 
   const historyAppointments = appointments
     .filter((appointment) =>
-      ["completed", "cancelled"].includes(appointment.status)
+      ["completed", "cancelled"].includes(appointment.status),
     )
     .filter((appointment) => {
       // Apply status filter
@@ -107,13 +117,22 @@ export default function Schedule() {
       }
       // Apply payment filter
       if (paymentFilter !== "all") {
-        if (paymentFilter === "paid" && appointment.payment?.status !== "completed") {
+        if (
+          paymentFilter === "paid" &&
+          appointment.payment?.status !== "completed"
+        ) {
           return false;
         }
-        if (paymentFilter === "pending" && appointment.payment?.status !== "pending") {
+        if (
+          paymentFilter === "pending" &&
+          appointment.payment?.status !== "pending"
+        ) {
           return false;
         }
-        if (paymentFilter === "failed" && appointment.payment?.status !== "failed") {
+        if (
+          paymentFilter === "failed" &&
+          appointment.payment?.status !== "failed"
+        ) {
           return false;
         }
       }
@@ -365,7 +384,9 @@ export default function Schedule() {
                 >
                   <Text
                     className={`text-sm font-medium ${
-                      statusFilter === "completed" ? "text-white" : "text-[#6B7280]"
+                      statusFilter === "completed"
+                        ? "text-white"
+                        : "text-[#6B7280]"
                     }`}
                   >
                     Completed
@@ -381,7 +402,9 @@ export default function Schedule() {
                 >
                   <Text
                     className={`text-sm font-medium ${
-                      statusFilter === "cancelled" ? "text-white" : "text-[#6B7280]"
+                      statusFilter === "cancelled"
+                        ? "text-white"
+                        : "text-[#6B7280]"
                     }`}
                   >
                     Cancelled
@@ -438,7 +461,9 @@ export default function Schedule() {
                 >
                   <Text
                     className={`text-sm font-medium ${
-                      paymentFilter === "pending" ? "text-white" : "text-[#6B7280]"
+                      paymentFilter === "pending"
+                        ? "text-white"
+                        : "text-[#6B7280]"
                     }`}
                   >
                     Payment Pending
@@ -454,7 +479,9 @@ export default function Schedule() {
                 >
                   <Text
                     className={`text-sm font-medium ${
-                      paymentFilter === "failed" ? "text-white" : "text-[#6B7280]"
+                      paymentFilter === "failed"
+                        ? "text-white"
+                        : "text-[#6B7280]"
                     }`}
                   >
                     Failed
@@ -467,7 +494,8 @@ export default function Schedule() {
             {(paymentFilter !== "all" || statusFilter !== "all") && (
               <View className="flex-row items-center justify-between mt-3 px-1">
                 <Text className="text-xs text-[#6B7280]">
-                  Showing {historyAppointments.length} result{historyAppointments.length !== 1 ? "s" : ""}
+                  Showing {historyAppointments.length} result
+                  {historyAppointments.length !== 1 ? "s" : ""}
                 </Text>
                 <TouchableOpacity
                   onPress={() => {
@@ -509,32 +537,33 @@ export default function Schedule() {
                         <View className="flex-row items-center gap-2">
                           <View
                             className={`px-3 py-1 rounded-full flex-row items-center gap-1 ${
-                              getPaymentStatusColor(appointment?.payment?.status)
-                                ?.bg
+                              getPaymentStatusColor(
+                                appointment?.payment?.status,
+                              )?.bg
                             }`}
                           >
                             <Ionicons
                               name={
                                 getPaymentStatusColor(
-                                  appointment?.payment?.status
+                                  appointment?.payment?.status,
                                 )?.icon as any
                               }
                               size={14}
                               color={
                                 getPaymentStatusColor(
-                                  appointment?.payment?.status
+                                  appointment?.payment?.status,
                                 )?.iconColor
                               }
                             />
                             <Text
                               className={`text-xs font-semibold ${
                                 getPaymentStatusColor(
-                                  appointment?.payment?.status
+                                  appointment?.payment?.status,
                                 )?.text
                               }`}
                             >
                               {getPaymentStatusLabel(
-                                appointment?.payment?.status
+                                appointment?.payment?.status,
                               )}
                             </Text>
                           </View>
@@ -611,7 +640,9 @@ export default function Schedule() {
                   <View className="bg-white rounded-2xl p-4 flex-row items-center gap-3">
                     <View className="w-12 h-12 bg-[#E8EBFF] rounded-xl justify-center items-center">
                       <Ionicons
-                        name={getServiceIcon(appointment.serviceCategory) as any}
+                        name={
+                          getServiceIcon(appointment.serviceCategory) as any
+                        }
                         size={24}
                         color="#4461F2"
                       />
@@ -695,19 +726,20 @@ export default function Schedule() {
                   ? "No appointments match your filters"
                   : "Your completed and cancelled appointments will appear here"}
             </Text>
-            {activeTab === "history" && (paymentFilter !== "all" || statusFilter !== "all") && (
-              <TouchableOpacity
-                className="mt-4 bg-[#4461F2] px-6 py-3 rounded-full"
-                onPress={() => {
-                  setPaymentFilter("all");
-                  setStatusFilter("all");
-                }}
-              >
-                <Text className="text-white font-semibold text-sm">
-                  Reset Filters
-                </Text>
-              </TouchableOpacity>
-            )}
+            {activeTab === "history" &&
+              (paymentFilter !== "all" || statusFilter !== "all") && (
+                <TouchableOpacity
+                  className="mt-4 bg-[#4461F2] px-6 py-3 rounded-full"
+                  onPress={() => {
+                    setPaymentFilter("all");
+                    setStatusFilter("all");
+                  }}
+                >
+                  <Text className="text-white font-semibold text-sm">
+                    Reset Filters
+                  </Text>
+                </TouchableOpacity>
+              )}
           </View>
         )}
       </ScrollView>

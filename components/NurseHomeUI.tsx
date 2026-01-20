@@ -79,7 +79,7 @@ export default function NurseHomeUI() {
             serviceName: appt.serviceName,
             userEmail: appt.userEmail,
           };
-        }
+        },
       );
 
       setUpcomingAppointments(appointmentItems);
@@ -142,7 +142,7 @@ export default function NurseHomeUI() {
     try {
       const allAppointments = await appointmentStorage.getAppointments();
       const appointmentIndex = allAppointments.findIndex(
-        (appt) => appt.id === appointmentId
+        (appt) => appt.id === appointmentId,
       );
 
       if (appointmentIndex !== -1) {
@@ -173,7 +173,7 @@ export default function NurseHomeUI() {
 
       const users = await authStorage.getUsers();
       const userIndex = users.findIndex(
-        (user) => user.email === currentUser.email
+        (user) => user.email === currentUser.email,
       );
 
       if (userIndex !== -1) {

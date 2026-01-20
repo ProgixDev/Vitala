@@ -1,10 +1,10 @@
-const User = require('../models/User');
-const cloudinary = require('../config/cloudinary');
-const fs = require('fs');
-const path = require('path');
+const User = require("../models/User");
+const cloudinary = require("../config/cloudinary");
+const fs = require("fs");
+const path = require("path");
 
 // Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, '../uploads/temp');
+const uploadsDir = path.join(__dirname, "../uploads/temp");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
@@ -14,7 +14,9 @@ if (!fs.existsSync(uploadsDir)) {
 // @access  Private
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('-password -refreshToken');
+    const user = await User.findById(req.user._id).select(
+      "-password -refreshToken",
+    );
 
     res.status(200).json({
       success: true,
@@ -23,7 +25,7 @@ exports.getProfile = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching profile',
+      message: "Error fetching profile",
       error: error.message,
     });
   }
@@ -46,13 +48,13 @@ exports.updateProfile = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Profile updated successfully',
+      message: "Profile updated successfully",
       data: user,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error updating profile',
+      message: "Error updating profile",
       error: error.message,
     });
   }
@@ -65,10 +67,10 @@ exports.updateMedicalProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
 
-    if (user.userType !== 'patient') {
+    if (user.userType !== "patient") {
       return res.status(403).json({
         success: false,
-        message: 'Only patients can update medical profile',
+        message: "Only patients can update medical profile",
       });
     }
 
@@ -81,13 +83,13 @@ exports.updateMedicalProfile = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Medical profile updated successfully',
+      message: "Medical profile updated successfully",
       data: user.medicalProfile,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error updating medical profile',
+      message: "Error updating medical profile",
       error: error.message,
     });
   }
@@ -101,34 +103,34 @@ exports.uploadProfilePicture = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: 'Please upload a file',
+        message: "Please upload a file",
       });
     }
 
-    console.log('Uploading profile picture for user:', req.user._id);
-    console.log('File details:', {
+    console.log("Uploading profile picture for user:", req.user._id);
+    console.log("File details:", {
       filename: req.file.filename,
       originalname: req.file.originalname,
       size: req.file.size,
-      path: req.file.path
+      path: req.file.path,
     });
 
     // Upload to cloudinary
     const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: 'vitala/profiles',
+      folder: "vitala/profiles",
       transformation: [
-        { width: 400, height: 400, crop: 'fill' },
-        { quality: 'auto' }
+        { width: 400, height: 400, crop: "fill" },
+        { quality: "auto" },
       ],
       public_id: `profile_${req.user._id}_${Date.now()}`,
     });
 
-    console.log('Cloudinary upload successful:', result.secure_url);
+    console.log("Cloudinary upload successful:", result.secure_url);
 
     // Delete local file
     if (fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
-      console.log('Local file deleted successfully');
+      console.log("Local file deleted successfully");
     }
 
     // Update user
@@ -136,37 +138,37 @@ exports.uploadProfilePicture = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found',
+        message: "User not found",
       });
     }
 
     user.profilePicture = result.secure_url;
     await user.save();
 
-    console.log('User profile picture updated in database');
+    console.log("User profile picture updated in database");
 
     res.status(200).json({
       success: true,
-      message: 'Profile picture uploaded successfully',
+      message: "Profile picture uploaded successfully",
       data: {
         url: result.secure_url,
       },
     });
   } catch (error) {
-    console.error('Profile picture upload error:', error);
+    console.error("Profile picture upload error:", error);
 
     // Clean up local file if it exists
     if (req.file && req.file.path && fs.existsSync(req.file.path)) {
       try {
         fs.unlinkSync(req.file.path);
       } catch (cleanupError) {
-        console.error('Error cleaning up file:', cleanupError);
+        console.error("Error cleaning up file:", cleanupError);
       }
     }
 
     res.status(500).json({
       success: false,
-      message: 'Error uploading profile picture',
+      message: "Error uploading profile picture",
       error: error.message,
     });
   }
@@ -179,7 +181,7 @@ exports.changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
-    const user = await User.findById(req.user._id).select('+password');
+    const user = await User.findById(req.user._id).select("+password");
 
     // Check current password
     const isMatch = await user.comparePassword(currentPassword);
@@ -187,7 +189,7 @@ exports.changePassword = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: 'Current password is incorrect',
+        message: "Current password is incorrect",
       });
     }
 
@@ -197,12 +199,12 @@ exports.changePassword = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Password changed successfully',
+      message: "Password changed successfully",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error changing password',
+      message: "Error changing password",
       error: error.message,
     });
   }
@@ -211,7 +213,7 @@ exports.changePassword = async (req, res) => {
 // @desc    Add user location
 // @route   POST /api/users/locations
 // @access  Private
-const geocoder = require('../config/geocoding');
+const geocoder = require("../config/geocoding");
 
 // @desc    Add user location
 // @route   POST /api/users/locations
@@ -223,7 +225,7 @@ exports.addLocation = async (req, res) => {
     if (!address && !coordinates) {
       return res.status(400).json({
         success: false,
-        message: 'Either address or coordinates must be provided',
+        message: "Either address or coordinates must be provided",
       });
     }
 
@@ -244,13 +246,16 @@ exports.addLocation = async (req, res) => {
           finalAddress = geocodeResult[0].formattedAddress || address;
         }
       } catch (geocodeError) {
-        console.warn('Geocoding failed, proceeding without coordinates:', geocodeError.message);
+        console.warn(
+          "Geocoding failed, proceeding without coordinates:",
+          geocodeError.message,
+        );
       }
     }
 
     // If this is set as default, unset others
     if (isDefault) {
-      user.locations.forEach(loc => loc.isDefault = false);
+      user.locations.forEach((loc) => (loc.isDefault = false));
     }
 
     user.locations.push({
@@ -264,13 +269,13 @@ exports.addLocation = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Location added successfully',
+      message: "Location added successfully",
       data: user.locations,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error adding location',
+      message: "Error adding location",
       error: error.message,
     });
   }
@@ -290,7 +295,7 @@ exports.getLocations = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching locations',
+      message: "Error fetching locations",
       error: error.message,
     });
   }
@@ -302,21 +307,21 @@ exports.getLocations = async (req, res) => {
 exports.deleteLocation = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    
+
     user.locations = user.locations.filter(
-      loc => loc._id.toString() !== req.params.locationId
+      (loc) => loc._id.toString() !== req.params.locationId,
     );
 
     await user.save();
 
     res.status(200).json({
       success: true,
-      message: 'Location deleted successfully',
+      message: "Location deleted successfully",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error deleting location',
+      message: "Error deleting location",
       error: error.message,
     });
   }
@@ -331,38 +336,40 @@ exports.updateLocation = async (req, res) => {
     const user = await User.findById(req.user._id);
 
     const locationIndex = user.locations.findIndex(
-      loc => loc._id.toString() === req.params.locationId
+      (loc) => loc._id.toString() === req.params.locationId,
     );
 
     if (locationIndex === -1) {
       return res.status(404).json({
         success: false,
-        message: 'Location not found',
+        message: "Location not found",
       });
     }
 
     // If this is set as default, unset others
     if (isDefault) {
-      user.locations.forEach(loc => loc.isDefault = false);
+      user.locations.forEach((loc) => (loc.isDefault = false));
     }
 
     // Update the location
     if (label !== undefined) user.locations[locationIndex].label = label;
     if (address !== undefined) user.locations[locationIndex].address = address;
-    if (coordinates !== undefined) user.locations[locationIndex].coordinates = coordinates;
-    if (isDefault !== undefined) user.locations[locationIndex].isDefault = isDefault;
+    if (coordinates !== undefined)
+      user.locations[locationIndex].coordinates = coordinates;
+    if (isDefault !== undefined)
+      user.locations[locationIndex].isDefault = isDefault;
 
     await user.save();
 
     res.status(200).json({
       success: true,
-      message: 'Location updated successfully',
+      message: "Location updated successfully",
       data: user.locations[locationIndex],
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error updating location',
+      message: "Error updating location",
       error: error.message,
     });
   }
@@ -373,7 +380,7 @@ exports.updateLocation = async (req, res) => {
 // @access  Private
 exports.getSettings = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('settings');
+    const user = await User.findById(req.user._id).select("settings");
 
     res.status(200).json({
       success: true,
@@ -382,7 +389,7 @@ exports.getSettings = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching settings',
+      message: "Error fetching settings",
       error: error.message,
     });
   }
@@ -404,13 +411,13 @@ exports.updateSettings = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Settings updated successfully',
+      message: "Settings updated successfully",
       data: user.settings,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error updating settings',
+      message: "Error updating settings",
       error: error.message,
     });
   }
@@ -426,17 +433,17 @@ exports.deleteAccount = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found',
+        message: "User not found",
       });
     }
 
     // Delete user's profile picture from cloudinary if exists
     if (user.profilePicture) {
       try {
-        const publicId = user.profilePicture.split('/').pop().split('.')[0];
+        const publicId = user.profilePicture.split("/").pop().split(".")[0];
         await cloudinary.uploader.destroy(`vitala/profiles/${publicId}`);
       } catch (error) {
-        console.log('Error deleting profile picture:', error.message);
+        console.log("Error deleting profile picture:", error.message);
       }
     }
 
@@ -445,12 +452,12 @@ exports.deleteAccount = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Account deleted successfully',
+      message: "Account deleted successfully",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error deleting account',
+      message: "Error deleting account",
       error: error.message,
     });
   }
@@ -466,7 +473,7 @@ exports.getSettings = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found',
+        message: "User not found",
       });
     }
 
@@ -482,7 +489,7 @@ exports.getSettings = async (req, res) => {
       },
       preferences: {
         biometricAuth: false,
-        language: 'en',
+        language: "en",
         darkMode: false,
       },
     };
@@ -494,10 +501,10 @@ exports.getSettings = async (req, res) => {
       data: settings,
     });
   } catch (error) {
-    console.error('Error in getSettings:', error);
+    console.error("Error in getSettings:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching settings',
+      message: "Error fetching settings",
       error: error.message,
     });
   }
@@ -515,7 +522,7 @@ exports.updateSettings = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found',
+        message: "User not found",
       });
     }
 
@@ -532,7 +539,7 @@ exports.updateSettings = async (req, res) => {
         },
         preferences: {
           biometricAuth: false,
-          language: 'en',
+          language: "en",
           darkMode: false,
         },
       };
@@ -541,7 +548,11 @@ exports.updateSettings = async (req, res) => {
     // Update settings recursively
     const updateNestedSettings = (target, source) => {
       for (const key in source) {
-        if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+        if (
+          source[key] &&
+          typeof source[key] === "object" &&
+          !Array.isArray(source[key])
+        ) {
           if (!target[key]) target[key] = {};
           updateNestedSettings(target[key], source[key]);
         } else {
@@ -556,13 +567,13 @@ exports.updateSettings = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Settings updated successfully',
+      message: "Settings updated successfully",
       data: user.settings,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error updating settings',
+      message: "Error updating settings",
       error: error.message,
     });
   }
@@ -573,12 +584,14 @@ exports.updateSettings = async (req, res) => {
 // @access  Private
 exports.getUserById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password -refreshToken');
+    const user = await User.findById(req.params.id).select(
+      "-password -refreshToken",
+    );
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found',
+        message: "User not found",
       });
     }
 
@@ -589,7 +602,7 @@ exports.getUserById = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching user',
+      message: "Error fetching user",
       error: error.message,
     });
   }

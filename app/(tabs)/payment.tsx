@@ -52,7 +52,7 @@ export default function PaymentdPage() {
       () => {
         router.replace("/(tabs)");
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -104,7 +104,7 @@ export default function PaymentdPage() {
   useFocusEffect(
     useCallback(() => {
       fetchRecentPayments();
-    }, [fetchRecentPayments])
+    }, [fetchRecentPayments]),
   );
 
   const onRefresh = useCallback(() => {
@@ -136,7 +136,7 @@ export default function PaymentdPage() {
     try {
       await AsyncStorage.setItem(
         CARDS_STORAGE_KEY,
-        JSON.stringify(cardsToSave)
+        JSON.stringify(cardsToSave),
       );
     } catch (error) {
       console.error("Error saving cards:", error);

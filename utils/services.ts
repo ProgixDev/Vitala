@@ -172,16 +172,16 @@ const servicesData: Service[] = [
 ];
 
 export function getServiceNameById(id: string): string {
-  const service = servicesData.find(s => s._id === id);
+  const service = servicesData.find((s) => s._id === id);
   return service ? service.name : "Unknown Service";
 }
 
 export function getServiceById(id: string): Service | undefined {
-  return servicesData.find(s => s._id === id);
+  return servicesData.find((s) => s._id === id);
 }
 
 export function getServiceCategoryById(id: string): string {
-  const service = servicesData.find(s => s._id === id);
+  const service = servicesData.find((s) => s._id === id);
   return service ? service.category : "";
 }
 

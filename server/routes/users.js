@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 const {
   getProfile,
@@ -21,8 +21,8 @@ const upload = require("../middleware/upload");
 router.use(protect);
 
 // Settings routes - MUST be before /:id route to avoid matching "settings" as an ID
-router.get('/settings', getSettings);
-router.put('/settings', updateSettings);
+router.get("/settings", getSettings);
+router.put("/settings", updateSettings);
 
 router.get("/profile", getProfile);
 router.put("/profile", updateProfile);
@@ -30,7 +30,7 @@ router.put("/medical-profile", updateMedicalProfile);
 router.post(
   "/profile-picture",
   upload.uploadProfilePicture.single("profilePicture"),
-  uploadProfilePicture
+  uploadProfilePicture,
 );
 router.put("/change-password", changePassword);
 

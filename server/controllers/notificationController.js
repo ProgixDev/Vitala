@@ -1,6 +1,6 @@
-const Notification = require('../models/Notification');
-const User = require('../models/User');
-const { createAndSendNotification } = require('../utils/notificationHelpers');
+const Notification = require("../models/Notification");
+const User = require("../models/User");
+const { createAndSendNotification } = require("../utils/notificationHelpers");
 
 // @desc    Get user notifications
 // @route   GET /api/notifications
@@ -8,19 +8,19 @@ const { createAndSendNotification } = require('../utils/notificationHelpers');
 exports.getNotifications = async (req, res) => {
   try {
     const { isRead, type } = req.query;
-    
+
     let query = { user: req.user._id };
-    
+
     if (isRead !== undefined) {
-      query.isRead = isRead === 'true';
+      query.isRead = isRead === "true";
     }
-    
+
     if (type) {
       query.type = type;
     }
 
     const notifications = await Notification.find(query)
-      .populate('relatedAppointment relatedPayment')
+      .populate("relatedAppointment relatedPayment")
       .sort({ createdAt: -1 })
       .limit(50);
 
@@ -32,7 +32,7 @@ exports.getNotifications = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching notifications',
+      message: "Error fetching notifications",
       error: error.message,
     });
   }
@@ -48,7 +48,7 @@ exports.markAsRead = async (req, res) => {
     if (!notification) {
       return res.status(404).json({
         success: false,
-        message: 'Notification not found',
+        message: "Notification not found",
       });
     }
 
@@ -63,7 +63,7 @@ exports.markAsRead = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error marking notification as read',
+      message: "Error marking notification as read",
       error: error.message,
     });
   }
@@ -76,17 +76,17 @@ exports.markAllAsRead = async (req, res) => {
   try {
     await Notification.updateMany(
       { user: req.user._id, isRead: false },
-      { isRead: true, readAt: new Date() }
+      { isRead: true, readAt: new Date() },
     );
 
     res.status(200).json({
       success: true,
-      message: 'All notifications marked as read',
+      message: "All notifications marked as read",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error marking notifications as read',
+      message: "Error marking notifications as read",
       error: error.message,
     });
   }
@@ -102,7 +102,7 @@ exports.deleteNotification = async (req, res) => {
     if (!notification) {
       return res.status(404).json({
         success: false,
-        message: 'Notification not found',
+        message: "Notification not found",
       });
     }
 
@@ -110,12 +110,12 @@ exports.deleteNotification = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Notification deleted',
+      message: "Notification deleted",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error deleting notification',
+      message: "Error deleting notification",
       error: error.message,
     });
   }
@@ -130,12 +130,12 @@ exports.clearAllNotifications = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'All notifications cleared',
+      message: "All notifications cleared",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error clearing notifications',
+      message: "Error clearing notifications",
       error: error.message,
     });
   }
@@ -146,14 +146,23 @@ exports.clearAllNotifications = async (req, res) => {
 // @access  Private
 exports.sendNotification = async (req, res) => {
   try {
-    const { userId, title, message, type, priority, data, relatedAppointment, relatedPayment } = req.body;
+    const {
+      userId,
+      title,
+      message,
+      type,
+      priority,
+      data,
+      relatedAppointment,
+      relatedPayment,
+    } = req.body;
 
     // Get user with notification preferences
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found',
+        message: "User not found",
       });
     }
 
@@ -161,10 +170,13 @@ exports.sendNotification = async (req, res) => {
       userId,
       title,
       message,
-      type: type || 'system',
-      priority: priority || 'medium',
+      type: type || "system",
+      priority: priority || "medium",
       data,
-      userPreferences: user.settings?.notifications || { push: true, email: true },
+      userPreferences: user.settings?.notifications || {
+        push: true,
+        email: true,
+      },
       expoPushToken: user.expoPushToken,
       email: user.email,
       relatedAppointment,
@@ -178,7 +190,7 @@ exports.sendNotification = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error sending notification',
+      message: "Error sending notification",
       error: error.message,
     });
   }
@@ -195,7 +207,7 @@ exports.updateNotificationPreferences = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found',
+        message: "User not found",
       });
     }
 
@@ -219,12 +231,12 @@ exports.updateNotificationPreferences = async (req, res) => {
     res.status(200).json({
       success: true,
       data: user.settings.notifications,
-      message: 'Notification preferences updated',
+      message: "Notification preferences updated",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error updating notification preferences',
+      message: "Error updating notification preferences",
       error: error.message,
     });
   }
@@ -240,7 +252,7 @@ exports.getDeliveryStatus = async (req, res) => {
     if (!notification) {
       return res.status(404).json({
         success: false,
-        message: 'Notification not found',
+        message: "Notification not found",
       });
     }
 
@@ -251,7 +263,7 @@ exports.getDeliveryStatus = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching delivery status',
+      message: "Error fetching delivery status",
       error: error.message,
     });
   }
@@ -267,7 +279,7 @@ exports.updatePushToken = async (req, res) => {
     if (!expoPushToken) {
       return res.status(400).json({
         success: false,
-        message: 'Expo push token is required',
+        message: "Expo push token is required",
       });
     }
 
@@ -275,7 +287,7 @@ exports.updatePushToken = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found',
+        message: "User not found",
       });
     }
 
@@ -284,12 +296,12 @@ exports.updatePushToken = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Push token updated successfully',
+      message: "Push token updated successfully",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error updating push token',
+      message: "Error updating push token",
       error: error.message,
     });
   }

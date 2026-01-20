@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 const {
   registerPatient,
@@ -25,7 +25,7 @@ router.post(
     { name: "idBack", maxCount: 1 },
     { name: "selfie", maxCount: 1 },
   ]),
-  registerNurse
+  registerNurse,
 );
 router.post("/login", login);
 router.post("/verify-email", verifyEmail);
@@ -33,10 +33,10 @@ router.post("/resend-verification", resendEmailVerification);
 router.post("/forgot-password", forgotPassword);
 router.post("/verify-reset-code", verifyResetCode);
 router.post("/reset-password", resetPassword);
-router.post('/refresh-token', refreshToken);
+router.post("/refresh-token", refreshToken);
 
 // Protected routes
-router.post('/logout', protect, logout);
-router.get('/me', protect, getMe);
+router.post("/logout", protect, logout);
+router.get("/me", protect, getMe);
 
 module.exports = router;

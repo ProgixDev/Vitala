@@ -1,7 +1,7 @@
-const EmergencyRequest = require('../models/EmergencyRequest');
-const Appointment = require('../models/Appointment');
-const EmergencyContact = require('../models/EmergencyContact');
-const User = require('../models/User');
+const EmergencyRequest = require("../models/EmergencyRequest");
+const Appointment = require("../models/Appointment");
+const EmergencyContact = require("../models/EmergencyContact");
+const User = require("../models/User");
 const {
   createAndSendNotification,
   sendSMSNotification,
@@ -166,7 +166,7 @@ exports.sendFamilyAlert = async (req, res) => {
           sendSMSNotification({
             to: contact.phoneNumber,
             message: `🚨 EMERGENCY ALERT: ${message || "I need immediate assistance"} - From ${req.user.fullName}. Contact: ${req.user.phoneNumber || "N/A"}`,
-          })
+          }),
         );
       }
 
@@ -203,7 +203,7 @@ exports.sendFamilyAlert = async (req, res) => {
             subject: `🚨 EMERGENCY ALERT from ${req.user.fullName}`,
             text: `EMERGENCY ALERT: ${message || "I need immediate assistance"} - From ${req.user.fullName} (${req.user.phoneNumber || "N/A"})`,
             html: emailHtml,
-          })
+          }),
         );
       }
 
@@ -215,7 +215,7 @@ exports.sendFamilyAlert = async (req, res) => {
           message: `Emergency alert sent to ${contact.name} (${contact.relationship})${contact.phoneNumber ? " via SMS" : ""}${contact.email ? " and email" : ""}`,
           type: "emergency",
           priority: "high",
-        })
+        }),
       );
 
       return Promise.all(promises);
@@ -248,13 +248,13 @@ exports.getEmergencyStatus = async (req, res) => {
     const appointment = await Appointment.findOne({
       _id: req.params.appointmentId,
       patient: req.user._id,
-      appointmentType: 'emergency',
-    }).populate('nurse', 'name phoneNumber');
+      appointmentType: "emergency",
+    }).populate("nurse", "name phoneNumber");
 
     if (!appointment) {
       return res.status(404).json({
         success: false,
-        message: 'Emergency appointment not found',
+        message: "Emergency appointment not found",
       });
     }
 
@@ -272,7 +272,7 @@ exports.getEmergencyStatus = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching emergency status',
+      message: "Error fetching emergency status",
       error: error.message,
     });
   }

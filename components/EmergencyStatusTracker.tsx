@@ -94,7 +94,10 @@ export default function EmergencyStatusTracker({
         setLoading(false);
         return;
       }
-      const response = await api.getEmergencyStatus(accessToken, appointmentId) as { data: EmergencyStatus };
+      const response = (await api.getEmergencyStatus(
+        accessToken,
+        appointmentId,
+      )) as { data: EmergencyStatus };
       setStatus(response.data);
       setError(null);
     } catch (err) {
@@ -108,7 +111,9 @@ export default function EmergencyStatusTracker({
     return (
       <View className="flex-1 justify-center items-center bg-[#F9FAFB] p-6">
         <ActivityIndicator size="large" color="#4461F2" />
-        <Text className="text-[#6B7280] mt-4 font-medium">Loading emergency status...</Text>
+        <Text className="text-[#6B7280] mt-4 font-medium">
+          Loading emergency status...
+        </Text>
       </View>
     );
   }

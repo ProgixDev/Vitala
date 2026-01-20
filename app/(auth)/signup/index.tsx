@@ -29,7 +29,9 @@ export default function SignUp() {
   // Step 1: Info
   const [fullName, setFullName] = useState((params.fullName as string) || "");
   const [email, setEmail] = useState((params.email as string) || "");
-  const [phoneNumber, setPhoneNumber] = useState((params.phoneNumber as string) || "");
+  const [phoneNumber, setPhoneNumber] = useState(
+    (params.phoneNumber as string) || "",
+  );
 
   // Step 2: Password
   const [newPassword, setNewPassword] = useState("");
@@ -38,7 +40,7 @@ export default function SignUp() {
 
   // Step 3: Medical Profile
   const [gender, setGender] = useState<"male" | "female" | "other" | null>(
-    null
+    null,
   );
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [bloodType, setBloodType] = useState<
@@ -50,7 +52,14 @@ export default function SignUp() {
   const [weight, setWeight] = useState("");
 
   // Step 4: Email Verification
-  const [verificationCode, setVerificationCode] = useState(["", "", "", "", "", ""]);
+  const [verificationCode, setVerificationCode] = useState([
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+  ]);
   const [timer, setTimer] = useState(59);
 
   const handleBack = useCallback(() => {
@@ -71,7 +80,7 @@ export default function SignUp() {
       () => {
         handleBack();
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -256,7 +265,7 @@ export default function SignUp() {
         text1: "Code Sent",
         text2: "A new verification code has been sent to your email",
       });
-    } catch (err) {
+    } catch {
       Toast.show({
         type: "error",
         text1: "Error",
@@ -367,16 +376,8 @@ export default function SignUp() {
 
       <LoadingScreen
         visible={isLoading}
-        message={
-          step === "medical"
-            ? "Creating your account..."
-            : "Loading..."
-        }
-        subtitle={
-          step === "medical"
-            ? "Setting up your medical profile"
-            : ""
-        }
+        message={step === "medical" ? "Creating your account..." : "Loading..."}
+        subtitle={step === "medical" ? "Setting up your medical profile" : ""}
       />
     </KeyboardAvoidingView>
   );

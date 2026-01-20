@@ -16,8 +16,13 @@ import { router, useLocalSearchParams } from "expo-router";
 import Toast from "react-native-toast-message";
 
 export default function VerifyResetCode() {
-  const { email, resetCode } = useLocalSearchParams<{ email: string; resetCode?: string }>();
-  const [code, setCode] = useState<string[]>(resetCode ? resetCode.split("") : ["", "", "", "", "", ""]);
+  const { email, resetCode } = useLocalSearchParams<{
+    email: string;
+    resetCode?: string;
+  }>();
+  const [code, setCode] = useState<string[]>(
+    resetCode ? resetCode.split("") : ["", "", "", "", "", ""],
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [timer, setTimer] = useState(0);
   const codeInputs = useRef<(TextInput | null)[]>([]);
@@ -138,7 +143,7 @@ export default function VerifyResetCode() {
           <View style={styles.header}>
             <Text style={styles.title}>Reset Password</Text>
             <Text style={styles.subtitle}>
-              We've sent a 6-digit code to{"\n"}
+              We&apos;ve sent a 6-digit code to{"\n"}
               <Text style={styles.email}>{email}</Text>
             </Text>
           </View>
@@ -153,10 +158,7 @@ export default function VerifyResetCode() {
                     codeInputs.current[index] = ref;
                   }
                 }}
-                style={[
-                  styles.codeInput,
-                  digit && styles.codeInputFilled,
-                ]}
+                style={[styles.codeInput, digit && styles.codeInputFilled]}
                 value={digit}
                 onChangeText={(value) => handleCodeChange(value, index)}
                 onKeyPress={(e) => handleKeyPress(e, index)}
@@ -170,7 +172,7 @@ export default function VerifyResetCode() {
 
           {/* Resend Code */}
           <View style={styles.resendContainer}>
-            <Text style={styles.resendText}>Didn't receive the code?</Text>
+            <Text style={styles.resendText}>Didn&apos;t receive the code?</Text>
             <TouchableOpacity
               onPress={handleResendCode}
               disabled={timer > 0 || isLoading}

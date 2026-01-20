@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
 // Generate JWT token
 const generateToken = (id) => {
@@ -16,9 +16,9 @@ const generateRefreshToken = (id) => {
 };
 
 // Generate password reset token
-const crypto = require('crypto');
+const crypto = require("crypto");
 const generateResetToken = () => {
-  return crypto.randomBytes(32).toString('hex');
+  return crypto.randomBytes(32).toString("hex");
 };
 
 module.exports = {

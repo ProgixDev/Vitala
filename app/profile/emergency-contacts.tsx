@@ -24,10 +24,10 @@ export default function EmergencyContacts() {
 
   useEffect(() => {
     if (currentUser) {
-      console.log('Current user available, fetching contacts...');
+      console.log("Current user available, fetching contacts...");
       fetchContacts();
     } else {
-      console.log('No current user, setting loading to false');
+      console.log("No current user, setting loading to false");
       setLoading(false);
     }
   }, [currentUser]);
@@ -38,10 +38,12 @@ export default function EmergencyContacts() {
       return;
     }
     try {
-      const response = await api.getEmergencyContacts(currentUser.token) as { data: EmergencyContact[] };
+      const response = (await api.getEmergencyContacts(currentUser.token)) as {
+        data: EmergencyContact[];
+      };
       setContacts(response.data);
     } catch (error) {
-      console.error('Error fetching emergency contacts:', error);
+      console.error("Error fetching emergency contacts:", error);
       Alert.alert("Error", "Failed to load emergency contacts");
     } finally {
       setLoading(false);
@@ -102,63 +104,65 @@ export default function EmergencyContacts() {
         showsVerticalScrollIndicator={false}
       >
         <View className="px-6 mt-6">
-
-        {contacts.length === 0 ? (
-          <View className="bg-white rounded-2xl p-8 items-center shadow-sm">
-            <View className="w-16 h-16 bg-[#F3F4F6] rounded-full items-center justify-center mb-4">
-              <Ionicons name="people-outline" size={32} color="#9CA3AF" />
+          {contacts.length === 0 ? (
+            <View className="bg-white rounded-2xl p-8 items-center shadow-sm">
+              <View className="w-16 h-16 bg-[#F3F4F6] rounded-full items-center justify-center mb-4">
+                <Ionicons name="people-outline" size={32} color="#9CA3AF" />
+              </View>
+              <Text className="text-[#1F2937] font-semibold text-lg mb-2">
+                No Emergency Contacts
+              </Text>
+              <Text className="text-[#6B7280] text-center text-sm">
+                Add family members or friends who should be contacted in case of
+                emergency
+              </Text>
             </View>
-            <Text className="text-[#1F2937] font-semibold text-lg mb-2">
-              No Emergency Contacts
-            </Text>
-            <Text className="text-[#6B7280] text-center text-sm">
-              Add family members or friends who should be contacted in case of emergency
-            </Text>
-          </View>
-        ) : (
-          contacts.map((contact) => (
-            <TouchableOpacity
-              key={contact._id}
-              onPress={() =>
-                router.push(`/profile/edit-emergency-contact/${contact._id}`)
-              }
-              className="bg-white rounded-2xl p-4 mb-3 shadow-sm"
-              activeOpacity={0.7}
-            >
-              <View className="flex-row justify-between items-start">
-                <View className="flex-1">
-                  <View className="flex-row items-center mb-2">
-                    <Text className="text-[17px] font-semibold text-[#1F2937]">
-                      {contact.name}
+          ) : (
+            contacts.map((contact) => (
+              <TouchableOpacity
+                key={contact._id}
+                onPress={() =>
+                  router.push(`/profile/edit-emergency-contact/${contact._id}`)
+                }
+                className="bg-white rounded-2xl p-4 mb-3 shadow-sm"
+                activeOpacity={0.7}
+              >
+                <View className="flex-row justify-between items-start">
+                  <View className="flex-1">
+                    <View className="flex-row items-center mb-2">
+                      <Text className="text-[17px] font-semibold text-[#1F2937]">
+                        {contact.name}
+                      </Text>
+                      {contact.isPrimary && (
+                        <View className="bg-[#EEF2FF] px-2 py-1 rounded-md ml-2">
+                          <Text className="text-[#4461F2] text-xs font-medium">
+                            Primary
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text className="text-[#6B7280] text-sm capitalize mb-1">
+                      {contact.relationship}
                     </Text>
-                    {contact.isPrimary && (
-                      <View className="bg-[#EEF2FF] px-2 py-1 rounded-md ml-2">
-                        <Text className="text-[#4461F2] text-xs font-medium">
-                          Primary
-                        </Text>
-                      </View>
+                    <Text className="text-[#1F2937] text-[15px] mb-1">
+                      {contact.phoneNumber}
+                    </Text>
+                    {contact.email && (
+                      <Text className="text-[#6B7280] text-sm">
+                        {contact.email}
+                      </Text>
                     )}
                   </View>
-                  <Text className="text-[#6B7280] text-sm capitalize mb-1">
-                    {contact.relationship}
-                  </Text>
-                  <Text className="text-[#1F2937] text-[15px] mb-1">
-                    {contact.phoneNumber}
-                  </Text>
-                  {contact.email && (
-                    <Text className="text-[#6B7280] text-sm">{contact.email}</Text>
-                  )}
+                  <TouchableOpacity
+                    onPress={() => deleteContact(contact._id, contact.name)}
+                    className="w-10 h-10 items-center justify-center"
+                  >
+                    <Ionicons name="trash-outline" size={22} color="#EF4444" />
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity
-                  onPress={() => deleteContact(contact._id, contact.name)}
-                  className="w-10 h-10 items-center justify-center"
-                >
-                  <Ionicons name="trash-outline" size={22} color="#EF4444" />
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          ))
-        )}
+              </TouchableOpacity>
+            ))
+          )}
         </View>
       </ScrollView>
     </View>

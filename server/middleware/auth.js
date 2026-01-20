@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
 // Protect routes - verify JWT token
 exports.protect = async (req, res, next) => {
@@ -8,16 +8,16 @@ exports.protect = async (req, res, next) => {
   // Check for token in Authorization header
   if (
     req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
+    req.headers.authorization.startsWith("Bearer")
   ) {
-    token = req.headers.authorization.split(' ')[1];
+    token = req.headers.authorization.split(" ")[1];
   }
 
   // Check if token exists
   if (!token) {
     return res.status(401).json({
       success: false,
-      message: 'Not authorized to access this route',
+      message: "Not authorized to access this route",
     });
   }
 
@@ -26,24 +26,24 @@ exports.protect = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // Get user from token
-    req.user = await User.findById(decoded.id).select('-password');
+    req.user = await User.findById(decoded.id).select("-password");
 
     if (!req.user) {
       return res.status(401).json({
         success: false,
-        message: 'User not found',
+        message: "User not found",
       });
     }
 
     // Prevent caching of private/authenticated responses (avoids 304 Not Modified)
     // This ensures clients always receive fresh JSON (no ETag/conditional GET effects).
-    res.set('Cache-Control', 'no-store');
+    res.set("Cache-Control", "no-store");
 
     next();
   } catch (error) {
     return res.status(401).json({
       success: false,
-      message: 'Not authorized to access this route',
+      message: "Not authorized to access this route",
       error: error.message,
     });
   }
@@ -64,11 +64,11 @@ exports.authorize = (...roles) => {
 
 // Check if user is verified (for nurses)
 exports.requireVerification = async (req, res, next) => {
-  if (req.user.userType === 'nurse') {
-    if (req.user.nurseProfile?.verificationStatus !== 'approved') {
+  if (req.user.userType === "nurse") {
+    if (req.user.nurseProfile?.verificationStatus !== "approved") {
       return res.status(403).json({
         success: false,
-        message: 'Your account is pending verification',
+        message: "Your account is pending verification",
       });
     }
   }

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const serviceSchema = new mongoose.Schema(
   {
@@ -53,7 +53,7 @@ const serviceSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
-module.exports = mongoose.model('Service', serviceSchema);
+module.exports = mongoose.model("Service", serviceSchema);

@@ -98,7 +98,7 @@ export default function BookingComponent({
   const today = new Date();
   const [currentYear, setCurrentYear] = useState<number>(today.getFullYear());
   const [currentMonthIndex, setCurrentMonthIndex] = useState<number>(
-    today.getMonth()
+    today.getMonth(),
   );
 
   const [dates, setDates] = useState<DateOption[]>([]);
@@ -128,7 +128,7 @@ export default function BookingComponent({
 
   const isDatesReady = useMemo(
     () => dates.length > 0 && currentMonth !== "",
-    [dates.length, currentMonth]
+    [dates.length, currentMonth],
   );
   const isReadyToRender = useMemo(() => {
     // Emergency flow doesn't depend on dates/time/location selections to render
@@ -144,7 +144,7 @@ export default function BookingComponent({
       () => {
         onBack();
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -154,7 +154,7 @@ export default function BookingComponent({
   useFocusEffect(
     React.useCallback(() => {
       refreshUser();
-    }, [refreshUser])
+    }, [refreshUser]),
   );
 
   // Handle back button/swipe

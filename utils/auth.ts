@@ -69,7 +69,7 @@ export const authStorage = {
    */
   validateCredentials: async (
     email: string,
-    password: string
+    password: string,
   ): Promise<User | null> => {
     // Removed local storage - use API for authentication
     return null;
@@ -99,7 +99,7 @@ export const authStorage = {
    */
   setTokens: async (
     accessToken: string,
-    refreshToken?: string
+    refreshToken?: string,
   ): Promise<void> => {
     try {
       await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, accessToken);

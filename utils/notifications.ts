@@ -43,7 +43,7 @@ export async function registerForPushNotificationsAsync(): Promise<
   // Check if notifications are supported
   if (!Notifications) {
     console.log(
-      "Push notifications are not supported in Expo Go. Use a development build instead."
+      "Push notifications are not supported in Expo Go. Use a development build instead.",
     );
     return null;
   }
@@ -144,7 +144,7 @@ export async function clearStoredPushToken(): Promise<void> {
  * Add listener for incoming notifications (foreground)
  */
 export function addNotificationReceivedListener(
-  callback: (notification: import("expo-notifications").Notification) => void
+  callback: (notification: import("expo-notifications").Notification) => void,
 ): import("expo-notifications").EventSubscription | null {
   if (!Notifications) return null;
   return Notifications.addNotificationReceivedListener(callback);
@@ -154,7 +154,9 @@ export function addNotificationReceivedListener(
  * Add listener for notification responses (when user taps notification)
  */
 export function addNotificationResponseListener(
-  callback: (response: import("expo-notifications").NotificationResponse) => void
+  callback: (
+    response: import("expo-notifications").NotificationResponse,
+  ) => void,
 ): import("expo-notifications").EventSubscription | null {
   if (!Notifications) return null;
   return Notifications.addNotificationResponseReceivedListener(callback);
@@ -163,7 +165,9 @@ export function addNotificationResponseListener(
 /**
  * Get the last notification response (for deep linking on app open)
  */
-export async function getLastNotificationResponse(): Promise<import("expo-notifications").NotificationResponse | null> {
+export async function getLastNotificationResponse(): Promise<
+  import("expo-notifications").NotificationResponse | null
+> {
   if (!Notifications) return null;
   return Notifications.getLastNotificationResponseAsync();
 }
@@ -249,7 +253,7 @@ export interface NotificationData {
  * Parse notification data from Expo notification
  */
 export function parseNotificationData(
-  notification: import("expo-notifications").Notification
+  notification: import("expo-notifications").Notification,
 ): NotificationData {
   return (notification.request.content.data || {}) as NotificationData;
 }

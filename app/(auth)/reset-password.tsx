@@ -14,13 +14,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { OtpInput } from "react-native-otp-entry";
 import Toast from "react-native-toast-message";
-import EmailVerificationStep from "./signup/components/EmailVerificationStep";
 import PasswordStep from "./signup/components/PasswordStep";
 
 type Step = "code" | "password";
 
 export default function ResetPassword() {
-  const { email, resetCode } = useLocalSearchParams<{ email: string; resetCode?: string }>();
+  const { email, resetCode } = useLocalSearchParams<{
+    email: string;
+    resetCode?: string;
+  }>();
   const [currentStep, setCurrentStep] = useState<Step>("code");
   const [code, setCode] = useState(resetCode || "");
   const [newPassword, setNewPassword] = useState("");
@@ -112,7 +114,7 @@ export default function ResetPassword() {
         text1: "Code Sent",
         text2: "Check your email for a new code",
       });
-    } catch (error: any) {
+    } catch {
       Toast.show({
         type: "error",
         text1: "Error",
@@ -166,7 +168,9 @@ export default function ResetPassword() {
               onPress={handleResetPassword}
               disabled={isLoading}
             >
-              <Text className="text-lg font-semibold text-white">Reset Password</Text>
+              <Text className="text-lg font-semibold text-white">
+                Reset Password
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -192,10 +196,7 @@ export default function ResetPassword() {
         keyboardShouldPersistTaps="handled"
       >
         {/* Back Button */}
-        <TouchableOpacity
-          className="mt-12 mb-8"
-          onPress={handleBackToSignIn}
-        >
+        <TouchableOpacity className="mt-12 mb-8" onPress={handleBackToSignIn}>
           <Ionicons name="arrow-back" size={28} color="#2D3142" />
         </TouchableOpacity>
 
@@ -254,15 +255,17 @@ export default function ResetPassword() {
         {/* Resend Code */}
         <View className="items-center">
           <Text className="text-[15px] text-gray-500 mb-2">
-            Didn't receive the code?
+            Didn&apos;t receive the code?
           </Text>
           <TouchableOpacity
             onPress={handleResendCode}
             disabled={timer > 0 || isLoading}
           >
-            <Text className={`text-[15px] font-medium ${
-              timer > 0 ? "text-gray-400" : "text-[#4461F2]"
-            }`}>
+            <Text
+              className={`text-[15px] font-medium ${
+                timer > 0 ? "text-gray-400" : "text-[#4461F2]"
+              }`}
+            >
               {timer > 0 ? `Resend in ${timer}s` : "Resend Code"}
             </Text>
           </TouchableOpacity>

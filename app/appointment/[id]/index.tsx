@@ -167,7 +167,9 @@ export default function AppointmentDetails() {
   const { id } = useLocalSearchParams();
   const { currentUser } = useCurrentUser();
   const [appointment, setAppointment] = useState<any | null>(null);
-  const [partialAppointment, setPartialAppointment] = useState<any | null>(null);
+  const [partialAppointment, setPartialAppointment] = useState<any | null>(
+    null,
+  );
   const [patientDetails, setPatientDetails] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -187,7 +189,7 @@ export default function AppointmentDetails() {
 
         // Find service details
         const serviceDetails = servicesData.find(
-          (s) => s._id === appointmentData.service
+          (s) => s._id === appointmentData.service,
         );
 
         // Format appointment data for frontend
@@ -201,7 +203,7 @@ export default function AppointmentDetails() {
               year: "numeric",
               month: "long",
               day: "numeric",
-            }
+            },
           ),
           time: appointmentData.scheduledTime.start,
           duration: `${serviceDetails ? serviceDetails.duration : appointmentData.duration} minutes`,
@@ -222,34 +224,45 @@ export default function AppointmentDetails() {
           if (accessToken) {
             const listRes = await api.getAppointments(accessToken);
             if (listRes.success) {
-              const found = listRes.data.find((a: any) => a._id === id || a.id === id);
+              const found = listRes.data.find(
+                (a: any) => a._id === id || a.id === id,
+              );
               if (found) {
                 const fallback = {
                   id: found._id || found.id,
-                  serviceName: found.service || found.serviceName || 'Unknown Service',
-                  date: found.scheduledDate ? new Date(found.scheduledDate).toLocaleDateString() : '',
-                  time: found.scheduledTime?.start || '',
+                  serviceName:
+                    found.service || found.serviceName || "Unknown Service",
+                  date: found.scheduledDate
+                    ? new Date(found.scheduledDate).toLocaleDateString()
+                    : "",
+                  time: found.scheduledTime?.start || "",
                   location: found.location || {},
                   status: found.status,
-                  payment: found.payment || { status: 'pending', amount: found.price || 0, currency: 'USD' },
+                  payment: found.payment || {
+                    status: "pending",
+                    amount: found.price || 0,
+                    currency: "USD",
+                  },
                 };
                 setPartialAppointment(fallback);
-                setError('Limited access: some details are hidden. Here is what we can show.');
+                setError(
+                  "Limited access: some details are hidden. Here is what we can show.",
+                );
               } else {
-                setError('Not authorized to view this appointment');
+                setError("Not authorized to view this appointment");
               }
             } else {
-              setError('Not authorized to view this appointment');
+              setError("Not authorized to view this appointment");
             }
           } else {
-            setError('Not authenticated');
+            setError("Not authenticated");
           }
         } catch (err2) {
-          console.error('Fallback error:', err2);
-          setError('Not authorized to view this appointment');
+          console.error("Fallback error:", err2);
+          setError("Not authorized to view this appointment");
         }
       } else {
-        setError('Failed to load appointment');
+        setError("Failed to load appointment");
       }
     } finally {
       setLoading(false);
@@ -267,7 +280,7 @@ export default function AppointmentDetails() {
       () => {
         router.replace("/(tabs)/schedule");
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -294,7 +307,7 @@ export default function AppointmentDetails() {
     return (
       <View className="flex-1 bg-gray-100 justify-center items-center px-6">
         <Text className="text-base text-[#FF3B30] text-center">
-          {error || 'Appointment not found'}
+          {error || "Appointment not found"}
         </Text>
 
         {partialAppointment ? (
@@ -302,11 +315,24 @@ export default function AppointmentDetails() {
             <Text className="font-semibold text-[#2D3142] mb-2">
               Limited appointment details
             </Text>
-            <Text className="text-sm text-[#9E9E9E]">Service: {partialAppointment.serviceName}</Text>
-            <Text className="text-sm text-[#9E9E9E]">Date: {partialAppointment.date}</Text>
-            <Text className="text-sm text-[#9E9E9E]">Time: {partialAppointment.time}</Text>
-            <Text className="text-sm text-[#9E9E9E]">Location: {partialAppointment.location?.label || partialAppointment.location?.address || 'N/A'}</Text>
-            <Text className="text-sm text-[#9E9E9E]">Status: {partialAppointment.status}</Text>
+            <Text className="text-sm text-[#9E9E9E]">
+              Service: {partialAppointment.serviceName}
+            </Text>
+            <Text className="text-sm text-[#9E9E9E]">
+              Date: {partialAppointment.date}
+            </Text>
+            <Text className="text-sm text-[#9E9E9E]">
+              Time: {partialAppointment.time}
+            </Text>
+            <Text className="text-sm text-[#9E9E9E]">
+              Location:{" "}
+              {partialAppointment.location?.label ||
+                partialAppointment.location?.address ||
+                "N/A"}
+            </Text>
+            <Text className="text-sm text-[#9E9E9E]">
+              Status: {partialAppointment.status}
+            </Text>
 
             <View className="flex-row gap-2 mt-4">
               <TouchableOpacity
@@ -317,9 +343,16 @@ export default function AppointmentDetails() {
               </TouchableOpacity>
               <TouchableOpacity
                 className="bg-white border border-[#E0E0E0] py-3 px-4 rounded-lg"
-                onPress={() => Linking.openURL('mailto:support@vitala.app?subject=Appointment%20Access%20Request&body=I%20need%20access%20to%20appointment%20ID%20' + id)}
+                onPress={() =>
+                  Linking.openURL(
+                    "mailto:support@vitala.app?subject=Appointment%20Access%20Request&body=I%20need%20access%20to%20appointment%20ID%20" +
+                      id,
+                  )
+                }
               >
-                <Text className="text-[#4461F2] font-semibold">Contact support</Text>
+                <Text className="text-[#4461F2] font-semibold">
+                  Contact support
+                </Text>
               </TouchableOpacity>
             </View>
           </View>

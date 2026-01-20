@@ -35,7 +35,7 @@ export default function MyProfile() {
       () => {
         router.replace("/(tabs)/profile");
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -47,7 +47,7 @@ export default function MyProfile() {
       Alert.alert(
         "Permission Required",
         "Camera roll permissions are required to select a profile picture.",
-        [{ text: "OK" }]
+        [{ text: "OK" }],
       );
       return false;
     }
@@ -65,7 +65,7 @@ export default function MyProfile() {
         { text: "Camera", onPress: openCamera },
         { text: "Gallery", onPress: openGallery },
         { text: "Cancel", style: "cancel" },
-      ]
+      ],
     );
   };
 
@@ -75,7 +75,7 @@ export default function MyProfile() {
       Alert.alert(
         "Permission Required",
         "Camera permissions are required to take a photo.",
-        [{ text: "OK" }]
+        [{ text: "OK" }],
       );
       return;
     }
@@ -546,7 +546,7 @@ export default function MyProfile() {
                         <Text className="text-base font-semibold text-[#1F2937]">
                           {
                             currentUser.medicalProfile.dateOfBirth?.split(
-                              "T"
+                              "T",
                             )[0]
                           }
                         </Text>
@@ -733,7 +733,7 @@ export default function MyProfile() {
                                   {allergy}
                                 </Text>
                               </View>
-                            )
+                            ),
                           )}
                         </View>
                       )}
@@ -765,7 +765,7 @@ export default function MyProfile() {
                         className="text-base font-semibold text-[#1F2937] border-b border-[#E5E7EB] pb-1"
                         value={
                           editedUser?.medicalProfile?.chronicIllnesses?.join(
-                            ", "
+                            ", ",
                           ) || ""
                         }
                         onChangeText={(text) =>
@@ -796,7 +796,7 @@ export default function MyProfile() {
                                 {illness}
                               </Text>
                             </View>
-                          )
+                          ),
                         )}
                       </View>
                     )}

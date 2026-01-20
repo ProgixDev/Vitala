@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const appointmentSchema = new mongoose.Schema(
   {
@@ -87,7 +87,7 @@ const appointmentSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Index for efficient queries
@@ -95,4 +95,4 @@ appointmentSchema.index({ patient: 1, status: 1 });
 appointmentSchema.index({ nurse: 1, status: 1 });
 appointmentSchema.index({ scheduledDate: 1 });
 
-module.exports = mongoose.model('Appointment', appointmentSchema);
+module.exports = mongoose.model("Appointment", appointmentSchema);

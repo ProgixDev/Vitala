@@ -1,15 +1,15 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const paymentSchema = new mongoose.Schema(
   {
     appointment: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Appointment',
+      ref: "Appointment",
       required: true,
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
     },
     amount: {
@@ -18,31 +18,31 @@ const paymentSchema = new mongoose.Schema(
     },
     currency: {
       type: String,
-      default: 'USD',
+      default: "USD",
     },
     paymentMethod: {
       type: String,
-      enum: ['credit_card', 'debit_card', 'paypal', 'stripe', 'cash'],
+      enum: ["credit_card", "debit_card", "paypal", "stripe", "cash"],
       required: true,
     },
     status: {
       type: String,
-      enum: ['pending', 'processing', 'completed', 'failed', 'refunded'],
-      default: 'pending',
+      enum: ["pending", "processing", "completed", "failed", "refunded"],
+      default: "pending",
     },
     stripePaymentIntentId: String,
     stripeChargeId: String,
     paypalOrderId: String,
-    
+
     // Receipt
     receiptUrl: String,
     receiptNumber: String,
-    
+
     // Refund details
     refundAmount: Number,
     refundReason: String,
     refundedAt: Date,
-    
+
     // Payment method details (saved for future use)
     savedPaymentMethod: {
       last4: String,
@@ -51,7 +51,7 @@ const paymentSchema = new mongoose.Schema(
       expiryYear: Number,
       isDefault: Boolean,
     },
-    
+
     // Metadata
     metadata: {
       type: Map,
@@ -60,11 +60,11 @@ const paymentSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Generate receipt number before saving
-paymentSchema.pre('save', async function (next) {
+paymentSchema.pre("save", async function (next) {
   if (this.isNew && !this.receiptNumber) {
     const timestamp = Date.now();
     const random = Math.floor(Math.random() * 1000);
@@ -73,4 +73,4 @@ paymentSchema.pre('save', async function (next) {
   next();
 });
 
-module.exports = mongoose.model('Payment', paymentSchema);
+module.exports = mongoose.model("Payment", paymentSchema);
