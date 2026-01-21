@@ -43,7 +43,7 @@ export default function PasswordInput({
 
   return (
     <>
-      <View className="flex-row items-center bg-white rounded-2xl px-4 h-[60px] shadow-sm">
+      <View className="flex-row items-center bg-white rounded-2xl px-4 h-15 shadow-sm">
         {showIcon && (
           <Ionicons
             name="lock-closed-outline"

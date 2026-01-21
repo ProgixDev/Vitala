@@ -1,22 +1,7 @@
 const User = require("../models/User");
 const sendEmail = require("../config/email");
 // Initialize Twilio only if credentials are properly configured
-let twilio = null;
-if (
-  process.env.TWILIO_ACCOUNT_SID &&
-  process.env.TWILIO_AUTH_TOKEN &&
-  process.env.TWILIO_ACCOUNT_SID.startsWith("AC")
-) {
-  twilio = require("twilio")(
-    process.env.TWILIO_ACCOUNT_SID,
-    process.env.TWILIO_AUTH_TOKEN,
-  );
-}
-const {
-  generateToken,
-  generateRefreshToken,
-  generateResetToken,
-} = require("../utils/tokenUtils");
+const { generateToken, generateRefreshToken } = require("../utils/tokenUtils");
 
 // @desc    Register patient
 // @route   POST /api/auth/register/patient
@@ -173,7 +158,7 @@ exports.registerNurse = async (req, res) => {
           typeof specializations === "string"
             ? JSON.parse(specializations)
             : specializations;
-      } catch (e) {
+      } catch {
         parsedSpecializations = [];
       }
     }
