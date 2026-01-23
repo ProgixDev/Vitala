@@ -4,7 +4,7 @@ import {
   updateProfile,
   uploadProfilePicture,
 } from "@/utils/api";
-import { authStorage } from "@/utils/auth";
+
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
@@ -114,19 +114,7 @@ export default function MyProfile() {
   };
 
   const uploadImage = async (asset: ImagePicker.ImagePickerAsset) => {
-    let token = currentUser?.token;
-
-    // Fallback: get token from authStorage if not in currentUser
-    if (!token) {
-      try {
-        const { accessToken } = await authStorage.getTokens();
-        token = accessToken || undefined;
-      } catch (error) {
-        console.error("Error getting token from authStorage:", error);
-      }
-    }
-
-    if (!token) {
+    if (!currentUser?.token) {
       Toast.show({
         type: "error",
         text1: "Authentication Error",
@@ -145,7 +133,7 @@ export default function MyProfile() {
         name: `profile-picture-${Date.now()}.jpg`,
       } as any);
 
-      const response = await uploadProfilePicture(token, formData);
+      const response = await uploadProfilePicture(currentUser.token, formData);
 
       await refreshUser();
 
@@ -191,17 +179,7 @@ export default function MyProfile() {
   const saveProfile = async () => {
     if (!editedUser) return;
 
-    let token = currentUser?.token;
-    if (!token) {
-      try {
-        const { accessToken } = await authStorage.getTokens();
-        token = accessToken || undefined;
-      } catch (error) {
-        console.error("Error getting token from authStorage:", error);
-      }
-    }
-
-    if (!token) {
+    if (!currentUser?.token) {
       Toast.show({
         type: "error",
         text1: "Authentication Error",
@@ -218,11 +196,11 @@ export default function MyProfile() {
         email: editedUser.email,
         phoneNumber: editedUser.phoneNumber,
       };
-      await updateProfile(token, profileData);
+      await updateProfile(currentUser.token, profileData);
 
       // Update medical profile if it exists
       if (editedUser.medicalProfile) {
-        await updateMedicalProfile(token, editedUser.medicalProfile);
+        await updateMedicalProfile(currentUser.token, editedUser.medicalProfile);
       }
 
       await refreshUser();

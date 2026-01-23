@@ -72,12 +72,10 @@ const processPayment = async (req, res) => {
         "Appointment status does not allow payment:",
         appointment.status,
       );
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Appointment must be confirmed before payment",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Appointment must be confirmed before payment",
+      });
     }
 
     // Check if payment already exists
@@ -88,12 +86,10 @@ const processPayment = async (req, res) => {
       // If payment is already completed, don't allow another payment
       if (existingPayment.status === "completed") {
         console.log("Payment already completed for this appointment");
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "Payment already completed for this appointment",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "Payment already completed for this appointment",
+        });
       }
       // If payment failed or is pending, allow retry by deleting the old payment
       console.log("Removing existing failed/pending payment to allow retry");

@@ -3,7 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { View, Text } from "react-native";
 import { useEffect } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { authStorage } from "@/utils/auth";
+import { auth } from "@/hooks/useCurrentUser";
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
@@ -13,7 +13,7 @@ export default function TabLayout() {
   }, []);
 
   const checkAuth = async () => {
-    const isLoggedIn = await authStorage.isLoggedIn();
+    const isLoggedIn = await auth.isLoggedIn();
     if (!isLoggedIn) {
       router.replace("/signin");
     }
@@ -42,7 +42,7 @@ export default function TabLayout() {
         options={{
           tabBarIcon: ({ focused }) => (
             <View
-              className={`w-[50px] h-[50px] justify-center items-center rounded-full ${
+              className={`w-12 h-12 justify-center items-center rounded-full ${
                 focused
                   ? "bg-[#4461F2]"
                   : "bg-transparent border-2 border-gray-600"
@@ -58,7 +58,7 @@ export default function TabLayout() {
         options={{
           tabBarIcon: ({ focused }) => (
             <View
-              className={`w-[50px] h-[50px] justify-center items-center rounded-full ${
+              className={`w-12 h-12 justify-center items-center rounded-full ${
                 focused
                   ? "bg-[#4461F2]"
                   : "bg-transparent border-2 border-gray-600"
@@ -73,13 +73,13 @@ export default function TabLayout() {
         name="sos"
         options={{
           tabBarIcon: () => (
-            <View className="w-[70px] h-[70px] justify-center items-center -mt-10">
+            <View className="w-17 h-17 justify-center items-center -mt-10">
               {/* Outer glow layers */}
-              <View className="absolute w-[70px] h-[70px] rounded-full bg-[#FF3B30] opacity-15" />
-              <View className="absolute w-[60px] h-[60px] rounded-full bg-[#FF3B30] opacity-30" />
+              <View className="absolute w-17 h-17 rounded-full bg-[#FF3B30] opacity-15" />
+              <View className="absolute w-15 h-15 rounded-full bg-[#FF3B30] opacity-30" />
 
               {/* Main SOS button */}
-              <View className="w-[50px] h-[50px] rounded-full bg-[#FF3B30] justify-center items-center shadow-2xl">
+              <View className="w-12 h-12 rounded-full bg-[#FF3B30] justify-center items-center shadow-2xl">
                 <Text className="text-white text-base font-bold tracking-wider">
                   SOS
                 </Text>
@@ -93,7 +93,7 @@ export default function TabLayout() {
         options={{
           tabBarIcon: ({ focused }) => (
             <View
-              className={`w-[50px] h-[50px] justify-center items-center rounded-full ${
+              className={`w-12 h-12 justify-center items-center rounded-full ${
                 focused
                   ? "bg-[#4461F2]"
                   : "bg-transparent border-2 border-gray-600"
@@ -109,7 +109,7 @@ export default function TabLayout() {
         options={{
           tabBarIcon: ({ focused }) => (
             <View
-              className={`w-[50px] h-[50px] justify-center items-center rounded-full ${
+              className={`w-12 h-12 justify-center items-center rounded-full ${
                 focused
                   ? "bg-[#4461F2]"
                   : "bg-transparent border-2 border-gray-600"

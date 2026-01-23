@@ -1,5 +1,5 @@
 import { api } from "@/utils/api";
-import { authStorage } from "@/utils/auth";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
@@ -75,6 +75,7 @@ export default function EmergencyStatusTracker({
   appointmentId,
   onClose,
 }: EmergencyStatusTrackerProps) {
+  const { currentUser } = useCurrentUser();
   const [status, setStatus] = useState<EmergencyStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -88,14 +89,13 @@ export default function EmergencyStatusTracker({
 
   const fetchStatus = async () => {
     try {
-      const { accessToken } = await authStorage.getTokens();
-      if (!accessToken) {
+      if (!currentUser?.token) {
         setError("Authentication required");
         setLoading(false);
         return;
       }
       const response = (await api.getEmergencyStatus(
-        accessToken,
+        currentUser.token,
         appointmentId,
       )) as { data: EmergencyStatus };
       setStatus(response.data);

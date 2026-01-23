@@ -1,6 +1,5 @@
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/utils/api";
-import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -176,14 +175,13 @@ export default function AppointmentDetails() {
 
   const loadAppointment = useCallback(async () => {
     try {
-      const { accessToken } = await authStorage.getTokens();
-      if (!accessToken) {
+      if (!currentUser?.token) {
         setError("Not authenticated");
         setLoading(false);
         return;
       }
 
-      const result = await api.getAppointmentById(accessToken, id as string);
+      const result = await api.getAppointmentById(currentUser.token, id as string);
       if (result.success) {
         const appointmentData = result.data;
 
@@ -220,9 +218,8 @@ export default function AppointmentDetails() {
       const msg = String((err as any)?.message || err);
       if (/not authorized/i.test(msg)) {
         try {
-          const { accessToken } = await authStorage.getTokens();
-          if (accessToken) {
-            const listRes = await api.getAppointments(accessToken);
+          if (currentUser?.token) {
+            const listRes = await api.getAppointments(currentUser.token);
             if (listRes.success) {
               const found = listRes.data.find(
                 (a: any) => a._id === id || a.id === id,

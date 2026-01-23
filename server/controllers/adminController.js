@@ -19,13 +19,11 @@ exports.approveNurse = async (req, res) => {
       .status(200)
       .json({ success: true, message: "Nurse approved", data: user });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error approving nurse",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error approving nurse",
+      error: error.message,
+    });
   }
 };
 
@@ -50,13 +48,11 @@ exports.rejectNurse = async (req, res) => {
       .status(200)
       .json({ success: true, message: "Nurse rejected", data: user });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error rejecting nurse",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error rejecting nurse",
+      error: error.message,
+    });
   }
 };
 

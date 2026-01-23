@@ -1,0 +1,10 @@
+{
+  "name": "vitala",
+  "scripts": {
+    "format": "prettier --write ."
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "prettier": "^3.8.0"
+  }
+}

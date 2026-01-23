@@ -1,5 +1,4 @@
-import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { authStorage } from "@/utils/auth";
+import { auth, useCurrentUser } from "@/hooks/useCurrentUser";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect } from "react";
@@ -74,7 +73,7 @@ export default function Profile() {
 
   const handleLogout = async () => {
     try {
-      await authStorage.setLoggedOut();
+      await auth.logout();
       router.replace("/signin");
     } catch (error) {
       console.error("Error logging out:", error);
@@ -141,7 +140,7 @@ export default function Profile() {
 
         {/* User Info Section */}
         {currentUser && (
-          <View className="bg-white rounded-[20px] p-6 mb-[30px] items-center">
+          <View className="bg-white rounded-[20px] p-6 mb-7 items-center">
             <View className="mb-4">
               {currentUser.profilePicture ? (
                 <Image
@@ -184,7 +183,7 @@ export default function Profile() {
         )}
 
         {/* Menu Items */}
-        <View className="mb-[30px]">
+        <View className="mb-7">
           <Text className="text-xl font-semibold text-[#2D3142] mb-5">
             Account Settings
           </Text>
@@ -201,7 +200,7 @@ export default function Profile() {
         </View>
 
         {/* Logout Button */}
-        <View className="mb-[30px]">
+        <View className="mb-7">
           <MenuItem
             icon="log-out-outline"
             title="Logout"

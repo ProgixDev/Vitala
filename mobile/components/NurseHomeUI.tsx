@@ -1,6 +1,9 @@
-import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { appointmentStorage } from "@/utils/appointments";
-import { authStorage } from "@/utils/auth";
+import { auth, useCurrentUser } from "@/hooks/useCurrentUser";
+import {
+  acceptAppointment,
+  declineAppointment,
+  getAppointments,
+} from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
@@ -47,39 +50,40 @@ export default function NurseHomeUI() {
 
   const loadUpcomingAppointments = useCallback(async () => {
     try {
+      if (!currentUser?.token) return;
+
       setLoading(true);
-      const allAppointments = await appointmentStorage.getAppointments();
+      const response = await getAppointments(currentUser.token, {
+        status: "confirmed",
+      });
+
+      const allAppointments = response.data || [];
 
       // Filter for appointments assigned to this nurse that are confirmed
       const sortedAppointments = allAppointments
-        .filter((appt) => {
+        .filter((appt: any) => {
           return (
             appt.status === "confirmed" &&
             appt.nurseEmail === currentUser?.email
           );
         })
-        .sort((a, b) => {
+        .sort((a: any, b: any) => {
           const dateA = new Date(`${a.date} ${a.time}`);
           const dateB = new Date(`${b.date} ${b.time}`);
           return dateA.getTime() - dateB.getTime();
         });
 
-      const users = await authStorage.getUsers();
-
       const appointmentItems: AppointmentItem[] = sortedAppointments.map(
-        (appt) => {
-          const patient = users.find((user) => user.email === appt.userEmail);
-          return {
-            id: appt.id,
-            name: patient?.fullName || "Unknown Patient",
-            role: "PATIENT",
-            date: appt.date,
-            time: appt.time,
-            image: `https://i.pravatar.cc/150?u=${appt.userEmail}`,
-            serviceName: appt.serviceName,
-            userEmail: appt.userEmail,
-          };
-        },
+        (appt: any) => ({
+          id: appt._id || appt.id,
+          name: appt.patientName || appt.userName || "Unknown Patient",
+          role: "PATIENT",
+          date: appt.date,
+          time: appt.time,
+          image: `https://i.pravatar.cc/150?u=${appt.userEmail}`,
+          serviceName: appt.serviceName,
+          userEmail: appt.userEmail,
+        }),
       );
 
       setUpcomingAppointments(appointmentItems);
@@ -89,37 +93,40 @@ export default function NurseHomeUI() {
     } finally {
       setLoading(false);
     }
-  }, [currentUser?.email]);
+  }, [currentUser?.email, currentUser?.token]);
 
   const loadRequests = useCallback(async () => {
     try {
+      if (!currentUser?.token) return;
+
       setRequestsLoading(true);
-      const allAppointments = await appointmentStorage.getAppointments();
+      const response = await getAppointments(currentUser.token, {
+        status: "pending",
+      });
+
+      const allAppointments = response.data || [];
 
       // Filter for pending appointments without a nurse assigned
       const pendingAppointments = allAppointments
-        .filter((appt) => appt.status === "pending" && !appt.nurseEmail)
-        .sort((a, b) => {
+        .filter((appt: any) => appt.status === "pending" && !appt.nurseEmail)
+        .sort((a: any, b: any) => {
           const dateA = new Date(`${a.date} ${a.time}`);
           const dateB = new Date(`${b.date} ${b.time}`);
           return dateA.getTime() - dateB.getTime();
         });
 
-      const users = await authStorage.getUsers();
-
-      const requestItems: RequestItem[] = pendingAppointments.map((appt) => {
-        const patient = users.find((user) => user.email === appt.userEmail);
-        return {
-          id: appt.id,
-          name: patient?.fullName || "Unknown Patient",
+      const requestItems: RequestItem[] = pendingAppointments.map(
+        (appt: any) => ({
+          id: appt._id || appt.id,
+          name: appt.patientName || appt.userName || "Unknown Patient",
           role: "PATIENT",
           date: appt.date,
           time: appt.time,
           image: `https://i.pravatar.cc/150?u=${appt.userEmail}`,
           serviceName: appt.serviceName,
           userEmail: appt.userEmail,
-        };
-      });
+        }),
+      );
 
       setRequests(requestItems);
     } catch (error) {
@@ -128,75 +135,84 @@ export default function NurseHomeUI() {
     } finally {
       setRequestsLoading(false);
     }
-  }, []);
+  }, [currentUser?.token]);
 
   const loadData = useCallback(async () => {
     await Promise.all([loadUpcomingAppointments(), loadRequests()]);
   }, [loadUpcomingAppointments, loadRequests]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (currentUser?.token) {
+      loadData();
+    }
+  }, [loadData, currentUser?.token]);
 
   const handleAcceptRequest = async (appointmentId: string) => {
     try {
-      const allAppointments = await appointmentStorage.getAppointments();
-      const appointmentIndex = allAppointments.findIndex(
-        (appt) => appt.id === appointmentId,
-      );
+      if (!currentUser?.token) return;
 
-      if (appointmentIndex !== -1) {
-        allAppointments[appointmentIndex].status = "confirmed";
-        allAppointments[appointmentIndex].nurseEmail = currentUser?.email;
-        await appointmentStorage.saveAppointments(allAppointments);
+      await acceptAppointment(currentUser.token, appointmentId);
 
-        // Reload data
-        await loadData();
-      }
-    } catch (error) {
+      Toast.show({
+        type: "success",
+        text1: "Request Accepted",
+        text2: "The appointment has been confirmed",
+      });
+
+      // Reload data
+      await loadData();
+    } catch (error: any) {
       console.error("Error accepting request:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: error.message || "Failed to accept request",
+      });
     }
   };
 
   const handleDeclineRequest = async (appointmentId: string) => {
     try {
-      await appointmentStorage.deleteAppointment(appointmentId);
+      if (!currentUser?.token) return;
+
+      await declineAppointment(
+        currentUser.token,
+        appointmentId,
+        "Nurse declined the request",
+      );
+
+      Toast.show({
+        type: "success",
+        text1: "Request Declined",
+        text2: "The appointment has been declined",
+      });
+
       await loadRequests();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error declining request:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: error.message || "Failed to decline request",
+      });
     }
   };
 
   const handleDevVerify = async () => {
     try {
-      if (!currentUser?.email) return;
+      // In a real app, this would call an API endpoint to update nurse status
+      // For dev purposes, we'll just show a toast and refresh
+      Toast.show({
+        type: "info",
+        text1: "Dev Mode",
+        text2: "Account verification should be done via admin panel",
+      });
 
-      const users = await authStorage.getUsers();
-      const userIndex = users.findIndex(
-        (user) => user.email === currentUser.email,
-      );
-
-      if (userIndex !== -1) {
-        users[userIndex].status = "verified";
-        // Removed AsyncStorage - users are in MongoDB
-
-        await authStorage.setCurrentUser({
-          ...currentUser,
-          status: "verified",
-        });
-
-        Toast.show({
-          type: "success",
-          text1: "Account Verified",
-          text2: "Your account has been verified (dev mode)",
-        });
-
-        // Force a refresh by reloading data
-        await loadData();
-        router.push("/(tabs)");
-      }
+      // Force logout and re-login to refresh user data
+      await auth.logout();
+      router.replace("/signin");
     } catch (error) {
-      console.error("Error verifying account:", error);
+      console.error("Error in dev verify:", error);
       Toast.show({
         type: "error",
         text1: "Error",
@@ -214,14 +230,19 @@ export default function NurseHomeUI() {
             <View className="flex-row justify-between items-center">
               <View className="flex-1">
                 <Text className="text-[28px] font-bold text-[#2D3142] mb-1">
-                  Hi, {currentUser?.fullName.split(" ")[0] || "Amelia"}
+                  Hi, {currentUser?.fullName.split(" ")[0] || "Nurse"}
                 </Text>
                 <Text className="text-sm text-[#9E9E9E]">Welcome Back</Text>
               </View>
-              <TouchableOpacity className="bg-[#FF3B30] rounded-full px-4 py-2 flex-row items-center gap-2">
+              <TouchableOpacity
+                onPress={() => router.push("/sos")}
+                className="bg-[#FF3B30] rounded-full px-4 py-2 flex-row items-center gap-2"
+              >
                 <Text className="text-white text-xs font-semibold">SOS</Text>
                 <View className="bg-white rounded-full px-2 py-0.5">
-                  <Text className="text-[#FF3B30] text-xs font-bold">02</Text>
+                  <Text className="text-[#FF3B30] text-xs font-bold">
+                    {requests.length.toString().padStart(2, "0")}
+                  </Text>
                 </View>
                 <Text className="text-white text-xs font-semibold">
                   Emergency Map
@@ -461,14 +482,16 @@ export default function NurseHomeUI() {
           </View>
 
           {/* Dev Button */}
-          <TouchableOpacity
-            onPress={handleDevVerify}
-            className="bg-[#F97316] rounded-[20px] px-6 py-3 w-full items-center mb-4"
-          >
-            <Text className="text-white font-semibold text-base">
-              🔧 Dev: Verify Account
-            </Text>
-          </TouchableOpacity>
+          {__DEV__ && (
+            <TouchableOpacity
+              onPress={handleDevVerify}
+              className="bg-[#F97316] rounded-[20px] px-6 py-3 w-full items-center mb-4"
+            >
+              <Text className="text-white font-semibold text-base">
+                🔧 Dev: Verify via Admin Panel
+              </Text>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity
             onPress={() => router.push("/profile")}

@@ -13,7 +13,7 @@ import {
 import LoadingScreen from "@/components/LoadingScreen";
 import PasswordInput from "@/components/PasswordInput";
 import { login as apiLogin } from "@/utils/api";
-import { authStorage } from "@/utils/auth";
+import { auth } from "@/hooks/useCurrentUser";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
@@ -56,24 +56,12 @@ export default function SignIn() {
         const { user: apiUser, token, refreshToken } = resp.data;
 
         // Store tokens
-        await authStorage.setTokens(token, refreshToken);
-
-        // Set current user
-        const currentUser: CurrentUser = {
-          fullName: apiUser.fullName,
-          email: apiUser.email,
-          phoneNumber: apiUser.phoneNumber,
-          userType: apiUser.userType || "patient",
-          status: apiUser.status,
-          verification: apiUser.verification,
-        };
-        await authStorage.setCurrentUser(currentUser);
-        await authStorage.setLoggedIn();
+        await auth.setTokens(token, refreshToken);
 
         console.log("Sign in successful (API)");
         if (
-          currentUser.userType === "nurse" &&
-          currentUser.status === "pending"
+          apiUser.userType === "nurse" &&
+          apiUser.status === "pending"
         ) {
           router.replace("/profile/pending");
         } else {
@@ -86,15 +74,6 @@ export default function SignIn() {
           apiErr.message?.includes("Email not verified") ||
           apiErr.message?.includes("403")
         ) {
-          // Store the email for verification flow
-          await authStorage.setCurrentUser({
-            email: email,
-            fullName: "", // Will be filled during verification
-            phoneNumber: "",
-            userType: "patient",
-            status: "pending",
-          });
-
           Toast.show({
             type: "info",
             text1: "Email Verification Required",
@@ -109,39 +88,12 @@ export default function SignIn() {
           return;
         }
 
-        console.warn("API login failed, falling back to local:", apiErr);
-      }
-
-      // Fallback: validate local credentials (dev/demo mode)
-      const user = await authStorage.validateCredentials(email, password);
-      if (!user) {
+        console.warn("API login failed:", apiErr);
         Toast.show({
           type: "error",
           text1: "Error",
-          text2: "Invalid email or password",
+          text2: apiErr.message || "Invalid email or password",
         });
-        return;
-      }
-
-      const currentUser: CurrentUser = {
-        fullName: user.fullName,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        userType: user.userType || "patient",
-        status: user.status,
-        verification: user.verification,
-      };
-      await authStorage.setCurrentUser(currentUser);
-      await authStorage.setLoggedIn();
-
-      console.log("Sign in successful");
-      if (
-        currentUser.userType === "nurse" &&
-        currentUser.status === "pending"
-      ) {
-        router.replace("/profile/pending");
-      } else {
-        router.replace("/(tabs)");
       }
     } catch (error) {
       console.error("Error during sign in:", error);

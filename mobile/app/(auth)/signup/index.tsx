@@ -11,7 +11,7 @@ import {
 
 import LoadingScreen from "@/components/LoadingScreen";
 import { registerPatient } from "@/utils/api";
-import { authStorage } from "@/utils/auth";
+import { auth } from "@/hooks/useCurrentUser";
 import { router, useLocalSearchParams } from "expo-router";
 import Toast from "react-native-toast-message";
 import EmailVerificationStep from "./components/EmailVerificationStep";
@@ -197,16 +197,8 @@ export default function SignUp() {
           medicalProfile,
         });
 
-        const { user: apiUser, token, refreshToken } = resp.data;
-        await authStorage.setTokens(token, refreshToken);
-        await authStorage.setCurrentUser({
-          fullName: apiUser.fullName,
-          email: apiUser.email,
-          phoneNumber: apiUser.phoneNumber,
-          userType: apiUser.userType || "patient",
-          status: apiUser.status,
-        });
-        await authStorage.setLoggedIn();
+        const {  token, refreshToken } = resp.data;
+        await auth.setTokens(token, refreshToken);
 
         // Start the resend timer
         setTimer(59);

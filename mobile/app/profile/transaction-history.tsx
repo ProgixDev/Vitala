@@ -1,6 +1,6 @@
 import LoadingScreen from "@/components/LoadingScreen";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/utils/api";
-import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
@@ -129,6 +129,7 @@ const TransactionItem: React.FC<TransactionItemProps> = ({
 };
 
 export default function TransactionHistory() {
+  const { currentUser } = useCurrentUser();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -148,8 +149,7 @@ export default function TransactionHistory() {
   // Fetch transactions from API
   const fetchTransactions = useCallback(async () => {
     try {
-      const { accessToken } = await authStorage.getTokens();
-      if (!accessToken) {
+      if (!currentUser?.token) {
         Toast.show({
           type: "error",
           text1: "Authentication Error",
@@ -160,7 +160,7 @@ export default function TransactionHistory() {
 
       // Fetch transactions with filter
       const filterParam = filter !== "all" ? { status: filter } : {};
-      const result = await api.getTransactions(accessToken, filterParam);
+      const result = await api.getTransactions(currentUser.token, filterParam);
 
       if (result.success) {
         // Format transactions for display
@@ -175,7 +175,7 @@ export default function TransactionHistory() {
         setTransactions(formattedTransactions);
 
         // Fetch statistics
-        const statsResult = await api.getUserStatistics(accessToken);
+        const statsResult = await api.getUserStatistics(currentUser.token);
         if (statsResult.success) {
           setStatistics({
             totalSpent: statsResult.data.totalSpent,

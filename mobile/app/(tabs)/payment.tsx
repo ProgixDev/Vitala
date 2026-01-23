@@ -1,5 +1,5 @@
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/utils/api";
-import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useFocusEffect } from "expo-router";
@@ -42,6 +42,7 @@ interface Payment {
 }
 
 export default function PaymentdPage() {
+  const { currentUser } = useCurrentUser();
   const [cards, setCards] = useState<Card[]>([]);
   const [loadingCards, setLoadingCards] = useState(true);
 
@@ -65,13 +66,12 @@ export default function PaymentdPage() {
   // Fetch recent payments
   const fetchRecentPayments = useCallback(async () => {
     try {
-      const { accessToken } = await authStorage.getTokens();
-      if (!accessToken) {
+      if (!currentUser?.token) {
         setLoadingPayments(false);
         return;
       }
 
-      const result = await api.getTransactions(accessToken, { limit: "5" });
+      const result = await api.getTransactions(currentUser.token, { limit: "5" });
 
       if (result.success) {
         const formattedPayments = result.data.map((trans: any) => ({
@@ -93,7 +93,7 @@ export default function PaymentdPage() {
       setLoadingPayments(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [currentUser?.token]);
 
   // Fetch payments on mount
   useEffect(() => {

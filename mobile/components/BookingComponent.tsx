@@ -1,6 +1,5 @@
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/utils/api";
-import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
@@ -215,8 +214,6 @@ export default function BookingComponent({
 
     try {
       let formattedDate: string;
-      let time: string;
-      let duration: string;
       let location: UserLocation;
       let patientInfo = {};
 
@@ -228,34 +225,14 @@ export default function BookingComponent({
           month: "long",
           day: "numeric",
         });
-        time = now.toLocaleTimeString("en-US", {
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: true,
-        });
-        duration = "Immediate";
         location = locationOptions[selectedLocation];
-        patientInfo = {
-          name: "Amelia Selma",
-          age: "30",
-          gender: "Female",
-          description: emergencyDescription,
-        };
+
       } else {
         // Normal booking with selected values
-        const selectedDateObj = dates[selectedDate];
-        formattedDate = selectedDateObj.fullDate.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        });
-        time = timeSlots[selectedTime].time;
-        duration = durationOptions[selectedDuration].label;
         location = locationOptions[selectedLocation];
       }
 
-      const { accessToken } = await authStorage.getTokens();
-      if (!accessToken) {
+      if (!currentUser?.token) {
         Toast.show({
           type: "error",
           text1: "Error",
@@ -292,7 +269,7 @@ export default function BookingComponent({
         duration: service.duration,
       };
 
-      const result = await api.createAppointment(accessToken, appointmentData);
+      const result = await api.createAppointment(currentUser.token, appointmentData);
 
       Toast.show({
         type: "success",
@@ -320,8 +297,7 @@ export default function BookingComponent({
 
   const handleDeleteLocation = async (index: number) => {
     try {
-      const { accessToken } = await authStorage.getTokens();
-      if (!accessToken) {
+      if (!currentUser?.token) {
         Toast.show({
           type: "error",
           text1: "Error",
@@ -340,7 +316,7 @@ export default function BookingComponent({
       }
 
       const locationId = (currentUser.locations[index] as any)._id;
-      await api.deleteLocation(accessToken, locationId);
+      await api.deleteLocation(currentUser.token, locationId);
       await refreshUser();
 
       // Adjust selectedLocation if necessary

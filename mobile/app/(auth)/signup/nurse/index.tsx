@@ -11,7 +11,7 @@ import {
 
 import LoadingScreen from "@/components/LoadingScreen";
 import { registerNurse } from "@/utils/api";
-import { authStorage } from "@/utils/auth";
+import { auth } from "@/hooks/useCurrentUser";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
 import InfoStep from "../components/InfoStep";
@@ -211,17 +211,9 @@ export default function NurseSignUp() {
 
         const resp = await registerNurse(form);
         console.log("Nurse registration response:", resp);
-        const { user: apiUser, token, refreshToken } = resp.data;
+        const {  token, refreshToken } = resp.data;
 
-        await authStorage.setTokens(token, refreshToken);
-        await authStorage.setCurrentUser({
-          fullName: apiUser.fullName,
-          email: apiUser.email,
-          phoneNumber: apiUser.phoneNumber,
-          userType: apiUser.userType || "nurse",
-          status: apiUser.status,
-        });
-        await authStorage.setLoggedIn();
+        await auth.setTokens(token, refreshToken);
 
         Toast.show({
           type: "success",

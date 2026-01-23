@@ -1,6 +1,5 @@
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/utils/api";
-import { authStorage } from "@/utils/auth";
 import { getServiceNameById } from "@/utils/services";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -74,14 +73,13 @@ export default function AppointmentStatus() {
 
   const loadAppointment = React.useCallback(async () => {
     try {
-      const { accessToken } = await authStorage.getTokens();
-      if (!accessToken) {
+      if (!currentUser?.token) {
         setError("Not authenticated");
         setLoading(false);
         return;
       }
 
-      const result = await api.getAppointmentById(accessToken, id as string);
+      const result = await api.getAppointmentById(currentUser.token, id as string);
       if (result.success) {
         const appointmentData = result.data;
 
@@ -124,9 +122,8 @@ export default function AppointmentStatus() {
       const msg = String((err as any)?.message || err);
       if (/not authorized/i.test(msg)) {
         try {
-          const { accessToken } = await authStorage.getTokens();
-          if (accessToken) {
-            const listRes = await api.getAppointments(accessToken);
+          if (currentUser?.token) {
+            const listRes = await api.getAppointments(currentUser.token);
             if (listRes.success) {
               const found = listRes.data.find(
                 (a: any) => a._id === id || a.id === id,
@@ -161,8 +158,6 @@ export default function AppointmentStatus() {
             } else {
               setError("Not authorized to view this appointment");
             }
-          } else {
-            setError("Not authenticated");
           }
         } catch (err2) {
           console.error("Fallback error:", err2);
@@ -175,7 +170,7 @@ export default function AppointmentStatus() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, currentUser?.token]);
 
   useEffect(() => {
     loadAppointment();
@@ -189,13 +184,12 @@ export default function AppointmentStatus() {
     if (!appointment) return;
 
     try {
-      const { accessToken } = await authStorage.getTokens();
-      if (!accessToken) throw new Error("Not authenticated");
+      if (!currentUser?.token) throw new Error("Not authenticated");
 
       const appointmentId =
         ((appointment as any)._id as string) ?? (appointment.id as string);
       const res = await api.cancelAppointment(
-        accessToken,
+        currentUser.token,
         appointmentId,
         "Cancelled by user",
       );
@@ -279,13 +273,12 @@ export default function AppointmentStatus() {
       console.log("Updating status to:", newStatus);
 
       try {
-        const { accessToken } = await authStorage.getTokens();
-        if (!accessToken) throw new Error("Not authenticated");
+        if (!currentUser?.token) throw new Error("Not authenticated");
 
         const appointmentId =
           ((appointment as any)._id as string) ?? (appointment.id as string);
         const res = await api.updateAppointmentStatus(
-          accessToken,
+          currentUser.token,
           appointmentId,
           newStatus,
         );

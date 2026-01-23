@@ -1,6 +1,6 @@
 import LoadingScreen from "@/components/LoadingScreen";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { getSettings, updateSettings } from "@/utils/api";
-import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -58,6 +58,7 @@ const SettingItem: React.FC<SettingItemProps> = ({
 );
 
 export default function Settings() {
+  const { currentUser } = useCurrentUser();
   const [pushNotifications, setPushNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [smsNotifications, setSmsNotifications] = useState(false);
@@ -71,9 +72,8 @@ export default function Settings() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const { accessToken } = await authStorage.getTokens();
-        if (accessToken) {
-          const response = await getSettings(accessToken);
+        if (currentUser?.token) {
+          const response = await getSettings(currentUser.token);
           const settings = response.data;
 
           setPushNotifications(settings.notifications?.push ?? true);
@@ -115,9 +115,8 @@ export default function Settings() {
   // Helper function to update settings
   const updateUserSettings = async (updates: any) => {
     try {
-      const { accessToken } = await authStorage.getTokens();
-      if (accessToken) {
-        await updateSettings(accessToken, updates);
+      if (currentUser?.token) {
+        await updateSettings(currentUser.token, updates);
         Toast.show({
           type: "success",
           text1: "Success",

@@ -1,6 +1,5 @@
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { auth, useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/utils/api";
-import { authStorage } from "@/utils/auth";
 import { servicesData } from "@/utils/services";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
@@ -32,13 +31,12 @@ export default function Schedule() {
 
   const loadAppointments = useCallback(async () => {
     try {
-      const { accessToken } = await authStorage.getTokens();
-      if (!accessToken) {
+      if (!currentUser?.token) {
         setLoading(false);
         return;
       }
 
-      const result = await api.getAppointments(accessToken);
+      const result = await api.getAppointments(currentUser.token);
       if (result.success) {
         // Transform API response to match frontend expectations
         const transformedAppointments = result.data.map((appointment: any) => {

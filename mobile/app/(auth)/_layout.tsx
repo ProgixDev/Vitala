@@ -1,4 +1,4 @@
-import { authStorage } from "@/utils/auth";
+import { isLoggedIn } from "@/hooks/useCurrentUser";
 import { Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
@@ -11,7 +11,7 @@ export default function Layout() {
   }, []);
 
   const checkLoginStatus = async () => {
-    const isLoggedIn = await authStorage.isLoggedIn();
+    const isLoggedIn = await isLoggedIn();
     if (isLoggedIn) {
       router.replace("/(tabs)");
     }

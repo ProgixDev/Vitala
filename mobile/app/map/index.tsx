@@ -1,6 +1,5 @@
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/utils/api";
-import { authStorage } from "@/utils/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
@@ -118,8 +117,7 @@ export default function App() {
     if (!newLocation) return;
 
     try {
-      const { accessToken } = await authStorage.getTokens();
-      if (!accessToken) {
+      if (!currentUser?.token) {
         Alert.alert("Error", "Not authenticated");
         return;
       }
@@ -133,7 +131,7 @@ export default function App() {
         },
       };
 
-      await api.addLocation(accessToken, locationData);
+      await api.addLocation(currentUser.token, locationData);
       await refreshUser();
 
       Alert.alert("Success", "Location saved successfully");

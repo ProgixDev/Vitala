@@ -1,4 +1,4 @@
-import { authStorage } from "@/utils/auth";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -17,6 +17,7 @@ type TabType = "About" | "Schedule" | "Ratings";
 
 export default function NurseProfile() {
   const { id } = useLocalSearchParams();
+  const { currentUser } = useCurrentUser();
   const [activeTab, setActiveTab] = useState<TabType>("About");
   const [nurse, setNurse] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,14 +25,13 @@ export default function NurseProfile() {
   useEffect(() => {
     const loadNurseData = async () => {
       try {
-        const { accessToken } = await authStorage.getTokens();
-        if (!accessToken) {
+        if (!currentUser?.token) {
           console.error("No access token");
           setLoading(false);
           return;
         }
 
-        const result = await api.getUserById(accessToken, id as string);
+        const result = await api.getUserById(currentUser.token, id as string);
         if (result.success) {
           setNurse(result.data);
         } else {

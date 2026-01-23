@@ -1,5 +1,5 @@
 import { getSettings, updatePushToken } from "@/utils/api";
-import { authStorage } from "@/utils/auth";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import {
   addNotificationReceivedListener,
   addNotificationResponseListener,
@@ -20,6 +20,7 @@ interface UseNotificationsReturn {
 }
 
 export function useNotifications(): UseNotificationsReturn {
+  const { currentUser } = useCurrentUser();
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
   const [notification, setNotification] = useState<Notification | null>(null);
   const notificationListener = useRef<EventSubscription | null>(null);
@@ -66,10 +67,9 @@ export function useNotifications(): UseNotificationsReturn {
   const registerPushNotifications = async (): Promise<string | null> => {
     try {
       // Check user settings first
-      const { accessToken } = await authStorage.getTokens();
-      if (accessToken) {
+      if (currentUser?.token) {
         try {
-          const settingsResponse = await getSettings(accessToken);
+          const settingsResponse = await getSettings(currentUser.token);
           const settings = settingsResponse.data;
 
           // If push notifications are disabled in settings, don't register
@@ -89,10 +89,9 @@ export function useNotifications(): UseNotificationsReturn {
         setExpoPushToken(token);
 
         // Update token on server if user is logged in
-        const { accessToken } = await authStorage.getTokens();
-        if (accessToken) {
+        if (currentUser?.token) {
           try {
-            await updatePushToken(accessToken, token);
+            await updatePushToken(currentUser.token, token);
             console.log("Push token updated on server");
           } catch (error) {
             console.error("Failed to update push token on server:", error);

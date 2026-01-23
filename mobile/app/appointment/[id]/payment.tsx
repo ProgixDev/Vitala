@@ -1,5 +1,5 @@
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/utils/api";
-import { authStorage } from "@/utils/auth";
 import { getServiceNameById } from "@/utils/services";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -18,6 +18,7 @@ import {
 type PaymentMethodType = "credit_card" | null;
 
 export default function PaymentPage() {
+  const { currentUser } = useCurrentUser();
   const { id } = useLocalSearchParams();
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,14 +27,13 @@ export default function PaymentPage() {
 
   const loadAppointment = useCallback(async () => {
     try {
-      const { accessToken } = await authStorage.getTokens();
-      if (!accessToken) {
+      if (!currentUser?.token) {
         console.error("No access token");
         setLoading(false);
         return;
       }
 
-      const result = await api.getAppointmentById(accessToken, id as string);
+      const result = await api.getAppointmentById(currentUser.token, id as string);
       if (result.success) {
         const appointmentData = result.data;
 
@@ -83,7 +83,7 @@ export default function PaymentPage() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, currentUser?.token]);
 
   useEffect(() => {
     loadAppointment();
@@ -132,10 +132,9 @@ export default function PaymentPage() {
     setProcessing(true);
 
     try {
-      const { accessToken } = await authStorage.getTokens();
-      console.log("Access token:", !!accessToken);
+      console.log("Access token:", !!currentUser?.token);
 
-      if (!accessToken) {
+      if (!currentUser?.token) {
         Alert.alert("Authentication Error", "Please log in again");
         setProcessing(false);
         return;
@@ -148,7 +147,7 @@ export default function PaymentPage() {
       };
 
       console.log("Calling payment API with data:", paymentData);
-      const result = await api.processPayment(accessToken, paymentData);
+      const result = await api.processPayment(currentUser.token, paymentData);
 
       console.log("Payment result:", result);
 

@@ -1,5 +1,5 @@
 {
-  "name": "vitala-backend",
+  "name": "@vitala/backend",
   "version": "1.0.0",
   "description": "Backend API for Vitala - Healthcare Nursing Application",
   "main": "server.js",
