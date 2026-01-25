@@ -1,8 +1,10 @@
-import { auth, useCurrentUser } from "@/hooks/useCurrentUser";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import {
   acceptAppointment,
+  assignSelfAppointment,
   declineAppointment,
   getAppointments,
+  getUnassignedAppointments,
 } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -40,13 +42,17 @@ type AppointmentItem = {
 };
 
 export default function NurseHomeUI() {
-  const { currentUser } = useCurrentUser();
+  const { currentUser, logout } = useCurrentUser();
   const [upcomingAppointments, setUpcomingAppointments] = useState<
     AppointmentItem[]
   >([]);
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [requestsLoading, setRequestsLoading] = useState(true);
+  const [unassignedAppointments, setUnassignedAppointments] = useState<
+    AppointmentItem[]
+  >([]);
+  const [unassignedLoading, setUnassignedLoading] = useState(true);
 
   const loadUpcomingAppointments = useCallback(async () => {
     try {
@@ -137,15 +143,84 @@ export default function NurseHomeUI() {
     }
   }, [currentUser?.token]);
 
+  const loadUnassignedAppointments = useCallback(async () => {
+    try {
+      if (!currentUser?.token) return;
+
+      setUnassignedLoading(true);
+      const response = await getUnassignedAppointments(currentUser.token);
+
+      const allAppointments = response.data || [];
+
+      const sortedAppointments = allAppointments.sort((a: any, b: any) => {
+        const dateA = new Date(
+          `${a.scheduledDate.split("T")[0]} ${a.scheduledTime.start}`,
+        );
+        const dateB = new Date(
+          `${b.scheduledDate.split("T")[0]} ${b.scheduledTime.start}`,
+        );
+        return dateA.getTime() - dateB.getTime();
+      });
+
+      const appointmentItems: AppointmentItem[] = sortedAppointments.map(
+        (appt: any) => ({
+          id: appt._id || appt.id,
+          name: appt.patient?.fullName || "Unknown Patient",
+          role: "PATIENT",
+          date: new Date(appt.scheduledDate).toLocaleDateString(),
+          time: appt.scheduledTime.start,
+          image: `https://i.pravatar.cc/150?u=${appt.patient?.email}`,
+          serviceName: appt.service?.name || "Unknown Service",
+          userEmail: appt.patient?.email,
+        }),
+      );
+
+      setUnassignedAppointments(appointmentItems);
+    } catch (error) {
+      console.error("Error loading unassigned appointments:", error);
+      setUnassignedAppointments([]);
+    } finally {
+      setUnassignedLoading(false);
+    }
+  }, [currentUser?.token]);
+
   const loadData = useCallback(async () => {
-    await Promise.all([loadUpcomingAppointments(), loadRequests()]);
-  }, [loadUpcomingAppointments, loadRequests]);
+    await Promise.all([
+      loadUpcomingAppointments(),
+      loadRequests(),
+      loadUnassignedAppointments(),
+    ]);
+  }, [loadUpcomingAppointments, loadRequests, loadUnassignedAppointments]);
 
   useEffect(() => {
     if (currentUser?.token) {
       loadData();
     }
   }, [loadData, currentUser?.token]);
+
+  const handleAssignSelf = async (appointmentId: string) => {
+    try {
+      if (!currentUser?.token) return;
+
+      await assignSelfAppointment(currentUser.token, appointmentId);
+
+      Toast.show({
+        type: "success",
+        text1: "Appointment Assigned",
+        text2: "You have been assigned to this appointment",
+      });
+
+      // Reload data
+      await loadData();
+    } catch (error: any) {
+      console.error("Error assigning self:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: error.message || "Failed to assign appointment",
+      });
+    }
+  };
 
   const handleAcceptRequest = async (appointmentId: string) => {
     try {
@@ -209,7 +284,7 @@ export default function NurseHomeUI() {
       });
 
       // Force logout and re-login to refresh user data
-      await auth.logout();
+      await logout();
       router.replace("/signin");
     } catch (error) {
       console.error("Error in dev verify:", error);
@@ -223,7 +298,7 @@ export default function NurseHomeUI() {
 
   return (
     <>
-      {currentUser?.status === "verified" ? (
+      {currentUser?.status === "active" ? (
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View className="py-5">
@@ -252,16 +327,21 @@ export default function NurseHomeUI() {
           </View>
 
           {/* Upcoming Appointments */}
-          <View className="mb-[30px]">
+          <View className="mb-12">
             <View className="flex-row justify-between items-center mb-4">
               <Text className="text-xl font-semibold text-[#2D3142]">
                 Upcoming Appointments
               </Text>
-              <TouchableOpacity onPress={() => router.push("/schedule")}>
-                <Text className="text-sm text-[#4461F2] font-medium">
-                  See All
-                </Text>
-              </TouchableOpacity>
+              <View className="flex-row items-center gap-2">
+                <TouchableOpacity onPress={() => loadUpcomingAppointments()}>
+                  <Ionicons name="refresh" size={20} color="#4461F2" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => router.push("/schedule")}>
+                  <Text className="text-sm text-[#4461F2] font-medium">
+                    See All
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {loading ? (
@@ -321,15 +401,15 @@ export default function NurseHomeUI() {
           </View>
 
           {/* Motivational Banner */}
-          <View className="bg-[#4461F2] rounded-[20px] p-5 pr-0 pb-0 overflow-hidden mb-[30px] flex-row">
+          <View className="bg-[#4461F2] rounded-[20px] p-5 pr-0 pb-0 overflow-hidden mb-12 flex-row">
             <View className="flex-1">
               <Text className="text-xs text-white mb-3 opacity-90">
                 Your Patients Rely On You
               </Text>
-              <Text className="text-2xl font-bold text-white leading-[30px]">
+              <Text className="text-2xl font-bold text-white leading-12">
                 Make Every Visit
               </Text>
-              <Text className="text-2xl font-bold text-white leading-[30px]">
+              <Text className="text-2xl font-bold text-white leading-12">
                 Count
               </Text>
               <View className="flex-row items-center mt-4 gap-3">
@@ -357,22 +437,27 @@ export default function NurseHomeUI() {
             </View>
             <Image
               source={require("@/assets/images/doctor.png")}
-              className="h-[180px] relative -right-2.5 bottom-0"
+              className="h-45 relative -right-2.5 bottom-0"
               resizeMode="contain"
             />
           </View>
 
           {/* Your Requests */}
-          <View className="mb-[30px]">
+          <View className="mb-12">
             <View className="flex-row justify-between items-center mb-4">
               <Text className="text-xl font-semibold text-[#2D3142]">
                 Your Requests
               </Text>
-              <TouchableOpacity>
-                <Text className="text-sm text-[#4461F2] font-medium">
-                  See All
-                </Text>
-              </TouchableOpacity>
+              <View className="flex-row items-center gap-2">
+                <TouchableOpacity onPress={() => loadRequests()}>
+                  <Ionicons name="refresh" size={20} color="#4461F2" />
+                </TouchableOpacity>
+                <TouchableOpacity>
+                  <Text className="text-sm text-[#4461F2] font-medium">
+                    See All
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {requestsLoading ? (
@@ -440,6 +525,77 @@ export default function NurseHomeUI() {
                 />
                 <Text className="text-sm text-[#9E9E9E] mt-2">
                   No pending requests
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Available Appointments */}
+          <View className="mb-12">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-xl font-semibold text-[#2D3142]">
+                Available Appointments
+              </Text>
+              <TouchableOpacity onPress={() => loadUnassignedAppointments()}>
+                <Ionicons name="refresh" size={20} color="#4461F2" />
+              </TouchableOpacity>
+            </View>
+
+            {unassignedLoading ? (
+              <View className="bg-white rounded-[20px] p-4 shadow-sm items-center justify-center h-32">
+                <ActivityIndicator size="large" color="#4461F2" />
+              </View>
+            ) : unassignedAppointments.length > 0 ? (
+              unassignedAppointments.map((appointment) => (
+                <View
+                  key={appointment.id}
+                  className="bg-white rounded-[20px] p-4 shadow-sm mb-3"
+                >
+                  <View className="flex-row items-center gap-3">
+                    <Image
+                      source={{ uri: appointment.image }}
+                      className="w-12 h-12 rounded-full"
+                    />
+                    <View className="flex-1">
+                      <Text className="text-base font-semibold text-[#2D3142] mb-0.5">
+                        {appointment.name}
+                      </Text>
+                      <Text className="text-xs text-[#9E9E9E]">
+                        {appointment.role}
+                      </Text>
+                    </View>
+                  </View>
+                  <View className="mt-3 pt-3 border-t border-gray-100">
+                    <Text className="text-xs text-[#9E9E9E] mb-1">Service</Text>
+                    <Text className="text-sm font-medium text-[#2D3142] mb-3">
+                      {appointment.serviceName}
+                    </Text>
+                    <View className="flex-row justify-between items-center">
+                      <View>
+                        <Text className="text-sm font-semibold text-[#4461F2] mb-0.5">
+                          {appointment.date}
+                        </Text>
+                        <Text className="text-base font-bold text-[#2D3142]">
+                          {appointment.time}
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => handleAssignSelf(appointment.id)}
+                        className="bg-[#4461F2] rounded-full px-4 py-2"
+                      >
+                        <Text className="text-white text-sm font-semibold">
+                          Assign Me
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              ))
+            ) : (
+              <View className="bg-white rounded-[20px] p-4 shadow-sm items-center justify-center h-32">
+                <Ionicons name="briefcase-outline" size={32} color="#9E9E9E" />
+                <Text className="text-sm text-[#9E9E9E] mt-2">
+                  No available appointments
                 </Text>
               </View>
             )}

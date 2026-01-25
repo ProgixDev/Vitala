@@ -10,6 +10,7 @@ const http = require("http");
 const socketIo = require("socket.io");
 const connectDB = require("./config/db");
 const errorHandler = require("./middleware/error");
+const { authorize } = require("./middleware/auth");
 
 // Connect to database
 connectDB();

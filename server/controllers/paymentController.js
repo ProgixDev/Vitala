@@ -413,7 +413,7 @@ const processRefund = async (req, res) => {
 const getUserTransactions = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { status, type, limit = 50 } = req.query;
+    const { status } = req.query;
 
     let query = { user: userId };
 
@@ -432,8 +432,7 @@ const getUserTransactions = async (req, res) => {
           select: "name",
         },
       })
-      .sort({ createdAt: -1 })
-      .limit(parseInt(limit));
+      .sort({ createdAt: -1 });
 
     // Transform payments to transaction format
     const transactions = payments.map((payment) => {

@@ -1,7 +1,126 @@
 declare global {
+  // API Response wrapper type
+  type ApiResponse<T> = {
+    success: boolean;
+    data?: T;
+    count?: number;
+    message?: string;
+    error?: string;
+  };
+
+  // Transaction data from API responses
+  type ApiTransaction = {
+    id: string;
+    type: "payment" | "refund";
+    service: string;
+    amount: number;
+    currency: string;
+    date: string;
+    status:
+      | "pending"
+      | "processing"
+      | "completed"
+      | "failed"
+      | "cancelled"
+      | "refunded";
+    paymentMethod: string;
+    receiptNumber: string;
+    appointmentId?: string;
+  };
+
+  // Populated user data from API (limited fields for security)
+  type PopulatedUser = {
+    _id: string;
+    fullName: string;
+    email: string;
+    userType: "patient" | "nurse";
+  };
+
+  // Payment data from API responses
+  type PopulatedPayment = {
+    status: "pending" | "processing" | "completed" | "failed" | "cancelled";
+    amount: number;
+    currency: string;
+    method?: string;
+    reference?: string;
+    transactionDate?: string;
+  };
+
+  // Full Payment object from database (populated)
+  type ApiPayment = {
+    _id: string;
+    appointment: string;
+    user: string;
+    amount: number;
+    currency: string;
+    paymentMethod?: string;
+    status:
+      | "pending"
+      | "processing"
+      | "completed"
+      | "failed"
+      | "cancelled"
+      | "refunded";
+    stripePaymentIntentId?: string;
+    stripeChargeId?: string;
+    paypalOrderId?: string;
+    receiptUrl?: string;
+    receiptNumber: string;
+    refundAmount?: number;
+    refundReason?: string;
+    refundedAt?: string;
+    savedPaymentMethod?: {
+      last4: string;
+      brand: string;
+      expiryMonth: number;
+      expiryYear: number;
+      isDefault: boolean;
+    };
+    metadata?: Record<string, string>;
+    createdAt: string;
+    updatedAt: string;
+  };
+
+  // Appointment data from API responses
+  type ApiAppointment = {
+    _id: string;
+    patient: PopulatedUser;
+    nurse?: PopulatedUser;
+    service: string;
+    appointmentType: "normal" | "emergency";
+    status:
+      | "pending"
+      | "confirmed"
+      | "on-the-way"
+      | "in-progress"
+      | "completed"
+      | "cancelled"
+      | "declined";
+    scheduledDate: string;
+    scheduledTime: {
+      start: string;
+      end?: string;
+    };
+    location: {
+      address: string;
+      coordinates?: {
+        latitude: number;
+        longitude: number;
+      };
+      label?: string;
+    };
+    symptoms?: string;
+    notes?: string;
+    price: number;
+    duration: number;
+    payment?: PopulatedPayment;
+    createdAt: string;
+    updatedAt: string;
+  };
+
   type Payment = {
     id: string;
-    status: "pending" | "processing" | "completed" | "failed";
+    status: "pending" | "processing" | "completed" | "failed" | "cancelled";
     amount: number;
     currency: string;
     method: "credit_card" | "paypal" | null;
@@ -53,7 +172,7 @@ declare global {
     userType: "patient" | "nurse";
     medicalProfile?: MedicalProfile;
     locations?: UserLocation[];
-    status?: "pending" | "verified" | "rejected"; // verification status for nurses
+    status?: "active" | "pending" | "verified" | "rejected"; // verification status for nurses
     isEmailVerified?: boolean;
     verification?: {
       idFrontUri?: string;

@@ -1,4 +1,4 @@
-import { auth, useCurrentUser } from "@/hooks/useCurrentUser";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect } from "react";
@@ -56,7 +56,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
 );
 
 export default function Profile() {
-  const { currentUser } = useCurrentUser();
+  const { currentUser, logout } = useCurrentUser();
 
   // Handle back button - go to home tab instead of back
   useEffect(() => {
@@ -73,7 +73,7 @@ export default function Profile() {
 
   const handleLogout = async () => {
     try {
-      await auth.logout();
+      await logout();
       router.replace("/signin");
     } catch (error) {
       console.error("Error logging out:", error);

@@ -1,21 +1,23 @@
-import { isLoggedIn } from "@/hooks/useCurrentUser";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { Image, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 export default function Layout() {
-  useEffect(() => {
-    checkLoginStatus();
-  }, []);
+  const { isLoggedIn } = useCurrentUser();
 
-  const checkLoginStatus = async () => {
-    const isLoggedIn = await isLoggedIn();
-    if (isLoggedIn) {
+  const checkLoginStatus = useCallback(async () => {
+    const _ = await isLoggedIn();
+    if (_) {
       router.replace("/(tabs)");
     }
-  };
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    checkLoginStatus();
+  }, [checkLoginStatus]);
 
   return (
     <SafeAreaProvider>

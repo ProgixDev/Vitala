@@ -97,7 +97,7 @@ export default function Settings() {
     };
 
     fetchSettings();
-  }, []);
+  }, [currentUser]);
 
   // Handle back button - go back to profile page
   useEffect(() => {
@@ -208,7 +208,7 @@ export default function Settings() {
       {!loading && (
         <>
           {/* Header */}
-          <View className="flex-row items-center justify-between px-4 pt-[60px] pb-4 bg-white border-b border-gray-100">
+          <View className="flex-row items-center justify-between px-4 pt-15 pb-4 bg-white border-b border-gray-100">
             <TouchableOpacity
               className="w-10 h-10 items-center justify-center"
               onPress={() => router.replace("/(tabs)/profile")}
@@ -246,7 +246,7 @@ export default function Settings() {
                     />
                   }
                 />
-                <View className="h-px bg-gray-100 ml-[68px]" />
+                <View className="h-px bg-gray-100 ml-15" />
                 <SettingItem
                   icon="mail-outline"
                   title="Email Notifications"
@@ -261,7 +261,7 @@ export default function Settings() {
                     />
                   }
                 />
-                <View className="h-px bg-gray-100 ml-[68px]" />
+                <View className="h-px bg-gray-100 ml-15" />
                 <SettingItem
                   icon="chatbubble-outline"
                   title="SMS Notifications"
@@ -298,7 +298,7 @@ export default function Settings() {
                     />
                   }
                 />
-                <View className="h-px bg-gray-100 ml-[68px]" />
+                <View className="h-px bg-gray-100 ml-15" />
                 <SettingItem
                   icon="finger-print-outline"
                   title="Biometric Authentication"
@@ -341,7 +341,7 @@ export default function Settings() {
                   subtitle={language === "en" ? "English" : language}
                   onPress={() => console.log("Language")}
                 />
-                <View className="h-px bg-gray-100 ml-[68px]" />
+                <View className="h-px bg-gray-100 ml-15" />
                 <SettingItem
                   icon="moon-outline"
                   title="Dark Mode"
@@ -356,7 +356,7 @@ export default function Settings() {
                     />
                   }
                 />
-                <View className="h-px bg-gray-100 ml-[68px]" />
+                <View className="h-px bg-gray-100 ml-15" />
                 <SettingItem
                   icon="download-outline"
                   title="App Updates"
@@ -377,14 +377,14 @@ export default function Settings() {
                   subtitle="Get help and support"
                   onPress={() => console.log("Help Center")}
                 />
-                <View className="h-px bg-gray-100 ml-[68px]" />
+                <View className="h-px bg-gray-100 ml-15" />
                 <SettingItem
                   icon="document-text-outline"
                   title="Terms & Conditions"
                   subtitle="Read our terms"
                   onPress={() => console.log("Terms & Conditions")}
                 />
-                <View className="h-px bg-gray-100 ml-[68px]" />
+                <View className="h-px bg-gray-100 ml-15" />
                 <SettingItem
                   icon="shield-outline"
                   title="Privacy Policy"

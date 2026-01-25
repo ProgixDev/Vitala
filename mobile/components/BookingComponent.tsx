@@ -1,7 +1,6 @@
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -149,20 +148,6 @@ export default function BookingComponent({
     return () => backHandler.remove();
   }, [onBack]);
 
-  // Refresh user data when screen comes into focus (e.g., when returning from map page)
-  useFocusEffect(
-    React.useCallback(() => {
-      refreshUser();
-    }, [refreshUser]),
-  );
-
-  // Handle back button/swipe
-  // useFocusEffect(
-  //   useCallback(() => {
-  //     refreshUser();
-  //   }, [refreshUser]),
-  // );
-
   const handleBookAppointment = async () => {
     if (!currentUser) {
       Toast.show({
@@ -213,20 +198,11 @@ export default function BookingComponent({
     }
 
     try {
-      let formattedDate: string;
       let location: UserLocation;
-      let patientInfo = {};
 
       if (type === "emergency") {
         // For emergency, use current date/time and default values
-        const now = new Date();
-        formattedDate = now.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        });
         location = locationOptions[selectedLocation];
-
       } else {
         // Normal booking with selected values
         location = locationOptions[selectedLocation];
@@ -269,7 +245,7 @@ export default function BookingComponent({
         duration: service.duration,
       };
 
-      const result = await api.createAppointment(currentUser.token, appointmentData);
+      await api.createAppointment(currentUser.token, appointmentData);
 
       Toast.show({
         type: "success",
@@ -437,7 +413,7 @@ export default function BookingComponent({
                 </Text>
                 <View className="bg-white rounded-xl p-4">
                   <TextInput
-                    className="h-[100px] text-base text-[#2D3142]"
+                    className="h-25 text-base text-[#2D3142]"
                     placeholder="Describe the emergency"
                     multiline
                     textAlignVertical="top"
@@ -670,7 +646,7 @@ export default function BookingComponent({
                   {dates.map((date, index) => (
                     <TouchableOpacity
                       key={index}
-                      className={`w-[70px] h-[70px] rounded-full justify-center items-center ${
+                      className={`w-20 h-20 rounded-full justify-center items-center ${
                         selectedDate === index
                           ? "bg-[#4461F2]"
                           : !date.available

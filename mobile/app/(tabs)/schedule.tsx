@@ -1,13 +1,11 @@
-import { auth, useCurrentUser } from "@/hooks/useCurrentUser";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/utils/api";
-import { servicesData } from "@/utils/services";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
-  RefreshControl,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -16,9 +14,8 @@ import {
 
 export default function Schedule() {
   const { currentUser } = useCurrentUser();
-  const [appointments, setAppointments] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<ApiAppointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<"upcoming" | "history">(
     "upcoming",
   );
@@ -30,60 +27,23 @@ export default function Schedule() {
   >("all");
 
   const loadAppointments = useCallback(async () => {
+    setLoading(true);
     try {
       if (!currentUser?.token) {
-        setLoading(false);
         return;
       }
-
       const result = await api.getAppointments(currentUser.token);
       if (result.success) {
-        // Transform API response to match frontend expectations
-        const transformedAppointments = result.data.map((appointment: any) => {
-          // Get service details from servicesData
-          const service = servicesData.find(
-            (s) => s._id === appointment.service,
-          );
-
-          return {
-            id: appointment._id,
-            userEmail: appointment.patient?.email,
-            nurseEmail: appointment.nurse?.email,
-            serviceName:
-              service?.name ||
-              appointment.serviceName ||
-              appointment.service ||
-              "Unknown Service",
-            serviceCategory: service?.category || "",
-            serviceId: appointment.service,
-            date: appointment.scheduledDate
-              ? new Date(appointment.scheduledDate).toLocaleDateString()
-              : "",
-            time: appointment.scheduledTime?.start || "",
-            duration: appointment.duration,
-            type: appointment.appointmentType,
-            location: appointment.location,
-            status: appointment.status,
-            payment: appointment.payment || {
-              status: "pending",
-              amount: appointment.price || 0,
-              currency: "USD",
-            },
-            createdAt: appointment.createdAt,
-          };
-        });
-        setAppointments(transformedAppointments);
+        setAppointments(result?.data || []);
       }
     } catch (error) {
       console.error("Error loading appointments:", error);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
-  }, []);
+  }, [currentUser?.token]);
 
   const onRefresh = useCallback(() => {
-    setRefreshing(true);
     loadAppointments();
   }, [loadAppointments]);
 
@@ -92,11 +52,7 @@ export default function Schedule() {
   }, [loadAppointments]);
 
   // Refresh appointments when screen comes into focus (e.g., after payment)
-  useFocusEffect(
-    useCallback(() => {
-      loadAppointments();
-    }, [loadAppointments]),
-  );
+  useFocusEffect(onRefresh);
 
   const upcomingAppointments = appointments.filter((appointment) =>
     ["pending", "confirmed", "on-the-way", "in-progress"].includes(
@@ -263,48 +219,11 @@ export default function Schedule() {
     }
   };
 
-  if (loading) {
-    return (
-      <View className="flex-1 bg-gray-100 justify-center items-center">
-        <ActivityIndicator size="large" color="#4461F2" />
-      </View>
-    );
-  }
-
-  const getUserInfo = (appointment: any) => {
-    if (currentUser?.userType === "patient") {
-      // Show nurse info for patients
-      if (appointment.nurseEmail) {
-        return {
-          name: appointment.nurseEmail, // For now, just show email until we fetch user details
-          role: "NURSE",
-          email: appointment.nurseEmail,
-        };
-      }
-    } else if (currentUser?.userType === "nurse") {
-      // Show patient info for nurses
-      if (appointment.userEmail) {
-        return {
-          name: appointment.userEmail, // For now, just show email until we fetch user details
-          role: "PATIENT",
-          email: appointment.userEmail,
-        };
-      }
-    }
-    return null;
-  };
-
   return (
     <View className="flex-1 pt-6 px-4">
-      <ScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View className="py-5">
+        <View className="py-5 flex-row justify-between items-center">
           <View>
             <Text className="text-[28px] font-bold text-[#2D3142] mb-1">
               Appointments
@@ -313,6 +232,9 @@ export default function Schedule() {
               Organize all your schedules
             </Text>
           </View>
+          <TouchableOpacity onPress={onRefresh} className="p-2">
+            <Ionicons name="refresh" size={24} color="#4461F2" />
+          </TouchableOpacity>
         </View>
 
         {/* Tab Bar */}
@@ -511,14 +433,20 @@ export default function Schedule() {
         )}
 
         {/* Appointments List */}
-        {displayedAppointments.length > 0 ? (
-          <View className="mb-[30px]">
+        {loading ? (
+          <View className="bg-white rounded-[20px] p-8 mb-12 items-center">
+            <View className="flex-1 bg-gray-100 justify-center items-center">
+              <ActivityIndicator size="large" color="#4461F2" />
+            </View>
+          </View>
+        ) : displayedAppointments.length > 0 ? (
+          <View className="mb-12">
             <View className="gap-4">
               {displayedAppointments.map((appointment) => (
                 <TouchableOpacity
-                  key={appointment.id}
+                  key={appointment._id}
                   className="bg-[#4461F2] rounded-3xl p-5 relative overflow-hidden"
-                  onPress={() => handleAppointmentPress(appointment.id)}
+                  onPress={() => handleAppointmentPress(appointment._id)}
                 >
                   {/* Header with Status Badges */}
                   <View className="flex-row justify-between items-start mb-5">
@@ -531,42 +459,43 @@ export default function Schedule() {
                             : "Upcoming Appointment"}
                       </Text>
                       {/* Payment Status Badge - Only show if not cancelled */}
-                      {appointment?.status !== "cancelled" && (
-                        <View className="flex-row items-center gap-2">
-                          <View
-                            className={`px-3 py-1 rounded-full flex-row items-center gap-1 ${
-                              getPaymentStatusColor(
-                                appointment?.payment?.status,
-                              )?.bg
-                            }`}
-                          >
-                            <Ionicons
-                              name={
+                      {appointment?.payment?.status !== undefined &&
+                        appointment?.status !== "cancelled" && (
+                          <View className="flex-row items-center gap-2">
+                            <View
+                              className={`px-3 py-1 rounded-full flex-row items-center gap-1 ${
                                 getPaymentStatusColor(
                                   appointment?.payment?.status,
-                                )?.icon as any
-                              }
-                              size={14}
-                              color={
-                                getPaymentStatusColor(
-                                  appointment?.payment?.status,
-                                )?.iconColor
-                              }
-                            />
-                            <Text
-                              className={`text-xs font-semibold ${
-                                getPaymentStatusColor(
-                                  appointment?.payment?.status,
-                                )?.text
+                                )?.bg
                               }`}
                             >
-                              {getPaymentStatusLabel(
-                                appointment?.payment?.status,
-                              )}
-                            </Text>
+                              <Ionicons
+                                name={
+                                  getPaymentStatusColor(
+                                    appointment?.payment?.status,
+                                  )?.icon as any
+                                }
+                                size={14}
+                                color={
+                                  getPaymentStatusColor(
+                                    appointment?.payment?.status,
+                                  )?.iconColor
+                                }
+                              />
+                              <Text
+                                className={`text-xs font-semibold ${
+                                  getPaymentStatusColor(
+                                    appointment?.payment?.status,
+                                  )?.text
+                                }`}
+                              >
+                                {getPaymentStatusLabel(
+                                  appointment?.payment?.status,
+                                )}
+                              </Text>
+                            </View>
                           </View>
-                        </View>
-                      )}
+                        )}
                       {/* Show Cancelled Badge */}
                       {appointment?.status === "cancelled" && (
                         <View className="flex-row items-center gap-2">
@@ -584,7 +513,7 @@ export default function Schedule() {
                       )}
                     </View>
                     <View className="flex-row gap-2 items-center">
-                      {appointment.type === "emergency" && (
+                      {appointment.appointmentType === "emergency" && (
                         <View className="bg-[#FF4B8C] px-3 py-1 rounded-full">
                           <Text className="text-xs font-semibold text-white">
                             Emergency
@@ -599,7 +528,7 @@ export default function Schedule() {
                     </View>
                   </View>
 
-                  {/* Date and Time Info */}
+                  {/* Date, Time and Location Info */}
                   <View className="flex-row justify-between mb-5 gap-3">
                     <View className="flex-1">
                       <View className="w-12 h-12 bg-white/20 rounded-xl justify-center items-center mb-2">
@@ -613,7 +542,7 @@ export default function Schedule() {
                         Appointment Date
                       </Text>
                       <Text className="text-sm font-semibold text-white">
-                        {appointment.date}
+                        {appointment.scheduledDate.split("T")[0]}
                       </Text>
                     </View>
 
@@ -629,7 +558,23 @@ export default function Schedule() {
                         Appointment Time
                       </Text>
                       <Text className="text-sm font-semibold text-white">
-                        {appointment.time}
+                        {appointment.scheduledTime.start}
+                      </Text>
+                    </View>
+
+                    <View className="flex-1">
+                      <View className="w-12 h-12 bg-white/20 rounded-xl justify-center items-center mb-2">
+                        <Ionicons
+                          name="location-outline"
+                          size={24}
+                          color="#FFFFFF"
+                        />
+                      </View>
+                      <Text className="text-xs text-white/80 mb-1">
+                        Location
+                      </Text>
+                      <Text className="text-sm font-semibold text-white">
+                        {appointment.location?.label || "N/A"}
                       </Text>
                     </View>
                   </View>
@@ -638,27 +583,15 @@ export default function Schedule() {
                   <View className="bg-white rounded-2xl p-4 flex-row items-center gap-3">
                     <View className="w-12 h-12 bg-[#E8EBFF] rounded-xl justify-center items-center">
                       <Ionicons
-                        name={
-                          getServiceIcon(appointment.serviceCategory) as any
-                        }
+                        name={getServiceIcon(appointment.service) as any}
                         size={24}
                         color="#4461F2"
                       />
                     </View>
                     <View className="flex-1">
                       <Text className="text-[15px] font-semibold text-[#2D3142] mb-1">
-                        {appointment.serviceName}
+                        {appointment.service}
                       </Text>
-                      <View className="flex-row items-center gap-1 mb-1">
-                        <Ionicons
-                          name="location-outline"
-                          size={12}
-                          color="#9E9E9E"
-                        />
-                        <Text className="text-xs text-[#9E9E9E]">
-                          {appointment.location.label}
-                        </Text>
-                      </View>
                       <View className="flex-row gap-2 items-center mt-1">
                         <View
                           className={`px-2 py-0.5 rounded-full ${
@@ -674,7 +607,7 @@ export default function Schedule() {
                           </Text>
                         </View>
                         <Text className="text-xs text-[#9E9E9E]">
-                          • {appointment?.payment?.amount}
+                          • {appointment.price}
                           {appointment?.payment?.currency === "USD" ? "$" : "€"}
                         </Text>
                       </View>
@@ -682,23 +615,29 @@ export default function Schedule() {
                   </View>
 
                   {/* Nurse/Patient Info */}
-                  {getUserInfo(appointment) && (
+                  {((currentUser?.userType === "patient" &&
+                    appointment?.nurse) ||
+                    currentUser?.userType === "nurse") && (
                     <View className="bg-white rounded-2xl p-4 flex-row items-center gap-3 mt-3">
                       <Image
                         source={{
                           uri: `https://i.pravatar.cc/150?u=${
-                            getUserInfo(appointment)?.email
+                            appointment.nurse?.email
                           }`,
                         }}
                         className="w-12 h-12 rounded-full"
                       />
                       <View className="flex-1">
                         <Text className="text-[15px] font-semibold text-[#2D3142] mb-1">
-                          {getUserInfo(appointment)?.name}
+                          {currentUser?.userType === "patient"
+                            ? appointment.nurse?.fullName
+                            : appointment.patient?.fullName}
                         </Text>
-                        <Text className="text-xs text-[#9E9E9E]">
-                          {getUserInfo(appointment)?.role}
-                        </Text>
+                        {currentUser?.userType === "patient" && (
+                          <Text className="text-[13px] text-[#9E9E9E]">
+                            {appointment.nurse?.email}
+                          </Text>
+                        )}
                       </View>
                       <Ionicons
                         name="person-circle-outline"
@@ -712,32 +651,34 @@ export default function Schedule() {
             </View>
           </View>
         ) : (
-          <View className="bg-white rounded-[20px] p-8 mb-[30px] items-center">
-            <Ionicons name="calendar-outline" size={48} color="#9E9E9E" />
-            <Text className="text-base text-[#2D3142] font-semibold mt-4 mb-2">
-              No {activeTab} appointments
-            </Text>
-            <Text className="text-sm text-[#9E9E9E] text-center">
-              {activeTab === "upcoming"
-                ? "Book your first appointment to get started"
-                : paymentFilter !== "all" || statusFilter !== "all"
-                  ? "No appointments match your filters"
-                  : "Your completed and cancelled appointments will appear here"}
-            </Text>
-            {activeTab === "history" &&
-              (paymentFilter !== "all" || statusFilter !== "all") && (
-                <TouchableOpacity
-                  className="mt-4 bg-[#4461F2] px-6 py-3 rounded-full"
-                  onPress={() => {
-                    setPaymentFilter("all");
-                    setStatusFilter("all");
-                  }}
-                >
-                  <Text className="text-white font-semibold text-sm">
-                    Reset Filters
-                  </Text>
-                </TouchableOpacity>
-              )}
+          <View className="bg-white rounded-[20px] p-8 mb-12 items-center">
+            <>
+              <Ionicons name="calendar-outline" size={48} color="#9E9E9E" />
+              <Text className="text-base text-[#2D3142] font-semibold mt-4 mb-2">
+                No {activeTab} appointments
+              </Text>
+              <Text className="text-sm text-[#9E9E9E] text-center">
+                {activeTab === "upcoming"
+                  ? "Book your first appointment to get started"
+                  : paymentFilter !== "all" || statusFilter !== "all"
+                    ? "No appointments match your filters"
+                    : "Your completed and cancelled appointments will appear here"}
+              </Text>
+              {activeTab === "history" &&
+                (paymentFilter !== "all" || statusFilter !== "all") && (
+                  <TouchableOpacity
+                    className="mt-4 bg-[#4461F2] px-6 py-3 rounded-full"
+                    onPress={() => {
+                      setPaymentFilter("all");
+                      setStatusFilter("all");
+                    }}
+                  >
+                    <Text className="text-white font-semibold text-sm">
+                      Reset Filters
+                    </Text>
+                  </TouchableOpacity>
+                )}
+            </>
           </View>
         )}
       </ScrollView>

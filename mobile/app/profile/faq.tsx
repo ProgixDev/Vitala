@@ -145,17 +145,6 @@ const faqData: FAQItem[] = [
   },
 ];
 
-const categories = [
-  "All",
-  "Appointments",
-  "Emergency",
-  "Payment",
-  "Privacy",
-  "Account",
-  "Settings",
-  "Support",
-];
-
 interface FAQItemComponentProps {
   faq: FAQItem;
   isExpanded: boolean;
@@ -184,9 +173,7 @@ const FAQItemComponent: React.FC<FAQItemComponentProps> = ({
     </View>
     {isExpanded && (
       <View className="mt-3 pt-3 border-t border-[#F3F4F6]">
-        <Text className="text-sm text-[#6B7280] leading-[22px]">
-          {faq.answer}
-        </Text>
+        <Text className="text-sm text-[#6B7280] leading-5">{faq.answer}</Text>
       </View>
     )}
   </TouchableOpacity>
@@ -215,7 +202,7 @@ export default function FAQ() {
   return (
     <View className="flex-1 bg-[#F9FAFB]">
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 pt-[60px] pb-4 bg-white border-b border-[#F3F4F6]">
+      <View className="flex-row items-center justify-between px-4 pt-15 pb-4 bg-white border-b border-[#F3F4F6]">
         <TouchableOpacity
           className="w-10 h-10 items-center justify-center"
           onPress={() => router.replace("/(tabs)/profile")}

@@ -1,23 +1,24 @@
 import { Tabs, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { View, Text } from "react-native";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { auth } from "@/hooks/useCurrentUser";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const { isLoggedIn } = useCurrentUser();
+
+  const checkAuth = useCallback(async () => {
+    const loggedIn = await isLoggedIn();
+    if (!loggedIn) {
+      router.replace("/signin");
+    }
+  }, [isLoggedIn]);
 
   useEffect(() => {
     checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    const isLoggedIn = await auth.isLoggedIn();
-    if (!isLoggedIn) {
-      router.replace("/signin");
-    }
-  };
+  }, [checkAuth]);
 
   return (
     <Tabs

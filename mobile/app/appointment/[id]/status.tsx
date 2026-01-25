@@ -79,7 +79,10 @@ export default function AppointmentStatus() {
         return;
       }
 
-      const result = await api.getAppointmentById(currentUser.token, id as string);
+      const result = await api.getAppointmentById(
+        currentUser.token,
+        id as string,
+      );
       if (result.success) {
         const appointmentData = result.data;
 
@@ -125,14 +128,14 @@ export default function AppointmentStatus() {
           if (currentUser?.token) {
             const listRes = await api.getAppointments(currentUser.token);
             if (listRes.success) {
-              const found = listRes.data.find(
+              const found = listRes.data?.find(
                 (a: any) => a._id === id || a.id === id,
               );
               if (found) {
                 const fallback = {
-                  id: found._id || found.id,
+                  id: found._id,
                   serviceName:
-                    found.serviceName ||
+                    found.service ||
                     getServiceNameById(found.service) ||
                     found.service ||
                     "Unknown Service",
@@ -486,7 +489,7 @@ export default function AppointmentStatus() {
             </View>
             <Image
               source={require("@/assets/images/Logo.png")}
-              className="w-[50px] h-[50px]"
+              className="w-12 h-12"
               resizeMode="contain"
             />
           </View>
@@ -502,8 +505,8 @@ export default function AppointmentStatus() {
                 Waiting for confirmation
               </Text>
               <Text className="text-xs text-[#9E9E9E] mt-1">
-                A nurse will confirm this appointment. We'll notify you once
-                it's confirmed.
+                A nurse will confirm this appointment. We&apos;ll notify you
+                once it&apos;s confirmed.
               </Text>
             </View>
           )}

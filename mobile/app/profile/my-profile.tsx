@@ -133,7 +133,7 @@ export default function MyProfile() {
         name: `profile-picture-${Date.now()}.jpg`,
       } as any);
 
-      const response = await uploadProfilePicture(currentUser.token, formData);
+      await uploadProfilePicture(currentUser.token, formData);
 
       await refreshUser();
 
@@ -200,7 +200,10 @@ export default function MyProfile() {
 
       // Update medical profile if it exists
       if (editedUser.medicalProfile) {
-        await updateMedicalProfile(currentUser.token, editedUser.medicalProfile);
+        await updateMedicalProfile(
+          currentUser.token,
+          editedUser.medicalProfile,
+        );
       }
 
       await refreshUser();
@@ -227,7 +230,7 @@ export default function MyProfile() {
   if (!currentUser) {
     return (
       <View className="flex-1 bg-[#F9FAFB]">
-        <View className="flex-row items-center justify-between px-4 pt-[60px] pb-4 bg-white border-b border-[#F3F4F6]">
+        <View className="flex-row items-center justify-between px-4 pt-15 pb-4 bg-white border-b border-[#F3F4F6]">
           <TouchableOpacity
             className="w-10 h-10 items-center justify-center"
             onPress={() => router.replace("/(tabs)/profile")}
@@ -251,7 +254,7 @@ export default function MyProfile() {
   return (
     <View className="flex-1 bg-[#F9FAFB]">
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 pt-[60px] pb-4 bg-white border-b border-[#F3F4F6]">
+      <View className="flex-row items-center justify-between px-4 pt-15 pb-4 bg-white border-b border-[#F3F4F6]">
         <TouchableOpacity
           className="w-10 h-10 items-center justify-center"
           onPress={() => router.replace("/(tabs)/profile")}
@@ -300,7 +303,7 @@ export default function MyProfile() {
         {/* Avatar Section */}
         <View className="items-center py-8 bg-white mb-4">
           <View className="relative">
-            <View className="w-[100px] h-[100px] rounded-full bg-[#EEF2FF] items-center justify-center border-4 border-[#E0E7FF] overflow-hidden">
+            <View className="w-25 h-25 rounded-full bg-[#EEF2FF] items-center justify-center border-4 border-[#E0E7FF] overflow-hidden">
               {currentUser?.profilePicture ? (
                 <TouchableOpacity
                   className="w-full h-full"
@@ -440,7 +443,7 @@ export default function MyProfile() {
         </View>
 
         {/* Medical Information */}
-        {currentUser.medicalProfile && (
+        {currentUser.userType === "patient" && currentUser.medicalProfile && (
           <View className="px-6 mb-6">
             <Text className="text-base font-semibold text-[#1F2937] mb-3">
               Medical Information

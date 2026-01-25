@@ -23,11 +23,17 @@ const paymentSchema = new mongoose.Schema(
     paymentMethod: {
       type: String,
       enum: ["credit_card", "debit_card", "paypal", "stripe", "cash"],
-      required: true,
     },
     status: {
       type: String,
-      enum: ["pending", "processing", "completed", "failed", "refunded"],
+      enum: [
+        "pending",
+        "processing",
+        "completed",
+        "failed",
+        "cancelled",
+        "refunded",
+      ],
       default: "pending",
     },
     stripePaymentIntentId: String,
@@ -42,21 +48,6 @@ const paymentSchema = new mongoose.Schema(
     refundAmount: Number,
     refundReason: String,
     refundedAt: Date,
-
-    // Payment method details (saved for future use)
-    savedPaymentMethod: {
-      last4: String,
-      brand: String,
-      expiryMonth: Number,
-      expiryYear: Number,
-      isDefault: Boolean,
-    },
-
-    // Metadata
-    metadata: {
-      type: Map,
-      of: String,
-    },
   },
   {
     timestamps: true,

@@ -8,23 +8,15 @@ const USER_CACHE_KEY = "cached_user_data";
 const USER_CACHE_TIMESTAMP_KEY = "cached_user_timestamp";
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-const auth = {
-  isLoggedIn: async (): Promise<boolean> => {
-    const { accessToken } = await auth.getTokens();
-    return !!accessToken;
-  },
+export function useCurrentUser() {
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  logout: async (): Promise<void> => {
-    await auth.clearTokens();
-    try {
-      await SecureStore.deleteItemAsync(USER_CACHE_KEY);
-      await SecureStore.deleteItemAsync(USER_CACHE_TIMESTAMP_KEY);
-    } catch (error) {
-      console.error("Error clearing cached user on logout:", error);
-    }
-  },
+  useEffect(() => {
+    loadCurrentUser();
+  });
 
-  setTokens: async (
+  const setTokens = async (
     accessToken: string,
     refreshToken?: string,
   ): Promise<void> => {
@@ -37,9 +29,9 @@ const auth = {
       console.error("Error setting tokens:", error);
       throw error;
     }
-  },
+  };
 
-  getTokens: async (): Promise<{
+  const getTokens = async (): Promise<{
     accessToken: string | null;
     refreshToken: string | null;
   }> => {
@@ -51,9 +43,9 @@ const auth = {
       console.error("Error getting tokens:", error);
       return { accessToken: null, refreshToken: null };
     }
-  },
+  };
 
-  clearTokens: async (): Promise<void> => {
+  const clearTokens = async (): Promise<void> => {
     try {
       await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
       await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
@@ -61,24 +53,15 @@ const auth = {
       console.error("Error clearing tokens:", error);
       throw error;
     }
-  },
-};
-
-export function useCurrentUser() {
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadCurrentUser();
-  });
+  };
 
   const isLoggedIn = async (): Promise<boolean> => {
-    const { accessToken } = await auth.getTokens();
+    const { accessToken } = await getTokens();
     return !!accessToken;
   };
 
   const logout = async (): Promise<void> => {
-    await auth.clearTokens();
+    await clearTokens();
     try {
       await SecureStore.deleteItemAsync(USER_CACHE_KEY);
       await SecureStore.deleteItemAsync(USER_CACHE_TIMESTAMP_KEY);
@@ -88,28 +71,11 @@ export function useCurrentUser() {
     setCurrentUser(null);
   };
 
-  const setTokens = async (
-    accessToken: string,
-    refreshToken?: string,
-  ): Promise<void> => {
-    await auth.setTokens(accessToken, refreshToken);
-  };
-
-  const getTokens = async (): Promise<{
-    accessToken: string | null;
-    refreshToken: string | null;
-  }> => {
-    return await auth.getTokens();
-  };
-
-  const clearTokens = async (): Promise<void> => {
-    await auth.clearTokens();
-    setCurrentUser(null);
-  };
-
   const isCacheValid = async (): Promise<boolean> => {
     try {
-      const timestamp = await SecureStore.getItemAsync(USER_CACHE_TIMESTAMP_KEY);
+      const timestamp = await SecureStore.getItemAsync(
+        USER_CACHE_TIMESTAMP_KEY,
+      );
       if (!timestamp) return false;
 
       const cacheAge = Date.now() - parseInt(timestamp, 10);
@@ -134,7 +100,10 @@ export function useCurrentUser() {
   const setCachedUser = async (user: CurrentUser): Promise<void> => {
     try {
       await SecureStore.setItemAsync(USER_CACHE_KEY, JSON.stringify(user));
-      await SecureStore.setItemAsync(USER_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      await SecureStore.setItemAsync(
+        USER_CACHE_TIMESTAMP_KEY,
+        Date.now().toString(),
+      );
     } catch (error) {
       console.error("Error caching user:", error);
     }
@@ -151,7 +120,7 @@ export function useCurrentUser() {
 
   const loadCurrentUser = async () => {
     try {
-      const { accessToken, refreshToken } = await auth.getTokens();
+      const { accessToken, refreshToken } = await getTokens();
 
       if (!accessToken) {
         setCurrentUser(null);
@@ -182,7 +151,7 @@ export function useCurrentUser() {
         // Check if email verification is required
         if (err.message?.includes("Email not verified")) {
           console.log("Email not verified, redirecting to verification");
-          await auth.clearTokens();
+          await clearTokens();
           await clearCachedUser();
           setCurrentUser(null);
           return;
@@ -192,7 +161,7 @@ export function useCurrentUser() {
         if (refreshToken) {
           try {
             const res = await refresh(refreshToken);
-            await auth.setTokens(res.data.token, res.data.refreshToken);
+            await setTokens(res.data.token, res.data.refreshToken);
             const me2 = await getMe(res.data.token);
             const user2 = me2.data as CurrentUser;
             const user2WithToken = { ...user2, token: res.data.token };
@@ -202,12 +171,12 @@ export function useCurrentUser() {
           } catch (e2: any) {
             console.warn("Token refresh failed", e2);
             if (e2.message?.includes("Email not verified")) {
-              await auth.clearTokens();
+              await clearTokens();
               await clearCachedUser();
               setCurrentUser(null);
               return;
             }
-            await auth.clearTokens();
+            await clearTokens();
             await clearCachedUser();
           }
         }

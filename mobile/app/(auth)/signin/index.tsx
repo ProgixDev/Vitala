@@ -13,7 +13,7 @@ import {
 import LoadingScreen from "@/components/LoadingScreen";
 import PasswordInput from "@/components/PasswordInput";
 import { login as apiLogin } from "@/utils/api";
-import { auth } from "@/hooks/useCurrentUser";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
@@ -22,6 +22,8 @@ export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const { setTokens } = useCurrentUser();
 
   // Handle back button - prevent going back from signin page
   useEffect(() => {
@@ -50,58 +52,48 @@ export default function SignIn() {
     try {
       setIsLoading(true);
 
-      // Try backend login first
-      try {
-        const resp = await apiLogin(email, password);
-        const { user: apiUser, token, refreshToken } = resp.data;
+      const resp = await apiLogin(email, password);
+      const { user: apiUser, token, refreshToken } = resp.data;
 
-        // Store tokens
-        await auth.setTokens(token, refreshToken);
+      // Store tokens
+      await setTokens(token, refreshToken);
 
-        console.log("Sign in successful (API)");
-        if (
-          apiUser.userType === "nurse" &&
-          apiUser.status === "pending"
-        ) {
-          router.replace("/profile/pending");
-        } else {
-          router.replace("/(tabs)");
-        }
-        return;
-      } catch (apiErr: any) {
-        // Check if email verification is required
-        if (
-          apiErr.message?.includes("Email not verified") ||
-          apiErr.message?.includes("403")
-        ) {
-          Toast.show({
-            type: "info",
-            text1: "Email Verification Required",
-            text2: "Redirecting to email verification...",
-          });
+      if (apiUser.userType === "nurse" && apiUser.status === "pending") {
+        router.replace("/profile/pending");
+      } else {
+        router.replace("/(tabs)");
+      }
+    } catch (apiErr: any) {
+      if (
+        apiErr.message?.includes("Email not verified") ||
+        apiErr.message?.includes("403")
+      ) {
+        Toast.show({
+          type: "info",
+          text1: "Email Verification Required",
+          text2: "Redirecting to email verification...",
+        });
 
-          // Navigate to signup verification step
-          router.replace({
-            pathname: "/(auth)/signup",
-            params: { step: "verification", email: email },
-          });
-          return;
-        }
-
+        // Navigate to signup verification step
+        router.replace({
+          pathname: "/(auth)/signup",
+          params: { step: "verification", email: email },
+        });
+      } else {
         console.warn("API login failed:", apiErr);
         Toast.show({
           type: "error",
           text1: "Error",
           text2: apiErr.message || "Invalid email or password",
         });
+
+        console.error("Error during sign in:", apiErr);
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Error signing in. Please try again.",
+        });
       }
-    } catch (error) {
-      console.error("Error during sign in:", error);
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: "Error signing in. Please try again.",
-      });
     } finally {
       setIsLoading(false);
     }

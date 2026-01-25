@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Linking,
@@ -25,9 +25,8 @@ interface PrivacySettings {
   smsNotifications: boolean;
 }
 
-export default function PrivacySettings() {
+export default function PrivacySettingsPage() {
   const { currentUser } = useCurrentUser();
-  const [loading, setLoading] = useState(false);
   const [systemPermissions, setSystemPermissions] = useState({
     location: false,
     notifications: false,
@@ -40,13 +39,7 @@ export default function PrivacySettings() {
     pushNotifications: true,
     smsNotifications: false,
   });
-
-  useEffect(() => {
-    loadSettings();
-    checkSystemPermissions();
-  }, []);
-
-  const checkSystemPermissions = async () => {
+  const checkSystemPermissions = useCallback(async () => {
     // Check location permission
     const locationStatus = await Location.getForegroundPermissionsAsync();
 
@@ -57,9 +50,9 @@ export default function PrivacySettings() {
       location: locationStatus.granted,
       notifications: notificationStatus.granted,
     });
-  };
+  }, []);
 
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     if (!currentUser?.token) return;
 
     try {
@@ -70,7 +63,12 @@ export default function PrivacySettings() {
     } catch (error) {
       console.log("Failed to load settings:", error);
     }
-  };
+  }, [currentUser]);
+
+  useEffect(() => {
+    loadSettings();
+    checkSystemPermissions();
+  }, [checkSystemPermissions, loadSettings]);
 
   const updateSetting = async (key: keyof PrivacySettings, value: any) => {
     if (!currentUser?.token) return;
@@ -168,7 +166,7 @@ export default function PrivacySettings() {
   return (
     <View className="flex-1 bg-[#F9FAFB]">
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 pt-[60px] pb-4 bg-white border-b border-[#F3F4F6]">
+      <View className="flex-row items-center justify-between px-4 pt-15 pb-4 bg-white border-b border-[#F3F4F6]">
         <TouchableOpacity
           className="w-10 h-10 items-center justify-center"
           onPress={() => router.back()}

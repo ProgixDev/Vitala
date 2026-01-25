@@ -2,7 +2,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 interface EmergencyContact {
@@ -22,17 +22,7 @@ export default function EmergencyContacts() {
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (currentUser) {
-      console.log("Current user available, fetching contacts...");
-      fetchContacts();
-    } else {
-      console.log("No current user, setting loading to false");
-      setLoading(false);
-    }
-  }, [currentUser]);
-
-  const fetchContacts = async () => {
+  const fetchContacts = useCallback(async () => {
     if (!currentUser?.token) {
       setLoading(false);
       return;
@@ -48,7 +38,17 @@ export default function EmergencyContacts() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (currentUser) {
+      console.log("Current user available, fetching contacts...");
+      fetchContacts();
+    } else {
+      console.log("No current user, setting loading to false");
+      setLoading(false);
+    }
+  }, [currentUser, fetchContacts]);
 
   const deleteContact = async (contactId: string, name: string) => {
     Alert.alert("Delete Contact", `Are you sure you want to delete ${name}?`, [
@@ -61,7 +61,7 @@ export default function EmergencyContacts() {
           try {
             await api.deleteEmergencyContact(currentUser.token, contactId);
             setContacts(contacts.filter((c) => c._id !== contactId));
-          } catch (error) {
+          } catch {
             Alert.alert("Error", "Failed to delete contact");
           }
         },
@@ -80,7 +80,7 @@ export default function EmergencyContacts() {
   return (
     <View className="flex-1 bg-[#F9FAFB]">
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 pt-[60px] pb-4 bg-white border-b border-[#F3F4F6]">
+      <View className="flex-row items-center justify-between px-4 pt-15 pb-4 bg-white border-b border-[#F3F4F6]">
         <TouchableOpacity
           className="w-10 h-10 items-center justify-center"
           onPress={() => router.back()}

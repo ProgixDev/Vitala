@@ -11,7 +11,7 @@ import {
 
 import LoadingScreen from "@/components/LoadingScreen";
 import { registerNurse } from "@/utils/api";
-import { auth } from "@/hooks/useCurrentUser";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
 import InfoStep from "../components/InfoStep";
@@ -38,6 +38,8 @@ export default function NurseSignUp() {
   const [idFrontUri, setIdFrontUri] = useState<string | undefined>();
   const [idBackUri, setIdBackUri] = useState<string | undefined>();
   const [selfieUri, setSelfieUri] = useState<string | undefined>();
+
+  const { setTokens } = useCurrentUser();
 
   const handleBack = useCallback(() => {
     if (step === "review") {
@@ -211,9 +213,9 @@ export default function NurseSignUp() {
 
         const resp = await registerNurse(form);
         console.log("Nurse registration response:", resp);
-        const {  token, refreshToken } = resp.data;
+        const { token, refreshToken } = resp.data;
 
-        await auth.setTokens(token, refreshToken);
+        await setTokens(token, refreshToken);
 
         Toast.show({
           type: "success",

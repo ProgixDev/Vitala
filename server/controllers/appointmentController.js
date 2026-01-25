@@ -1,4 +1,5 @@
 const Appointment = require("../models/Appointment");
+const Payment = require("../models/Payment");
 const User = require("../models/User");
 const Notification = require("../models/Notification");
 
@@ -13,46 +14,41 @@ exports.createAppointment = async (req, res) => {
       scheduledDate,
       scheduledTime,
       location,
-      symptoms,
-      notes,
       price,
       duration,
-      nurse,
     } = req.body;
 
     const appointment = await Appointment.create({
       patient: req.user._id,
-      nurse,
       service,
       appointmentType,
       scheduledDate: new Date(scheduledDate),
       scheduledTime,
       location,
-      symptoms,
-      notes,
       price,
       duration,
       status: appointmentType === "emergency" ? "pending" : "pending",
     });
 
-    await appointment.populate("patient nurse");
+    // Create payment along with appointment
+    const payment = await Payment.create({
+      appointment: appointment._id,
+      user: req.user._id,
+      amount: price,
+      currency: "USD",
+      status: "pending",
+    });
 
-    // Create notification for nurse if assigned
-    if (nurse) {
-      await Notification.create({
-        user: nurse,
-        title: "New Appointment Request",
-        message: `You have a new ${appointmentType} appointment request`,
-        type: "appointment",
-        relatedAppointment: appointment._id,
-      });
-    }
+    // Set payment reference in appointment
+    appointment.payment = payment._id;
+    await appointment.save();
 
     res.status(201).json({
       success: true,
       data: appointment,
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({
       success: false,
       message: "Error creating appointment",
@@ -88,42 +84,15 @@ exports.getAppointments = async (req, res) => {
     }
 
     const appointments = await Appointment.find(query)
-      .populate("patient nurse")
+      .populate("patient", "fullName email userType")
+      .populate("nurse", "fullName email userType")
+      .populate("payment", "amount currency status")
       .sort({ scheduledDate: -1 });
-
-    // Fetch payment data for each appointment
-    const Payment = require("../models/Payment");
-    const appointmentsWithPayments = await Promise.all(
-      appointments.map(async (appointment) => {
-        const payment = await Payment.findOne({ appointment: appointment._id });
-        const appointmentObj = appointment.toObject();
-
-        if (payment) {
-          appointmentObj.payment = {
-            status: payment.status,
-            amount: payment.amount,
-            currency: payment.currency || "USD",
-            method: payment.paymentMethod,
-            reference: payment.receiptNumber,
-            transactionDate: payment.createdAt,
-          };
-        } else {
-          // Default payment object if no payment exists
-          appointmentObj.payment = {
-            status: "pending",
-            amount: appointmentObj.price || 0,
-            currency: "USD",
-          };
-        }
-
-        return appointmentObj;
-      }),
-    );
 
     res.status(200).json({
       success: true,
-      count: appointmentsWithPayments.length,
-      data: appointmentsWithPayments,
+      count: appointments.length,
+      data: appointments,
     });
   } catch (error) {
     res.status(500).json({
@@ -142,13 +111,10 @@ exports.getAppointmentById = async (req, res) => {
     console.log("Getting appointment by ID:", req.params.id);
     console.log("User:", req.user._id, req.user.userType);
 
-    const appointment = await Appointment.findById(req.params.id).populate(
-      "patient nurse",
-    );
-
-    // Fetch payment data separately
-    const Payment = require("../models/Payment");
-    const payment = await Payment.findOne({ appointment: req.params.id });
+    const appointment = await Appointment.findById(req.params.id)
+      .populate("patient", "fullName email userType")
+      .populate("nurse", "fullName email userType")
+      .populate("payment");
 
     console.log("Appointment found:", !!appointment);
     if (appointment) {
@@ -163,53 +129,21 @@ exports.getAppointmentById = async (req, res) => {
       });
     }
 
-    // Check if user is authorized
-    const patientId = appointment.patient?._id
-      ? appointment.patient._id.toString()
-      : appointment.patient?.toString();
-    const nurseId = appointment.nurse?._id
-      ? appointment.nurse._id.toString()
-      : appointment.nurse?.toString();
-    const userId = req.user._id.toString();
-
-    console.log("Authorization check:", {
-      patientId,
-      nurseId,
-      userId,
-      userType: req.user.userType,
-      appointmentId: appointment._id.toString(),
-    });
-
-    // Temporarily allow all authenticated users to view appointments for debugging
-    // TODO: Fix the authorization logic
-    /*
-    if (
-      patientId !== userId &&
-      nurseId !== userId &&
-      req.user.userType !== "admin"
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: "Not authorized to view this appointment",
-      });
-    }
-    */
-
     const appointmentObj = appointment.toObject();
 
     res.status(200).json({
       success: true,
       data: {
         ...appointmentObj,
-        payment: payment
+        payment: appointment.payment
           ? {
-              id: payment._id,
-              status: payment.status,
-              amount: payment.amount,
-              method: payment.paymentMethod,
-              currency: payment.currency || "USD",
-              reference: payment.receiptNumber,
-              transactionDate: payment.createdAt,
+              id: appointment.payment._id,
+              status: appointment.payment.status,
+              amount: appointment.payment.amount,
+              method: appointment.payment.paymentMethod,
+              currency: appointment.payment.currency || "USD",
+              reference: appointment.payment.receiptNumber,
+              transactionDate: appointment.payment.createdAt,
             }
           : {
               status: "pending",
@@ -249,7 +183,10 @@ exports.updateAppointmentStatus = async (req, res) => {
     }
 
     await appointment.save();
-    await appointment.populate("patient nurse service");
+    await appointment
+      .populate("patient", "fullName email userType")
+      .populate("nurse", "fullName email userType")
+      .populate("payment");
 
     // Create notification
     const notifyUser =
@@ -301,6 +238,15 @@ exports.cancelAppointment = async (req, res) => {
     appointment.cancelledAt = new Date();
 
     await appointment.save();
+
+    // Cancel associated payment if it's pending
+    if (appointment.payment) {
+      const payment = await Payment.findById(appointment.payment);
+      if (payment && payment.status === "pending") {
+        payment.status = "cancelled";
+        await payment.save();
+      }
+    }
 
     res.status(200).json({
       success: true,
@@ -424,7 +370,10 @@ exports.assignNurse = async (req, res) => {
 
     appointment.nurse = nurseId;
     await appointment.save();
-    await appointment.populate("patient nurse service");
+    await appointment
+      .populate("patient", "fullName email userType")
+      .populate("nurse", "fullName email userType")
+      .populate("payment");
 
     // Create notification for nurse
     await Notification.create({
@@ -654,6 +603,88 @@ exports.checkNurseAvailability = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error checking nurse availability",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Get unassigned appointments
+// @route   GET /api/appointments/unassigned
+// @access  Private (Nurse)
+exports.getUnassignedAppointments = async (req, res) => {
+  console.log("Fetching unassigned appointments...");
+  try {
+    const appointments = await Appointment.find({
+      nurse: { $exists: false },
+      status: { $in: ["pending", "confirmed"] },
+    })
+      .populate("patient", "fullName email userType")
+      .populate("payment")
+      .sort({ scheduledDate: -1 });
+
+    console.log(appointments);
+
+    res.status(200).json({
+      success: true,
+      count: appointments.length,
+      data: appointments,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Error fetching unassigned appointments",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Assign self to appointment
+// @route   PUT /api/appointments/:id/assign-self
+// @access  Private (Nurse)
+exports.assignSelf = async (req, res) => {
+  try {
+    const appointment = await Appointment.findById(req.params.id);
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: "Appointment not found",
+      });
+    }
+
+    if (appointment.nurse) {
+      return res.status(400).json({
+        success: false,
+        message: "Appointment already assigned",
+      });
+    }
+
+    appointment.nurse = req.user._id;
+    await appointment.save();
+    await appointment
+      .populate("patient", "fullName email userType")
+      .populate("nurse", "fullName email userType")
+      .populate("payment");
+
+    // Create notification for patient
+    await Notification.create({
+      user: appointment.patient,
+      title: "Nurse Assigned",
+      message: "A nurse has been assigned to your appointment",
+      type: "appointment",
+      relatedAppointment: appointment._id,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: appointment,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error assigning appointment",
       error: error.message,
     });
   }

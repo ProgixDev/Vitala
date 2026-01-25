@@ -7,7 +7,6 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   BackHandler,
   FlatList,
-  RefreshControl,
   Text,
   TouchableOpacity,
   View,
@@ -21,7 +20,7 @@ interface Transaction {
   amount: number;
   currency: string;
   date: string;
-  status: "completed" | "pending" | "failed";
+  status: "completed" | "pending" | "failed" | "cancelled";
   paymentMethod: string;
   receiptNumber?: string;
   appointmentId?: string;
@@ -35,21 +34,10 @@ const getStatusColor = (status: string) => {
       return "#F59E0B";
     case "failed":
       return "#EF4444";
+    case "cancelled":
+      return "#6B7280";
     default:
       return "#6B7280";
-  }
-};
-
-const getStatusBgColor = (status: string) => {
-  switch (status) {
-    case "completed":
-      return "#D1FAE5";
-    case "pending":
-      return "#FEF3C7";
-    case "failed":
-      return "#FEE2E2";
-    default:
-      return "#F3F4F6";
   }
 };
 
@@ -76,7 +64,6 @@ const TransactionItem: React.FC<TransactionItemProps> = ({
   onPress,
 }) => {
   const statusColor = getStatusColor(transaction.status);
-  const statusBgColor = getStatusBgColor(transaction.status);
   const iconName = getTransactionIcon(transaction.type);
   const isRefund = transaction.type === "refund";
 
@@ -132,9 +119,8 @@ export default function TransactionHistory() {
   const { currentUser } = useCurrentUser();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<
-    "all" | "completed" | "pending" | "failed"
+    "all" | "completed" | "pending" | "failed" | "cancelled"
   >("all");
   const [statistics, setStatistics] = useState<{
     totalSpent: number;
@@ -150,19 +136,13 @@ export default function TransactionHistory() {
   const fetchTransactions = useCallback(async () => {
     try {
       if (!currentUser?.token) {
-        Toast.show({
-          type: "error",
-          text1: "Authentication Error",
-          text2: "Please log in again",
-        });
         return;
       }
 
       // Fetch transactions with filter
-      const filterParam = filter !== "all" ? { status: filter } : {};
-      const result = await api.getTransactions(currentUser.token, filterParam);
+      const result = await api.getTransactions(currentUser.token);
 
-      if (result.success) {
+      if (result.success && result.data) {
         // Format transactions for display
         const formattedTransactions = result.data.map((trans: any) => ({
           ...trans,
@@ -199,9 +179,8 @@ export default function TransactionHistory() {
       });
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
-  }, [filter]);
+  }, [currentUser?.token]);
 
   // Fetch on mount and when filter changes
   useEffect(() => {
@@ -214,11 +193,6 @@ export default function TransactionHistory() {
       fetchTransactions();
     }, [fetchTransactions]),
   );
-
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchTransactions();
-  }, [fetchTransactions]);
 
   const handleTransactionPress = (transactionId: string) => {
     // Navigate to appointment details if appointmentId exists
@@ -239,7 +213,7 @@ export default function TransactionHistory() {
     const backHandler = BackHandler.addEventListener(
       "hardwareBackPress",
       () => {
-        router.replace("/(tabs)/profile");
+        router.back();
         return true;
       },
     );
@@ -247,7 +221,10 @@ export default function TransactionHistory() {
     return () => backHandler.remove();
   }, []);
 
-  const filteredTransactions = transactions;
+  const filteredTransactions =
+    filter === "all"
+      ? transactions
+      : transactions.filter((transaction) => transaction.status === filter);
 
   return (
     <View className="flex-1 bg-[#F9FAFB]">
@@ -255,10 +232,10 @@ export default function TransactionHistory() {
       {!loading && (
         <>
           {/* Header */}
-          <View className="flex-row items-center justify-between px-4 pt-[60px] pb-4 bg-white border-b border-[#F3F4F6]">
+          <View className="flex-row items-center justify-between px-4 pt-15 pb-4 bg-white border-b border-[#F3F4F6]">
             <TouchableOpacity
               className="w-10 h-10 items-center justify-center"
-              onPress={() => router.replace("/(tabs)/profile")}
+              onPress={() => router.back()}
             >
               <Ionicons name="arrow-back" size={24} color="#1F2937" />
             </TouchableOpacity>
@@ -368,6 +345,22 @@ export default function TransactionHistory() {
                   Failed
                 </Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                className={`px-4 py-2 rounded-full ${
+                  filter === "cancelled"
+                    ? "bg-[#6B7280]"
+                    : "bg-white border border-gray-200"
+                }`}
+                onPress={() => setFilter("cancelled")}
+              >
+                <Text
+                  className={`text-sm font-medium ${
+                    filter === "cancelled" ? "text-white" : "text-[#6B7280]"
+                  }`}
+                >
+                  Cancelled
+                </Text>
+              </TouchableOpacity>
             </View>
 
             {/* Results Count & Clear Filters */}
@@ -408,14 +401,6 @@ export default function TransactionHistory() {
                   onPress={() => handleTransactionPress(item.id)}
                 />
               )}
-              refreshControl={
-                <RefreshControl
-                  refreshing={refreshing}
-                  onRefresh={onRefresh}
-                  colors={["#4461F2"]}
-                  tintColor="#4461F2"
-                />
-              }
               contentContainerStyle={{
                 paddingHorizontal: 24,
                 paddingBottom: 24,

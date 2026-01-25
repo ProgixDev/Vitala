@@ -45,7 +45,7 @@ export default function NurseProfile() {
     };
 
     loadNurseData();
-  }, [id]);
+  }, [id, currentUser]);
 
   if (loading) {
     return (
@@ -97,7 +97,7 @@ export default function NurseProfile() {
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Hero Section with Gradient */}
-        <View className="relative h-[420px]">
+        <View className="relative h-100">
           {/* Gradient Background */}
           <View className="absolute inset-0 bg-[#4461F2]" />
 
@@ -105,7 +105,7 @@ export default function NurseProfile() {
           <View className="absolute bottom-0 left-0 right-0 items-center pb-8">
             <Image
               source={{ uri: `https://i.pravatar.cc/300?u=${nurse.email}` }}
-              className="w-[280px] h-[280px] rounded-full border-8 border-white shadow-xl mb-4"
+              className="w-70 h-70 rounded-full border-8 border-white shadow-xl mb-4"
             />
             <Text className="text-[32px] font-bold text-white drop-shadow-lg">
               {firstName}

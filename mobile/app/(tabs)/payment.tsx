@@ -71,9 +71,11 @@ export default function PaymentdPage() {
         return;
       }
 
-      const result = await api.getTransactions(currentUser.token, { limit: "5" });
+      const result = await api.getTransactions(currentUser.token, {
+        limit: "5",
+      });
 
-      if (result.success) {
+      if (result.success && result.data) {
         const formattedPayments = result.data.map((trans: any) => ({
           id: trans.id,
           description: trans.service,
@@ -334,7 +336,7 @@ export default function PaymentdPage() {
           </View>
 
           {/* Saved Cards Section */}
-          <View className="mb-[30px]">
+          <View className="mb-12">
             <Text className="text-xl font-semibold text-[#2D3142] mb-5">
               Saved Cards ({cards.length})
             </Text>
@@ -413,7 +415,7 @@ export default function PaymentdPage() {
           </View>
 
           {/* Add New Card */}
-          <View className="mb-[30px]">
+          <View className="mb-12">
             <TouchableOpacity
               className="bg-white rounded-[20px] p-4 shadow-sm flex-row items-center"
               onPress={() => setShowAddCardModal(true)}
@@ -426,7 +428,7 @@ export default function PaymentdPage() {
           </View>
 
           {/* Recent Payments */}
-          <View className="mb-[30px]">
+          <View className="mb-12">
             <View className="flex-row justify-between items-center mb-5">
               <Text className="text-xl font-semibold text-[#2D3142]">
                 Recent Payments

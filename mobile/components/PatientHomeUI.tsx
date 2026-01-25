@@ -265,8 +265,8 @@ export default function PatientHomeUI() {
           </View>
 
           {/* Search Bar */}
-          <View className="mb-[30px]">
-            <View className="flex-row items-center bg-white rounded-[25px] px-4 h-[60px] gap-2.5">
+          <View className="mb-7">
+            <View className="flex-row items-center bg-white rounded-[25px] px-4 h-15 gap-2.5">
               <Ionicons name="search" size={20} color="#9E9E9E" />
               <TextInput
                 className="flex-1 text-base text-[#2D3142]"
@@ -288,14 +288,14 @@ export default function PatientHomeUI() {
 
           {/* Services Section */}
           {loading ? (
-            <View className="mb-[30px] items-center justify-center py-10">
+            <View className="mb-7 items-center justify-center py-10">
               <Ionicons name="refresh" size={40} color="#4461F2" />
               <Text className="text-base text-[#2D3142] mt-4">
                 Loading services...
               </Text>
             </View>
           ) : searchQuery.length === 0 ? (
-            <View className="mb-[30px]">
+            <View className="mb-7">
               <View className="flex-row justify-between items-center mb-5">
                 <Text className="text-xl font-semibold text-[#2D3142]">
                   Choose a service
@@ -329,7 +329,7 @@ export default function PatientHomeUI() {
               </View>
             </View>
           ) : (
-            <View className="mb-[30px]">
+            <View className="mb-7">
               <Text className="text-xl font-semibold text-[#2D3142] mb-5">
                 Search Results ({filteredServices.length})
               </Text>
@@ -385,10 +385,10 @@ export default function PatientHomeUI() {
                 <Text className="text-xs text-white mb-3 opacity-90">
                   Trusted Nurses on your schedule 😊
                 </Text>
-                <Text className="text-2xl font-bold text-white leading-[30px]">
+                <Text className="text-2xl font-bold text-white leading-7">
                   Consult A Nurse
                 </Text>
-                <Text className="text-2xl font-bold text-white leading-[30px]">
+                <Text className="text-2xl font-bold text-white leading-7">
                   — Book Today!
                 </Text>
                 <View className="flex-row items-center mt-4 gap-3">
@@ -409,7 +409,7 @@ export default function PatientHomeUI() {
               </View>
               <Image
                 source={require("@/assets/images/doctor.png")}
-                className="w-36 h-[180px] absolute right-0 bottom-0"
+                className="w-36 h-45 absolute right-0 bottom-0"
                 resizeMode="contain"
               />
             </View>
@@ -422,13 +422,13 @@ export default function PatientHomeUI() {
                 <Text className="text-xs text-white mb-3 opacity-90">
                   Need Urgent Help?
                 </Text>
-                <Text className="text-2xl font-bold text-white leading-[30px]">
+                <Text className="text-2xl font-bold text-white leading-7">
                   We&apos;re Here for You 24/7
                 </Text>
               </View>
               <Image
                 source={require("@/assets/images/nurse.png")}
-                className="h-[165px] relative -right-2.5 bottom-0"
+                className="h-40 relative -right-2.5 bottom-0"
                 resizeMode="contain"
               />
             </View>

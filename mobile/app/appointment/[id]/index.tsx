@@ -181,7 +181,10 @@ export default function AppointmentDetails() {
         return;
       }
 
-      const result = await api.getAppointmentById(currentUser.token, id as string);
+      const result = await api.getAppointmentById(
+        currentUser.token,
+        id as string,
+      );
       if (result.success) {
         const appointmentData = result.data;
 
@@ -220,15 +223,14 @@ export default function AppointmentDetails() {
         try {
           if (currentUser?.token) {
             const listRes = await api.getAppointments(currentUser.token);
-            if (listRes.success) {
+            if (listRes.success && listRes.data) {
               const found = listRes.data.find(
                 (a: any) => a._id === id || a.id === id,
               );
               if (found) {
                 const fallback = {
-                  id: found._id || found.id,
-                  serviceName:
-                    found.service || found.serviceName || "Unknown Service",
+                  id: found._id,
+                  serviceName: found.service,
                   date: found.scheduledDate
                     ? new Date(found.scheduledDate).toLocaleDateString()
                     : "",
@@ -264,7 +266,7 @@ export default function AppointmentDetails() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, currentUser]);
 
   useEffect(() => {
     loadAppointment();

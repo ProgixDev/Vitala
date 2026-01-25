@@ -359,7 +359,7 @@ export async function getAppointments(
   filters?: { status?: string; type?: string },
 ) {
   const queryParams = filters ? `?${new URLSearchParams(filters)}` : "";
-  return apiFetch<{ success: boolean; count: number; data: any[] }>(
+  return apiFetch<ApiResponse<ApiAppointment[]>>(
     `/api/appointments${queryParams}`,
     { token },
   );
@@ -484,13 +484,33 @@ export async function checkNurseAvailability(
   );
 }
 
+export async function getUnassignedAppointments(token: string) {
+  return apiFetch<{ success: boolean; count: number; data: any[] }>(
+    `/api/appointments/unassigned`,
+    { token },
+  );
+}
+
+export async function assignSelfAppointment(
+  token: string,
+  appointmentId: string,
+) {
+  return apiFetch<{ success: boolean; data: any }>(
+    `/api/appointments/${appointmentId}/assign-self`,
+    {
+      method: "PUT",
+      token,
+    },
+  );
+}
+
 // Transactions
 export async function getTransactions(
   token: string,
   filters?: { status?: string; type?: string; limit?: string },
 ) {
   const queryParams = filters ? `?${new URLSearchParams(filters as any)}` : "";
-  return apiFetch<{ success: boolean; count: number; data: any[] }>(
+  return apiFetch<ApiResponse<ApiTransaction[]>>(
     `/api/payments/transactions${queryParams}`,
     { token },
   );
@@ -700,9 +720,11 @@ export const api = {
   acceptAppointment,
   declineAppointment,
   assignNurse,
+  assignSelfAppointment,
   deleteAppointment,
   getAvailableTimeSlots,
   checkNurseAvailability,
+  getUnassignedAppointments,
   getTransactions,
   getTransactionById,
   getUserStatistics,

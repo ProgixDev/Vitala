@@ -11,7 +11,7 @@ import {
 
 import LoadingScreen from "@/components/LoadingScreen";
 import { registerPatient } from "@/utils/api";
-import { auth } from "@/hooks/useCurrentUser";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { router, useLocalSearchParams } from "expo-router";
 import Toast from "react-native-toast-message";
 import EmailVerificationStep from "./components/EmailVerificationStep";
@@ -73,6 +73,8 @@ export default function SignUp() {
       router.replace("/signup/choose");
     }
   }, [step]);
+
+  const { setTokens } = useCurrentUser();
   // Handle back button/swipe
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
@@ -197,8 +199,8 @@ export default function SignUp() {
           medicalProfile,
         });
 
-        const {  token, refreshToken } = resp.data;
-        await auth.setTokens(token, refreshToken);
+        const { token, refreshToken } = resp.data;
+        await setTokens(token, refreshToken);
 
         // Start the resend timer
         setTimer(59);

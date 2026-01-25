@@ -1,7 +1,7 @@
 import { api } from "@/utils/api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 
 interface EmergencyStatus {
@@ -79,15 +79,7 @@ export default function EmergencyStatusTracker({
   const [status, setStatus] = useState<EmergencyStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchStatus();
-    // Poll for updates every 30 seconds
-    const interval = setInterval(fetchStatus, 30000);
-    return () => clearInterval(interval);
-  }, [appointmentId]);
-
-  const fetchStatus = async () => {
+  const fetchStatus = useCallback(async () => {
     try {
       if (!currentUser?.token) {
         setError("Authentication required");
@@ -100,12 +92,18 @@ export default function EmergencyStatusTracker({
       )) as { data: EmergencyStatus };
       setStatus(response.data);
       setError(null);
-    } catch (err) {
+    } catch {
       setError("Failed to fetch emergency status");
     } finally {
       setLoading(false);
     }
-  };
+  }, [appointmentId, currentUser]);
+  useEffect(() => {
+    fetchStatus();
+    // Poll for updates every 30 seconds
+    const interval = setInterval(fetchStatus, 30000);
+    return () => clearInterval(interval);
+  }, [appointmentId, fetchStatus]);
 
   if (loading) {
     return (
@@ -136,7 +134,7 @@ export default function EmergencyStatusTracker({
   return (
     <View className="flex-1 bg-[#F9FAFB]">
       {/* Header */}
-      <View className="px-4 pt-[60px] pb-4 bg-white border-b border-[#F3F4F6]">
+      <View className="px-4 pt-15 pb-4 bg-white border-b border-[#F3F4F6]">
         <View className="flex-row justify-between items-center">
           <Text className="text-lg font-semibold text-[#1F2937]">
             Emergency Status
