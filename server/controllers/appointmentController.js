@@ -108,19 +108,10 @@ exports.getAppointments = async (req, res) => {
 // @access  Private
 exports.getAppointmentById = async (req, res) => {
   try {
-    console.log("Getting appointment by ID:", req.params.id);
-    console.log("User:", req.user._id, req.user.userType);
-
     const appointment = await Appointment.findById(req.params.id)
-      .populate("patient", "fullName email userType")
+      .populate("patient", "fullName email userType medicalProfile")
       .populate("nurse", "fullName email userType")
       .populate("payment");
-
-    console.log("Appointment found:", !!appointment);
-    if (appointment) {
-      console.log("Appointment patient:", appointment.patient);
-      console.log("Appointment nurse:", appointment.nurse);
-    }
 
     if (!appointment) {
       return res.status(404).json({
@@ -128,29 +119,9 @@ exports.getAppointmentById = async (req, res) => {
         message: "Appointment not found",
       });
     }
-
-    const appointmentObj = appointment.toObject();
-
     res.status(200).json({
       success: true,
-      data: {
-        ...appointmentObj,
-        payment: appointment.payment
-          ? {
-              id: appointment.payment._id,
-              status: appointment.payment.status,
-              amount: appointment.payment.amount,
-              method: appointment.payment.paymentMethod,
-              currency: appointment.payment.currency || "USD",
-              reference: appointment.payment.receiptNumber,
-              transactionDate: appointment.payment.createdAt,
-            }
-          : {
-              status: "pending",
-              amount: appointmentObj.price || 0,
-              currency: "USD",
-            },
-      },
+      data: appointment.toObject(),
     });
   } catch (error) {
     res.status(500).json({
@@ -167,7 +138,10 @@ exports.getAppointmentById = async (req, res) => {
 exports.updateAppointmentStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    const appointment = await Appointment.findById(req.params.id);
+    const appointment = await Appointment.findById(req.params.id)
+      .populate("patient", "fullName email userType medicalProfile")
+      .populate("nurse", "fullName email userType")
+      .populate("payment");
 
     if (!appointment) {
       return res.status(404).json({
@@ -183,10 +157,6 @@ exports.updateAppointmentStatus = async (req, res) => {
     }
 
     await appointment.save();
-    await appointment
-      .populate("patient", "fullName email userType")
-      .populate("nurse", "fullName email userType")
-      .populate("payment");
 
     // Create notification
     const notifyUser =
@@ -209,6 +179,7 @@ exports.updateAppointmentStatus = async (req, res) => {
       data: appointment,
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({
       success: false,
       message: "Error updating appointment status",
@@ -356,7 +327,10 @@ exports.assignNurse = async (req, res) => {
     }
 
     // Check if nurse exists and is approved
-    const nurse = await User.findById(nurseId);
+    const nurse = await User.findById(nurseId)
+      .populate("patient", "fullName email userType")
+      .populate("nurse", "fullName email userType")
+      .populate("payment");
     if (
       !nurse ||
       nurse.userType !== "nurse" ||
@@ -370,10 +344,6 @@ exports.assignNurse = async (req, res) => {
 
     appointment.nurse = nurseId;
     await appointment.save();
-    await appointment
-      .populate("patient", "fullName email userType")
-      .populate("nurse", "fullName email userType")
-      .populate("payment");
 
     // Create notification for nurse
     await Notification.create({
@@ -645,7 +615,10 @@ exports.getUnassignedAppointments = async (req, res) => {
 // @access  Private (Nurse)
 exports.assignSelf = async (req, res) => {
   try {
-    const appointment = await Appointment.findById(req.params.id);
+    const appointment = await Appointment.findById(req.params.id)
+      .populate("patient", "fullName email userType")
+      .populate("nurse", "fullName email userType")
+      .populate("payment");
 
     if (!appointment) {
       return res.status(404).json({
@@ -663,10 +636,6 @@ exports.assignSelf = async (req, res) => {
 
     appointment.nurse = req.user._id;
     await appointment.save();
-    await appointment
-      .populate("patient", "fullName email userType")
-      .populate("nurse", "fullName email userType")
-      .populate("payment");
 
     // Create notification for patient
     await Notification.create({

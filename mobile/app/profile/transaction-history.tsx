@@ -2,8 +2,8 @@ import LoadingScreen from "@/components/LoadingScreen";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useFocusEffect } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   BackHandler,
   FlatList,
@@ -132,73 +132,65 @@ export default function TransactionHistory() {
     currency: "USD",
   });
 
-  // Fetch transactions from API
-  const fetchTransactions = useCallback(async () => {
-    try {
-      if (!currentUser?.token) {
-        return;
-      }
+  // Fetch on mount and when filter changes
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        if (!currentUser?.token) {
+          return;
+        }
 
-      // Fetch transactions with filter
-      const result = await api.getTransactions(currentUser.token);
+        // Fetch transactions with filter
+        const result = await api.getTransactions(currentUser.token);
 
-      if (result.success && result.data) {
-        // Format transactions for display
-        const formattedTransactions = result.data.map((trans: any) => ({
-          ...trans,
-          date: new Date(trans.date).toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          }),
-        }));
-        setTransactions(formattedTransactions);
+        if (result.success && result.data) {
+          // Format transactions for display
+          const formattedTransactions = result.data.map((trans: any) => ({
+            ...trans,
+            date: new Date(trans.date).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            }),
+          }));
+          setTransactions(formattedTransactions);
 
-        // Fetch statistics
-        const statsResult = await api.getUserStatistics(currentUser.token);
-        if (statsResult.success) {
-          setStatistics({
-            totalSpent: statsResult.data.totalSpent,
-            totalRefunds: statsResult.data.totalRefunds,
-            currency: statsResult.data.currency,
+          // Fetch statistics
+          const statsResult = await api.getUserStatistics(currentUser.token);
+          if (statsResult.success) {
+            setStatistics({
+              totalSpent: statsResult.data.totalSpent,
+              totalRefunds: statsResult.data.totalRefunds,
+              currency: statsResult.data.currency,
+            });
+          }
+        } else {
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2: "Failed to load transactions",
           });
         }
-      } else {
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
         Toast.show({
           type: "error",
           text1: "Error",
           text2: "Failed to load transactions",
         });
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching transactions:", error);
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: "Failed to load transactions",
-      });
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    fetchTransactions();
   }, [currentUser?.token]);
 
-  // Fetch on mount and when filter changes
-  useEffect(() => {
-    fetchTransactions();
-  }, [fetchTransactions]);
-
-  // Refresh when screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      fetchTransactions();
-    }, [fetchTransactions]),
-  );
-
   const handleTransactionPress = (transactionId: string) => {
-    // Navigate to appointment details if appointmentId exists
+    // Navigate to payment details if appointmentId exists
     const transaction = transactions.find((t) => t.id === transactionId);
     if (transaction?.appointmentId) {
-      router.push(`/appointment/${transaction.appointmentId}/status`);
+      router.push(`/appointment/${transaction.appointmentId}/payment`);
     } else {
       Toast.show({
         type: "info",

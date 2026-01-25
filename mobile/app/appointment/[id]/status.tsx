@@ -8,7 +8,6 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
-  Linking,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -63,121 +62,40 @@ const statusSteps = [
 export default function AppointmentStatus() {
   const { id } = useLocalSearchParams();
   const { currentUser } = useCurrentUser();
-  const [appointment, setAppointment] = useState<Appointment | null>(null);
+  const [appointment, setAppointment] = useState<ApiAppointment | null>(null);
   const [loading, setLoading] = useState(true);
-  const [nurse, setNurse] = useState<User | null>(null);
-  const [partialAppointment, setPartialAppointment] = useState<any | null>(
-    null,
-  );
-  const [error, setError] = useState<string | null>(null);
-
-  const loadAppointment = React.useCallback(async () => {
-    try {
-      if (!currentUser?.token) {
-        setError("Not authenticated");
-        setLoading(false);
-        return;
-      }
-
-      const result = await api.getAppointmentById(
-        currentUser.token,
-        id as string,
-      );
-      if (result.success) {
-        const appointmentData = result.data;
-
-        const formattedAppointment = {
-          ...appointmentData,
-          serviceName:
-            appointmentData.serviceName ||
-            getServiceNameById(appointmentData.service) ||
-            appointmentData.service ||
-            "Unknown Service",
-          date: appointmentData.scheduledDate
-            ? new Date(appointmentData.scheduledDate).toLocaleDateString(
-                "en-US",
-                {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                },
-              )
-            : "",
-          time: appointmentData.scheduledTime?.start || "",
-          duration: appointmentData.duration
-            ? `${appointmentData.duration} minutes`
-            : "Unknown duration",
-        };
-
-        setAppointment(formattedAppointment);
-
-        // populate nurse if present in API response
-        if (appointmentData.nurse) {
-          setNurse(appointmentData.nurse);
-        }
-      } else {
-        setAppointment(null);
-        setError("Appointment not found");
-      }
-    } catch (err) {
-      console.error("Error loading appointment:", err);
-      const msg = String((err as any)?.message || err);
-      if (/not authorized/i.test(msg)) {
-        try {
-          if (currentUser?.token) {
-            const listRes = await api.getAppointments(currentUser.token);
-            if (listRes.success) {
-              const found = listRes.data?.find(
-                (a: any) => a._id === id || a.id === id,
-              );
-              if (found) {
-                const fallback = {
-                  id: found._id,
-                  serviceName:
-                    found.service ||
-                    getServiceNameById(found.service) ||
-                    found.service ||
-                    "Unknown Service",
-                  date: found.scheduledDate
-                    ? new Date(found.scheduledDate).toLocaleDateString()
-                    : "",
-                  time: found.scheduledTime?.start || "",
-                  location: found.location || {},
-                  status: found.status,
-                  payment: found.payment || {
-                    status: "pending",
-                    amount: found.price || 0,
-                    currency: "USD",
-                  },
-                };
-                setPartialAppointment(fallback);
-                setError(
-                  "Limited access: some details are hidden. Here is what we can show.",
-                );
-              } else {
-                setError("Not authorized to view this appointment");
-              }
-            } else {
-              setError("Not authorized to view this appointment");
-            }
-          }
-        } catch (err2) {
-          console.error("Fallback error:", err2);
-          setError("Not authorized to view this appointment");
-        }
-      } else {
-        setError("Failed to load appointment");
-      }
-      setAppointment(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [id, currentUser?.token]);
+  const [nurse, setNurse] = useState<PopulatedUser | null>(null);
 
   useEffect(() => {
+    const loadAppointment = async () => {
+      try {
+        if (!currentUser?.token) {
+          return;
+        }
+
+        const result = await api.getAppointmentById(
+          currentUser.token,
+          id as string,
+        );
+        if (result.success && result.data) {
+          setAppointment(result.data);
+
+          // populate nurse if present in API response
+          if (result.data.nurse) {
+            setNurse(result.data.nurse);
+          }
+        } else {
+          setAppointment(null);
+        }
+      } catch (err) {
+        console.error("Error loading appointment:", err);
+        setAppointment(null);
+      } finally {
+        setLoading(false);
+      }
+    };
     loadAppointment();
-  }, [loadAppointment]);
+  }, [currentUser?.token, id]);
 
   const handleGoBack = () => {
     router.replace("/(tabs)/schedule");
@@ -189,8 +107,7 @@ export default function AppointmentStatus() {
     try {
       if (!currentUser?.token) throw new Error("Not authenticated");
 
-      const appointmentId =
-        ((appointment as any)._id as string) ?? (appointment.id as string);
+      const appointmentId = appointment._id ?? appointment._id;
       const res = await api.cancelAppointment(
         currentUser.token,
         appointmentId,
@@ -244,16 +161,7 @@ export default function AppointmentStatus() {
   };
 
   const handleContinue = async () => {
-    console.log("=== handleContinue called ===");
-    console.log("Appointment:", appointment);
-    console.log("Appointment status:", appointment?.status);
-    console.log("Payment object:", appointment?.payment);
-    console.log("Payment status:", appointment?.payment?.status);
-
-    if (!appointment || !appointment.status) {
-      console.log("No appointment or status, returning early");
-      return;
-    }
+    if (!appointment || !appointment.status) return;
 
     const statusOrder: Appointment["status"][] = [
       "pending",
@@ -263,13 +171,10 @@ export default function AppointmentStatus() {
       "completed",
     ];
 
-    const currentIndex = statusOrder.indexOf(appointment.status);
-    console.log(
-      "Current status index:",
-      currentIndex,
-      "of",
-      statusOrder.length - 1,
-    );
+    const currentIndex =
+      appointment.status !== "declined"
+        ? statusOrder.indexOf(appointment.status)
+        : -1;
 
     if (currentIndex < statusOrder.length - 1) {
       const newStatus = statusOrder[currentIndex + 1];
@@ -278,11 +183,9 @@ export default function AppointmentStatus() {
       try {
         if (!currentUser?.token) throw new Error("Not authenticated");
 
-        const appointmentId =
-          ((appointment as any)._id as string) ?? (appointment.id as string);
         const res = await api.updateAppointmentStatus(
           currentUser.token,
-          appointmentId,
+          appointment._id,
           newStatus,
         );
         if (res.success) {
@@ -334,24 +237,7 @@ export default function AppointmentStatus() {
         });
       }
     } else {
-      // Appointment is completed - navigate to payment if not already paid
-      const appointmentId =
-        ((appointment as any)._id as string) ?? appointment.id;
-      const paymentStatus = appointment.payment?.status;
-
-      console.log("Appointment completed, checking payment...");
-      console.log("Appointment ID for payment:", appointmentId);
-      console.log("Payment status:", paymentStatus);
-
-      // Navigate to payment page if payment is not completed
-      if (paymentStatus !== "completed") {
-        const paymentUrl = `/appointment/${appointmentId}/payment` as const;
-        console.log("Navigating to payment page:", paymentUrl);
-        router.replace(paymentUrl as any);
-      } else {
-        console.log("Payment already completed, going to schedule");
-        router.replace("/(tabs)/schedule");
-      }
+      router.replace(`/appointment/${appointment._id}/payment`);
     }
   };
 
@@ -390,77 +276,15 @@ export default function AppointmentStatus() {
     );
   }
 
-  if (error || !appointment) {
-    return (
-      <View className="flex-1 bg-gray-100 justify-center items-center px-6">
-        <Text className="text-base text-[#FF3B30] text-center">
-          {error || "Appointment not found"}
-        </Text>
-
-        {partialAppointment ? (
-          <View className="bg-white rounded-xl p-4 mt-4 w-full">
-            <Text className="font-semibold text-[#2D3142] mb-2">
-              Limited appointment details
-            </Text>
-            <Text className="text-sm text-[#9E9E9E]">
-              Service: {partialAppointment.serviceName}
-            </Text>
-            <Text className="text-sm text-[#9E9E9E]">
-              Date: {partialAppointment.date}
-            </Text>
-            <Text className="text-sm text-[#9E9E9E]">
-              Time: {partialAppointment.time}
-            </Text>
-            <Text className="text-sm text-[#9E9E9E]">
-              Location:{" "}
-              {partialAppointment.location?.label ||
-                partialAppointment.location?.address ||
-                "N/A"}
-            </Text>
-            <Text className="text-sm text-[#9E9E9E]">
-              Status: {partialAppointment.status}
-            </Text>
-
-            <View className="flex-row gap-2 mt-4">
-              <TouchableOpacity
-                className="bg-[#4461F2] py-3 px-4 rounded-lg"
-                onPress={() => loadAppointment()}
-              >
-                <Text className="text-white font-semibold">Retry</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="bg-white border border-[#E0E0E0] py-3 px-4 rounded-lg"
-                onPress={() =>
-                  Linking.openURL(
-                    "mailto:support@vitala.app?subject=Appointment%20Access%20Request&body=I%20need%20access%20to%20appointment%20ID%20" +
-                      id,
-                  )
-                }
-              >
-                <Text className="text-[#4461F2] font-semibold">
-                  Contact support
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          <TouchableOpacity
-            className="mt-4 bg-[#4461F2] py-3 px-6 rounded-lg"
-            onPress={() => {
-              setError(null);
-              setLoading(true);
-              loadAppointment();
-            }}
-          >
-            <Text className="text-white font-semibold">Retry</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    );
-  }
-
   const currentStep = getCurrentStepData();
   const progressDots = getProgressDots();
+
+  if (!appointment)
+    return (
+      <View className="flex-1 bg-gray-100 justify-center items-center">
+        <Text className="text-lg text-center text-gray-500">Loading</Text>
+      </View>
+    );
 
   return (
     <View className="flex-1 bg-gray-100 pt-6 px-4">
@@ -583,10 +407,6 @@ export default function AppointmentStatus() {
                     <Text className="text-sm font-semibold text-[#2D3142]">
                       4.9
                     </Text>
-                    <Text className="text-sm text-[#9E9E9E]">
-                      {" "}
-                      • {nurse.phoneNumber}
-                    </Text>
                   </View>
                 </View>
                 <Ionicons name="chevron-forward" size={24} color="#9E9E9E" />
@@ -603,35 +423,43 @@ export default function AppointmentStatus() {
             <View className="flex-row justify-between items-center">
               <Text className="text-sm text-[#9E9E9E]">Service:</Text>
               <Text className="text-sm font-semibold text-[#2D3142]">
-                {appointment.serviceName}
+                {appointment.service}
               </Text>
             </View>
             <View className="flex-row justify-between items-center">
               <Text className="text-sm text-[#9E9E9E]">Date:</Text>
               <Text className="text-sm font-semibold text-[#2D3142]">
-                {appointment.date}
+                {new Date(appointment?.scheduledDate).toLocaleDateString(
+                  "en-US",
+                  {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    weekday: "long",
+                  },
+                )}
               </Text>
             </View>
             <View className="flex-row justify-between items-center">
               <Text className="text-sm text-[#9E9E9E]">Time:</Text>
               <Text className="text-sm font-semibold text-[#2D3142]">
-                {appointment.time}
+                {appointment?.scheduledTime.start}
               </Text>
             </View>
             <View className="flex-row justify-between items-center">
               <Text className="text-sm text-[#9E9E9E]">Duration:</Text>
               <Text className="text-sm font-semibold text-[#2D3142]">
-                {appointment.duration}
+                {appointment?.duration} minutes
               </Text>
             </View>
             <View className="flex-row justify-between items-start">
               <Text className="text-sm text-[#9E9E9E]">Location:</Text>
               <View className="flex-1 items-end ml-2">
                 <Text className="text-sm font-semibold text-[#2D3142] mb-1">
-                  {appointment.location?.label || "N/A"}
+                  {appointment?.location?.label || "N/A"}
                 </Text>
                 <Text className="text-xs text-[#9E9E9E] text-right">
-                  {appointment.location?.address || ""}
+                  {appointment?.location?.address || ""}
                 </Text>
               </View>
             </View>
@@ -673,7 +501,7 @@ export default function AppointmentStatus() {
               ) : (
                 <>
                   {appointment?.payment?.status === "completed"
-                    ? "Done"
+                    ? "Go to Payment Details"
                     : "Pay Now"}
                 </>
               )}

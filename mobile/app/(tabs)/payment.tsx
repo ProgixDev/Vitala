@@ -2,14 +2,13 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { router, useFocusEffect } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   BackHandler,
   Modal,
-  RefreshControl,
   ScrollView,
   Text,
   TextInput,
@@ -59,79 +58,54 @@ export default function PaymentdPage() {
     return () => backHandler.remove();
   }, []);
 
-  const [payments, setPayments] = useState<Payment[]>([]);
+  const [payments, setPayments] = useState<ApiTransaction[]>([]);
   const [loadingPayments, setLoadingPayments] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch recent payments
-  const fetchRecentPayments = useCallback(async () => {
-    try {
-      if (!currentUser?.token) {
-        setLoadingPayments(false);
-        return;
-      }
-
-      const result = await api.getTransactions(currentUser.token, {
-        limit: "5",
-      });
-
-      if (result.success && result.data) {
-        const formattedPayments = result.data.map((trans: any) => ({
-          id: trans.id,
-          description: trans.service,
-          date: new Date(trans.date).toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          }),
-          amount: trans.type === "refund" ? trans.amount : -trans.amount,
-          status: trans.status,
-        }));
-        setPayments(formattedPayments);
-      }
-    } catch (error) {
-      console.error("Error fetching payments:", error);
-    } finally {
-      setLoadingPayments(false);
-      setRefreshing(false);
-    }
-  }, [currentUser?.token]);
-
-  // Fetch payments on mount
   useEffect(() => {
-    fetchRecentPayments();
-  }, [fetchRecentPayments]);
+    // Fetch recent payments
+    const fetchRecentPayments = async () => {
+      setIsLoading(true);
+      try {
+        if (!currentUser?.token) {
+          return;
+        }
 
-  // Refresh when screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      fetchRecentPayments();
-    }, [fetchRecentPayments]),
-  );
+        const result = await api.getTransactions(currentUser.token, {
+          limit: "5",
+        });
 
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchRecentPayments();
-  }, [fetchRecentPayments]);
-
-  // Load saved cards from AsyncStorage
-  const loadSavedCards = useCallback(async () => {
-    try {
-      const savedCards = await AsyncStorage.getItem(CARDS_STORAGE_KEY);
-      if (savedCards) {
-        setCards(JSON.parse(savedCards));
+        if (result.success && result.data) {
+          setPayments(result.data);
+        }
+      } catch (error) {
+        console.error("Error fetching payments:", error);
+      } finally {
+        setLoadingPayments(false);
       }
-    } catch (error) {
-      console.error("Error loading saved cards:", error);
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: "Failed to load saved cards",
-      });
-    } finally {
-      setLoadingCards(false);
-    }
-  }, []);
+    };
+
+    // Load saved cards from AsyncStorage
+    const loadSavedCards = async () => {
+      try {
+        const savedCards = await AsyncStorage.getItem(CARDS_STORAGE_KEY);
+        if (savedCards) {
+          setCards(JSON.parse(savedCards));
+        }
+      } catch (error) {
+        console.error("Error loading saved cards:", error);
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Failed to load saved cards",
+        });
+      } finally {
+        setLoadingCards(false);
+      }
+    };
+
+    fetchRecentPayments();
+    loadSavedCards();
+  }, [currentUser?.token]);
 
   // Save cards to AsyncStorage
   const saveCardsToStorage = async (cardsToSave: Card[]) => {
@@ -149,11 +123,6 @@ export default function PaymentdPage() {
       });
     }
   };
-
-  // Load cards on mount
-  useEffect(() => {
-    loadSavedCards();
-  }, [loadSavedCards]);
 
   const [showAddCardModal, setShowAddCardModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -311,18 +280,7 @@ export default function PaymentdPage() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View className="flex-1 pt-6 px-4">
-        <ScrollView
-          className="flex-1"
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={["#4461F2"]}
-              tintColor="#4461F2"
-            />
-          }
-        >
+        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View className="py-5">
             <View>
@@ -461,15 +419,22 @@ export default function PaymentdPage() {
             ) : (
               <View className="gap-3">
                 {payments.map((payment) => (
-                  <View
+                  <TouchableOpacity
                     key={payment.id}
                     className="bg-white rounded-[20px] p-4 shadow-sm"
+                    onPress={() => {
+                      if (payment.appointmentId) {
+                        router.push(
+                          `/appointment/${payment.appointmentId}/payment`,
+                        );
+                      }
+                    }}
                   >
                     <View className="flex-row justify-between items-center">
                       <View className="flex-1">
                         <View className="flex-row items-center mb-1">
                           <Ionicons
-                            name={getStatusIcon(payment.status) as any}
+                            name={getStatusIcon(payment.status as any)}
                             size={16}
                             color={
                               payment.status === "completed"
@@ -483,20 +448,21 @@ export default function PaymentdPage() {
                             {payment.status}
                           </Text>
                         </View>
-                        <Text className="text-base font-medium">
-                          {payment.description}
-                        </Text>
                         <Text className="text-sm text-[#9E9E9E]">
-                          {payment.date}
+                          {new Date(payment.date).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
                         </Text>
                       </View>
                       <Text
-                        className={`text-base font-semibold ${getStatusColor(payment.status)}`}
+                        className={`text-base font-semibold ${getStatusColor(payment.status as any)}`}
                       >
                         ${Math.abs(payment.amount).toFixed(2)}
                       </Text>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </View>
             )}

@@ -1,7 +1,7 @@
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useFocusEffect } from "expo-router";
+import { router } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -50,9 +50,6 @@ export default function Schedule() {
   useEffect(() => {
     loadAppointments();
   }, [loadAppointments]);
-
-  // Refresh appointments when screen comes into focus (e.g., after payment)
-  useFocusEffect(onRefresh);
 
   const upcomingAppointments = appointments.filter((appointment) =>
     ["pending", "confirmed", "on-the-way", "in-progress"].includes(

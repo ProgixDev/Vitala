@@ -49,6 +49,8 @@ export function useCurrentUser() {
     try {
       await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
       await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+      await SecureStore.deleteItemAsync(USER_CACHE_KEY);
+      await SecureStore.deleteItemAsync(USER_CACHE_TIMESTAMP_KEY);
     } catch (error) {
       console.error("Error clearing tokens:", error);
       throw error;

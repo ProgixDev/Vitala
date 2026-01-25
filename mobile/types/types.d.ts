@@ -34,6 +34,14 @@ declare global {
     fullName: string;
     email: string;
     userType: "patient" | "nurse";
+    medicalProfile?: MedicalProfile;
+  };
+
+  // Extended patient details for appointment display
+  type PatientDetails = PopulatedUser & {
+    gender?: string;
+    age?: number;
+    medicalProfile?: MedicalProfile;
   };
 
   // Payment data from API responses
@@ -155,13 +163,13 @@ declare global {
   };
 
   type MedicalProfile = {
-    gender: "male" | "female" | "other" | null;
-    dateOfBirth: string | null;
-    bloodType: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-" | null;
+    gender: "male" | "female" | "other";
+    dateOfBirth: string;
+    bloodType: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-";
     chronicIllnesses: string[];
     allergies: string[];
-    height: number | null; // in cm
-    weight: number | null; // in kg
+    height: number; // in cm
+    weight: number; // in kg
   };
 
   type User = {

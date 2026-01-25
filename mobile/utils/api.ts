@@ -366,7 +366,7 @@ export async function getAppointments(
 }
 
 export async function getAppointmentById(token: string, appointmentId: string) {
-  return apiFetch<{ success: boolean; data: any }>(
+  return apiFetch<ApiResponse<ApiAppointment>>(
     `/api/appointments/${appointmentId}`,
     { token },
   );

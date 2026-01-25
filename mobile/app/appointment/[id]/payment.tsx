@@ -1,6 +1,5 @@
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/utils/api";
-import { getServiceNameById } from "@/utils/services";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -20,65 +19,30 @@ type PaymentMethodType = "credit_card" | null;
 export default function PaymentPage() {
   const { currentUser } = useCurrentUser();
   const { id } = useLocalSearchParams();
-  const [appointment, setAppointment] = useState<Appointment | null>(null);
+  const [appointment, setAppointment] = useState<ApiAppointment | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>(null);
   const [processing, setProcessing] = useState(false);
 
   const loadAppointment = useCallback(async () => {
+    setLoading(true);
     try {
       if (!currentUser?.token) {
-        console.error("No access token");
-        setLoading(false);
         return;
       }
 
-      const result = await api.getAppointmentById(currentUser.token, id as string);
-      if (result.success) {
-        const appointmentData = result.data;
-
-        const formattedAppointment = {
-          ...appointmentData,
-          id: appointmentData._id || appointmentData.id,
-          serviceName:
-            appointmentData.serviceName ||
-            getServiceNameById(appointmentData.service) ||
-            appointmentData.service ||
-            "Unknown Service",
-          date: appointmentData.scheduledDate
-            ? new Date(appointmentData.scheduledDate).toLocaleDateString(
-                "en-US",
-                {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                },
-              )
-            : "",
-          time: appointmentData.scheduledTime?.start || "",
-          duration: appointmentData.duration
-            ? `${appointmentData.duration} minutes`
-            : "Unknown duration",
-          location: appointmentData.location || {},
-          status: appointmentData.status,
-          payment: appointmentData.payment || {
-            status: "pending",
-            amount: appointmentData.price || 0,
-            currency: "USD",
-          },
-        };
-
-        setAppointment(formattedAppointment);
-        if (formattedAppointment.payment.method) {
-          setSelectedMethod(formattedAppointment.payment.method);
-        }
+      const result = await api.getAppointmentById(
+        currentUser.token,
+        id as string,
+      );
+      if (result.success && result.data) {
+        setAppointment(result.data);
+        console.log("Appointment loaded:", result.data);
       } else {
         console.error("Failed to load appointment:", result);
         setAppointment(null);
       }
-    } catch (error) {
-      console.error("Error loading appointment:", error);
+    } catch {
       setAppointment(null);
     } finally {
       setLoading(false);
@@ -89,12 +53,11 @@ export default function PaymentPage() {
     loadAppointment();
   }, [loadAppointment]);
 
-  // Handle back button - go to schedule tab instead of back
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
       "hardwareBackPress",
       () => {
-        router.replace("/(tabs)/schedule");
+        router.back();
         return true;
       },
     );
@@ -103,16 +66,10 @@ export default function PaymentPage() {
   }, []);
 
   const handleGoBack = () => {
-    router.replace("/(tabs)/schedule");
+    router.back();
   };
 
   const handleProcessPayment = async () => {
-    console.log("Processing payment...");
-    console.log("Selected method:", selectedMethod);
-    console.log("Appointment ID:", appointment?.id);
-    console.log("Appointment _ID:", (appointment as any)?._id);
-    console.log("Payment amount:", appointment?.payment?.amount);
-
     if (!selectedMethod) {
       Alert.alert("Payment Method Required", "Please select a payment method");
       return;
@@ -123,7 +80,7 @@ export default function PaymentPage() {
       return;
     }
 
-    if (!appointment.id) {
+    if (!appointment._id) {
       console.error("Appointment ID is missing!");
       Alert.alert("Error", "Appointment ID is missing. Please try again.");
       return;
@@ -132,8 +89,6 @@ export default function PaymentPage() {
     setProcessing(true);
 
     try {
-      console.log("Access token:", !!currentUser?.token);
-
       if (!currentUser?.token) {
         Alert.alert("Authentication Error", "Please log in again");
         setProcessing(false);
@@ -141,18 +96,14 @@ export default function PaymentPage() {
       }
 
       const paymentData = {
-        appointmentId: appointment.id,
+        appointmentId: appointment._id,
         paymentMethod: selectedMethod,
-        amount: appointment.payment.amount,
+        amount: appointment.payment?.amount || 0,
       };
 
-      console.log("Calling payment API with data:", paymentData);
       const result = await api.processPayment(currentUser.token, paymentData);
 
-      console.log("Payment result:", result);
-
       if (result.success) {
-        console.log("Payment successful, reloading appointment...");
         // Reload appointment to show receipt
         await loadAppointment();
       } else {
@@ -195,7 +146,10 @@ export default function PaymentPage() {
     );
   }
 
-  const isPaymentCompleted = appointment.payment.status === "completed";
+  const isPaymentCompleted = appointment.payment?.status === "completed";
+  const canPay =
+    currentUser?.userType === "patient" &&
+    !["cancelled", "declined", "pending"].includes(appointment.status);
 
   // Receipt View
   if (isPaymentCompleted) {
@@ -237,7 +191,7 @@ export default function PaymentPage() {
               <View className="flex-row justify-between py-3">
                 <Text className="text-[15px] text-[#6B7280]">Reference</Text>
                 <Text className="text-[15px] font-semibold text-[#2D3142]">
-                  {appointment.payment.reference}
+                  {appointment.payment?.reference}
                 </Text>
               </View>
 
@@ -245,7 +199,7 @@ export default function PaymentPage() {
                 <Text className="text-[15px] text-[#6B7280]">Date</Text>
                 <Text className="text-[15px] font-semibold text-[#2D3142]">
                   {new Date(
-                    appointment.payment.transactionDate!,
+                    appointment.payment?.transactionDate!,
                   ).toLocaleDateString("en-US", {
                     day: "2-digit",
                     month: "short",
@@ -258,7 +212,7 @@ export default function PaymentPage() {
                 <Text className="text-[15px] text-[#6B7280]">Time</Text>
                 <Text className="text-[15px] font-semibold text-[#2D3142]">
                   {new Date(
-                    appointment.payment.transactionDate!,
+                    appointment.payment?.transactionDate!,
                   ).toLocaleTimeString("en-US", {
                     hour: "2-digit",
                     minute: "2-digit",
@@ -289,8 +243,8 @@ export default function PaymentPage() {
               <View className="flex-row justify-between py-3">
                 <Text className="text-[15px] text-[#6B7280]">Total</Text>
                 <Text className="text-xl font-bold text-[#2D3142]">
-                  {appointment.payment.amount}
-                  {appointment.payment.currency === "USD" ? "$" : "€"}
+                  {appointment.payment?.amount}
+                  {appointment.payment?.currency === "USD" ? "$" : "€"}
                 </Text>
               </View>
             </View>
@@ -354,25 +308,25 @@ export default function PaymentPage() {
             <View className="flex-row justify-between items-center py-2">
               <Text className="text-[15px] text-[#6B7280]">Service:</Text>
               <Text className="text-[15px] font-semibold text-[#2D3142]">
-                {appointment.serviceName}
+                {appointment.service}
               </Text>
             </View>
             <View className="flex-row justify-between items-center py-2">
               <Text className="text-[15px] text-[#6B7280]">Date:</Text>
               <Text className="text-[15px] font-semibold text-[#2D3142]">
-                {appointment.date}
+                {new Date(appointment.scheduledDate).toLocaleDateString()}
               </Text>
             </View>
             <View className="flex-row justify-between items-center py-2">
               <Text className="text-[15px] text-[#6B7280]">Time:</Text>
               <Text className="text-[15px] font-semibold text-[#2D3142]">
-                {appointment.time}
+                {appointment.scheduledTime.start}
               </Text>
             </View>
             <View className="flex-row justify-between items-center py-2">
               <Text className="text-[15px] text-[#6B7280]">Duration:</Text>
               <Text className="text-[15px] font-semibold text-[#2D3142]">
-                {appointment.duration}
+                {appointment.duration} minutes
               </Text>
             </View>
             <View className="h-px bg-[#D1D5DB] my-3" />
@@ -381,96 +335,121 @@ export default function PaymentPage() {
                 Total Amount:
               </Text>
               <Text className="text-2xl font-bold text-[#4461F2]">
-                {appointment.payment.amount}
-                {appointment.payment.currency === "USD" ? "$" : "€"}
+                {appointment.payment?.amount}
+                {appointment.payment?.currency === "USD" ? "$" : "€"}
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Credit Card Section */}
-        <View className="mb-6">
-          <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-lg font-semibold text-[#2D3142]">
-              Credit card
+        {/* Payment Restriction Message */}
+        {!canPay && (
+          <View className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+            <Text className="text-red-800 text-center">
+              {currentUser?.userType !== "patient"
+                ? "Only patients can make payments for their appointments."
+                : `Payment is not available for appointments with status: ${appointment.status}.`}
             </Text>
-            <TouchableOpacity onPress={() => setSelectedMethod("credit_card")}>
-              <View
-                className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
-                  selectedMethod === "credit_card"
-                    ? "border-[#4461F2]"
-                    : "border-[#D1D5DB]"
-                }`}
+          </View>
+        )}
+
+        {/* Credit Card Section */}
+        {canPay && (
+          <View className="mb-6">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-lg font-semibold text-[#2D3142]">
+                Credit card
+              </Text>
+              <TouchableOpacity
+                onPress={() => setSelectedMethod("credit_card")}
               >
-                {selectedMethod === "credit_card" && (
-                  <View className="w-3 h-3 rounded-full bg-[#4461F2]" />
-                )}
+                <View
+                  className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
+                    selectedMethod === "credit_card"
+                      ? "border-[#4461F2]"
+                      : "border-[#D1D5DB]"
+                  }`}
+                >
+                  {selectedMethod === "credit_card" && (
+                    <View className="w-3 h-3 rounded-full bg-[#4461F2]" />
+                  )}
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            {/* Credit Card Display */}
+            <TouchableOpacity
+              className="bg-linear-to-br from-gray-800 via-gray-900 to-black rounded-2xl p-6 mb-4 shadow-2xl border border-gray-700"
+              onPress={() => setSelectedMethod("credit_card")}
+            >
+              {/* Card Header */}
+              <View className="flex-row justify-between items-center mb-6">
+                <View className="flex-row items-center">
+                  <View className="w-12 h-8 bg-linear-to-r from-yellow-400 to-yellow-500 rounded-md mr-3 flex-row items-center justify-center">
+                    <Text className="text-black text-xs font-bold">VISA</Text>
+                  </View>
+                  <Ionicons name="wifi" size={20} color="white" />
+                </View>
+                <View className="flex-row items-center">
+                  <Ionicons name="card" size={20} color="white" />
+                </View>
+              </View>
+
+              {/* Card Number */}
+              <Text className="text-white text-xl font-mono mb-6 tracking-wider">
+                **** **** **** 1234
+              </Text>
+
+              {/* Card Footer */}
+              <View className="flex-row justify-between items-end">
+                <View>
+                  <Text className="text-gray-300 text-xs mb-1">
+                    Card Holder
+                  </Text>
+                  <Text className="text-white text-sm font-semibold">
+                    YOUR NAME
+                  </Text>
+                </View>
+                <View>
+                  <Text className="text-gray-300 text-xs mb-1">Expires</Text>
+                  <Text className="text-white text-sm font-semibold">
+                    MM/YY
+                  </Text>
+                </View>
+                <View className="w-16 h-10 bg-linear-to-r from-blue-500 to-blue-600 rounded-md items-center justify-center">
+                  <Text className="text-white text-xs font-bold">VISA</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+
+            {/* Add Card Button */}
+            <TouchableOpacity className="border-2 border-dashed border-[#4461F2] py-4 rounded-2xl justify-center items-center">
+              <View className="flex-row items-center">
+                <Ionicons name="add-circle-outline" size={24} color="#4461F2" />
+                <Text className="text-base font-semibold text-[#4461F2] ml-2">
+                  Add New Card
+                </Text>
               </View>
             </TouchableOpacity>
           </View>
-
-          {/* Credit Card Display */}
-          <TouchableOpacity
-            className="bg-linear-to-br from-gray-800 via-gray-900 to-black rounded-2xl p-6 mb-4 shadow-2xl border border-gray-700"
-            onPress={() => setSelectedMethod("credit_card")}
-          >
-            {/* Card Header */}
-            <View className="flex-row justify-between items-center mb-6">
-              <View className="flex-row items-center">
-                <View className="w-12 h-8 bg-linear-to-r from-yellow-400 to-yellow-500 rounded-md mr-3 flex-row items-center justify-center">
-                  <Text className="text-black text-xs font-bold">VISA</Text>
-                </View>
-                <Ionicons name="wifi" size={20} color="white" />
-              </View>
-              <View className="flex-row items-center">
-                <Ionicons name="card" size={20} color="white" />
-              </View>
-            </View>
-
-            {/* Card Number */}
-            <Text className="text-white text-xl font-mono mb-6 tracking-wider">
-              **** **** **** 1234
-            </Text>
-
-            {/* Card Footer */}
-            <View className="flex-row justify-between items-end">
-              <View>
-                <Text className="text-gray-300 text-xs mb-1">Card Holder</Text>
-                <Text className="text-white text-sm font-semibold">
-                  YOUR NAME
-                </Text>
-              </View>
-              <View>
-                <Text className="text-gray-300 text-xs mb-1">Expires</Text>
-                <Text className="text-white text-sm font-semibold">MM/YY</Text>
-              </View>
-              <View className="w-16 h-10 bg-linear-to-r from-blue-500 to-blue-600 rounded-md items-center justify-center">
-                <Text className="text-white text-xs font-bold">VISA</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-
-          {/* Add Card Button */}
-          <TouchableOpacity className="border-2 border-dashed border-[#4461F2] py-4 rounded-2xl justify-center items-center">
-            <View className="flex-row items-center">
-              <Ionicons name="add-circle-outline" size={24} color="#4461F2" />
-              <Text className="text-base font-semibold text-[#4461F2] ml-2">
-                Add New Card
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+        )}
 
         {/* Process Payment Button */}
         <TouchableOpacity
           className={`py-4 rounded-[28px] justify-center items-center shadow-lg mt-5 ${
-            processing || !selectedMethod ? "bg-[#B8C5E8]" : "bg-[#4461F2]"
+            processing || !selectedMethod || !canPay
+              ? "bg-[#B8C5E8]"
+              : "bg-[#4461F2]"
           }`}
           onPress={handleProcessPayment}
-          disabled={processing || !selectedMethod}
+          disabled={processing || !selectedMethod || !canPay}
         >
           {processing ? (
             <ActivityIndicator size="small" color="white" />
+          ) : !canPay ? (
+            <Text className="text-lg font-semibold text-white">
+              Payment Not Available
+            </Text>
           ) : (
             <Text className="text-lg font-semibold text-white">Pay Now</Text>
           )}

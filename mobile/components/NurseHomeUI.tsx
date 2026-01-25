@@ -42,7 +42,7 @@ type AppointmentItem = {
 };
 
 export default function NurseHomeUI() {
-  const { currentUser, logout } = useCurrentUser();
+  const { currentUser, refreshUser } = useCurrentUser();
   const [upcomingAppointments, setUpcomingAppointments] = useState<
     AppointmentItem[]
   >([]);
@@ -275,17 +275,7 @@ export default function NurseHomeUI() {
 
   const handleDevVerify = async () => {
     try {
-      // In a real app, this would call an API endpoint to update nurse status
-      // For dev purposes, we'll just show a toast and refresh
-      Toast.show({
-        type: "info",
-        text1: "Dev Mode",
-        text2: "Account verification should be done via admin panel",
-      });
-
-      // Force logout and re-login to refresh user data
-      await logout();
-      router.replace("/signin");
+      await refreshUser();
     } catch (error) {
       console.error("Error in dev verify:", error);
       Toast.show({

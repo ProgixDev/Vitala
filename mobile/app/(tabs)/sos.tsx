@@ -197,7 +197,7 @@ export default function SOS() {
       ) : (
         <>
           {/* Header */}
-          <View className="px-4 pt-[60px] pb-4 bg-white border-b border-[#F3F4F6]">
+          <View className="px-4 pt-15 pb-4 bg-white border-b border-[#F3F4F6]">
             <Text className="text-2xl font-bold text-[#1F2937] mb-1">
               Emergency
             </Text>

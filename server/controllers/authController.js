@@ -8,9 +8,7 @@ const { generateToken, generateRefreshToken } = require("../utils/tokenUtils");
 // @access  Public
 exports.registerPatient = async (req, res) => {
   try {
-    console.log("Registration request body:", req.body);
     const { fullName, email, phoneNumber, password, medicalProfile } = req.body;
-
     // Check if user exists
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -25,14 +23,6 @@ exports.registerPatient = async (req, res) => {
       100000 + Math.random() * 900000,
     ).toString();
     const emailVerificationExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-    console.log("Creating user with data:", {
-      fullName,
-      email,
-      phoneNumber,
-      userType: "patient",
-      medicalProfile,
-    });
 
     // Create user
     const user = await User.create({
@@ -49,9 +39,6 @@ exports.registerPatient = async (req, res) => {
 
     // Send email verification code
     try {
-      console.log(
-        `Sending verification email to ${email} with code ${emailVerificationCode}`,
-      );
       await sendEmail({
         to: email,
         subject: "Verify Your Email - Vitala",
@@ -66,9 +53,7 @@ exports.registerPatient = async (req, res) => {
           <p>If you didn't create an account, please ignore this email.</p>
         `,
       });
-      console.log(`Verification email sent successfully to ${email}`);
     } catch (emailError) {
-      console.error("Error sending verification email:", emailError);
       // For now, don't fail registration if email fails, but this should be fixed
       // TODO: Consider failing registration if email cannot be sent
     }
@@ -85,23 +70,8 @@ exports.registerPatient = async (req, res) => {
       success: true,
       message:
         "Patient registered successfully. Please check your email to verify your account.",
-      data: {
-        user: {
-          id: user._id,
-          fullName: user.fullName,
-          email: user.email,
-          phoneNumber: user.phoneNumber,
-          userType: user.userType,
-          status: user.status,
-          isEmailVerified: user.isEmailVerified,
-        },
-        token,
-        refreshToken,
-        requiresEmailVerification: true,
-      },
     });
   } catch (error) {
-    console.error("Registration error:", error);
     res.status(500).json({
       success: false,
       message: "Error registering patient",
@@ -115,10 +85,6 @@ exports.registerPatient = async (req, res) => {
 // @access  Public
 exports.registerNurse = async (req, res) => {
   try {
-    console.log("Nurse registration request received");
-    console.log("Request body:", req.body);
-    console.log("Request files:", req.files);
-
     const {
       fullName,
       email,
@@ -199,9 +165,7 @@ exports.registerNurse = async (req, res) => {
           <p>Your account is currently pending verification. We'll notify you once it's approved.</p>
         `,
       });
-    } catch (emailError) {
-      console.error("Error sending email:", emailError);
-    }
+    } catch (emailError) {}
 
     // Generate tokens
     const token = generateToken(user._id);
@@ -214,19 +178,6 @@ exports.registerNurse = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Nurse registered successfully. Account pending verification.",
-      data: {
-        user: {
-          id: user._id,
-          fullName: user.fullName,
-          email: user.email,
-          phoneNumber: user.phoneNumber,
-          userType: user.userType,
-          status: user.status,
-          verificationStatus: user.nurseProfile.verificationStatus,
-        },
-        token,
-        refreshToken,
-      },
     });
   } catch (error) {
     res.status(500).json({

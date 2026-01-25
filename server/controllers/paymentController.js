@@ -39,26 +39,14 @@ const processPayment = async (req, res) => {
     const { appointmentId, paymentMethod, amount } = req.body;
     const userId = req.user._id;
 
-    console.log("Processing payment for appointment:", appointmentId);
-    console.log("User ID:", userId);
-    console.log("Payment method:", paymentMethod);
-    console.log("Amount:", amount);
-
     // Validate appointment
-    const appointment = await Appointment.findById(appointmentId);
+    const appointment =
+      await Appointment.findById(appointmentId).populate("payment");
     if (!appointment) {
-      console.log("Appointment not found");
       return res
         .status(404)
         .json({ success: false, message: "Appointment not found" });
     }
-
-    console.log("Appointment patient:", appointment.patient);
-    console.log(
-      "User ID comparison:",
-      appointment.patient.toString(),
-      userId.toString(),
-    );
 
     if (appointment.patient.toString() !== userId.toString()) {
       console.log("Unauthorized: appointment patient does not match user");
@@ -79,65 +67,47 @@ const processPayment = async (req, res) => {
     }
 
     // Check if payment already exists
-    const existingPayment = await Payment.findOne({
+    const payment = await Payment.findOne({
       appointment: appointmentId,
     });
-    if (existingPayment) {
+
+    if (!payment) {
+      // If no payment exists, create a new one
+      const newPayment = new Payment({
+        appointment: appointmentId,
+        amount: appointment.price,
+        status: "pending",
+      });
+      await newPayment.save();
+      payment = newPayment;
+    }
+
+    if (payment.status === "completed") {
       // If payment is already completed, don't allow another payment
-      if (existingPayment.status === "completed") {
-        console.log("Payment already completed for this appointment");
-        return res.status(400).json({
-          success: false,
-          message: "Payment already completed for this appointment",
-        });
-      }
-      // If payment failed or is pending, allow retry by deleting the old payment
-      console.log("Removing existing failed/pending payment to allow retry");
-      await Payment.findByIdAndDelete(existingPayment._id);
+      console.log("Payment already completed for this appointment");
+      return res.status(400).json({
+        success: false,
+        message: "Payment already completed for this appointment",
+      });
     }
 
     // Mock payment processing - simulate success/failure
     const paymentSuccess = Math.random() > 0.1; // 90% success rate
-    console.log("Payment success simulation:", paymentSuccess);
 
-    const payment = new Payment({
-      appointment: appointmentId,
-      user: userId,
-      amount,
-      paymentMethod,
-      status: paymentSuccess ? "completed" : "failed",
-      metadata: {
-        mockPayment: true,
-        processedAt: new Date().toISOString(),
-      },
-    });
-
+    payment.status = paymentSuccess ? "completed" : "failed";
     await payment.save();
-    console.log("Payment saved with ID:", payment._id);
 
     if (paymentSuccess) {
-      // Payment successful - no need to update appointment status
-      console.log("Payment processed successfully");
-
       res.status(201).json({
         success: true,
         message: "Payment processed successfully",
-        payment: {
-          id: payment._id,
-          status: payment.status,
-          amount: payment.amount,
-          receiptNumber: payment.receiptNumber,
-        },
+        data: payment,
       });
     } else {
       console.log("Payment failed");
       res.status(400).json({
         success: false,
         message: "Payment failed",
-        payment: {
-          id: payment._id,
-          status: payment.status,
-        },
       });
     }
   } catch (error) {
