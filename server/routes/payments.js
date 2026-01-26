@@ -1,7 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const {
-  processPayment,
+  getStripeConfig,
+  createPaymentIntent,
+  confirmPayment,
+  handleWebhook,
   savePaymentMethod,
   getSavedPaymentMethods,
   setDefaultPaymentMethod,
@@ -17,11 +20,23 @@ const {
 } = require("../controllers/paymentController");
 const { protect } = require("../middleware/auth");
 
-// All routes require authentication
+// Stripe webhook - must be before body parsers and auth middleware
+// Raw body is needed for signature verification
+router.post(
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  handleWebhook,
+);
+
+// All routes below require authentication
 router.use(protect);
 
-// Payment processing
-router.post("/process", processPayment);
+// Stripe configuration
+router.get("/config", getStripeConfig);
+
+// Payment intent creation and confirmation
+router.post("/create-intent", createPaymentIntent);
+router.post("/confirm", confirmPayment);
 
 // Transactions
 router.get("/transactions", getUserTransactions);

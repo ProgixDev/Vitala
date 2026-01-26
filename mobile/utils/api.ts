@@ -659,19 +659,51 @@ export async function registerNurse(form: FormData) {
   }
 }
 
-// Process payment
-export async function processPayment(
-  token: string,
-  data: { appointmentId: string; paymentMethod: string; amount: number },
-) {
-  return apiFetch<{ success: boolean; message: string; payment: any }>(
-    "/api/payments/process",
-    {
-      method: "POST",
-      token,
-      body: data,
-    },
+// Get Stripe configuration (publishable key)
+export async function getStripeConfig(token: string) {
+  return apiFetch<{ success: boolean; publishableKey: string }>(
+    "/api/payments/config",
+    { token },
   );
+}
+
+// Create Stripe PaymentIntent
+export async function createPaymentIntent(
+  token: string,
+  data: { appointmentId: string },
+) {
+  return apiFetch<{
+    success: boolean;
+    clientSecret: string;
+    paymentIntentId: string;
+    amount: number;
+    currency: string;
+  }>("/api/payments/create-intent", {
+    method: "POST",
+    token,
+    body: data,
+  });
+}
+
+// Confirm payment after Stripe processing
+export async function confirmStripePayment(
+  token: string,
+  data: { paymentIntentId: string },
+) {
+  return apiFetch<{
+    success: boolean;
+    message: string;
+    data: {
+      id: string;
+      status: string;
+      amount: number;
+      currency: string;
+    };
+  }>("/api/payments/confirm", {
+    method: "POST",
+    token,
+    body: data,
+  });
 }
 
 // Get payment by appointment
@@ -736,7 +768,9 @@ export const api = {
   updateNotificationPreferences,
   updatePushToken,
   getNotificationDeliveryStatus,
-  processPayment,
+  getStripeConfig,
+  createPaymentIntent,
+  confirmStripePayment,
   getPaymentByAppointment,
   // Emergency services
   getEmergencyContacts: (token: string) =>

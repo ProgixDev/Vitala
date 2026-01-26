@@ -1,5 +1,6 @@
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/utils/api";
+import { CardField, useConfirmPayment } from "@stripe/stripe-react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -14,15 +15,24 @@ import {
   View,
 } from "react-native";
 
-type PaymentMethodType = "credit_card" | null;
+type CardDetails = {
+  complete: boolean;
+  brand?: string;
+  last4?: string;
+  expiryMonth?: number;
+  expiryYear?: number;
+};
 
 export default function PaymentPage() {
   const { currentUser } = useCurrentUser();
   const { id } = useLocalSearchParams();
   const [appointment, setAppointment] = useState<ApiAppointment | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>(null);
+  const [cardDetails, setCardDetails] = useState<CardDetails | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
+  const { confirmPayment } = useConfirmPayment();
 
   const loadAppointment = useCallback(async () => {
     setLoading(true);
@@ -37,12 +47,31 @@ export default function PaymentPage() {
       );
       if (result.success && result.data) {
         setAppointment(result.data);
-        console.log("Appointment loaded:", result.data);
+
+        // Only create PaymentIntent for appointments that can be paid
+        // Skip pending appointments - they need to be confirmed first
+        const canCreateIntent =
+          result.data.payment?.status !== "completed" &&
+          !["pending", "cancelled", "declined"].includes(result.data.status);
+
+        if (canCreateIntent) {
+          const intentResult = await api.createPaymentIntent(
+            currentUser.token,
+            { appointmentId: result.data._id },
+          );
+          if (intentResult.success) {
+            setClientSecret(intentResult.clientSecret);
+            setPaymentIntentId(intentResult.paymentIntentId);
+          } else {
+            console.error("Failed to create payment intent:", intentResult);
+          }
+        }
       } else {
         console.error("Failed to load appointment:", result);
         setAppointment(null);
       }
-    } catch {
+    } catch (error) {
+      console.error("Error loading appointment:", error);
       setAppointment(null);
     } finally {
       setLoading(false);
@@ -70,19 +99,17 @@ export default function PaymentPage() {
   };
 
   const handleProcessPayment = async () => {
-    if (!selectedMethod) {
-      Alert.alert("Payment Method Required", "Please select a payment method");
+    if (!cardDetails?.complete) {
+      Alert.alert("Card Required", "Please enter your complete card details");
       return;
     }
 
     if (!appointment) {
-      console.log("No appointment found");
       return;
     }
 
-    if (!appointment._id) {
-      console.error("Appointment ID is missing!");
-      Alert.alert("Error", "Appointment ID is missing. Please try again.");
+    if (!clientSecret) {
+      Alert.alert("Error", "Payment not initialized. Please try again.");
       return;
     }
 
@@ -91,23 +118,46 @@ export default function PaymentPage() {
     try {
       if (!currentUser?.token) {
         Alert.alert("Authentication Error", "Please log in again");
+        return;
+      }
+
+      // Confirm payment with Stripe
+      const { paymentIntent, error } = await confirmPayment(clientSecret, {
+        paymentMethodType: "Card",
+        paymentMethodData: {
+          billingDetails: {
+            email: currentUser.email,
+            name: currentUser.fullName,
+          },
+        },
+      });
+
+      if (error) {
+        console.error("Stripe payment error:", error);
+        Alert.alert(
+          "Payment Failed",
+          error.message || "Please check your card details and try again",
+        );
         setProcessing(false);
         return;
       }
 
-      const paymentData = {
-        appointmentId: appointment._id,
-        paymentMethod: selectedMethod,
-        amount: appointment.payment?.amount || 0,
-      };
+      if (paymentIntent && paymentIntentId) {
+        // Confirm with backend
+        const confirmResult = await api.confirmStripePayment(
+          currentUser.token,
+          { paymentIntentId },
+        );
 
-      const result = await api.processPayment(currentUser.token, paymentData);
-
-      if (result.success) {
-        // Reload appointment to show receipt
-        await loadAppointment();
-      } else {
-        Alert.alert("Payment Failed", result.message || "Please try again");
+        if (confirmResult.success) {
+          // Reload appointment to show receipt
+          await loadAppointment();
+        } else {
+          Alert.alert(
+            "Payment Verification Failed",
+            confirmResult.message || "Please contact support",
+          );
+        }
       }
     } catch (error) {
       console.error("Error processing payment:", error);
@@ -353,96 +403,81 @@ export default function PaymentPage() {
           </View>
         )}
 
-        {/* Credit Card Section */}
-        {canPay && (
+        {/* Card Input Section */}
+        {canPay && clientSecret && (
           <View className="mb-6">
-            <View className="flex-row justify-between items-center mb-4">
-              <Text className="text-lg font-semibold text-[#2D3142]">
-                Credit card
-              </Text>
-              <TouchableOpacity
-                onPress={() => setSelectedMethod("credit_card")}
-              >
-                <View
-                  className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
-                    selectedMethod === "credit_card"
-                      ? "border-[#4461F2]"
-                      : "border-[#D1D5DB]"
-                  }`}
-                >
-                  {selectedMethod === "credit_card" && (
-                    <View className="w-3 h-3 rounded-full bg-[#4461F2]" />
-                  )}
-                </View>
-              </TouchableOpacity>
+            <Text className="text-lg font-semibold text-[#2D3142] mb-4">
+              Card Details
+            </Text>
+
+            {/* Stripe CardField */}
+            <View className="bg-white rounded-2xl p-4 border border-gray-200 mb-4">
+              <CardField
+                postalCodeEnabled={false}
+                placeholders={{
+                  number: "4242 4242 4242 4242",
+                }}
+                cardStyle={{
+                  backgroundColor: "#FFFFFF",
+                  textColor: "#2D3142",
+                  borderColor: "#E5E7EB",
+                  borderWidth: 1,
+                  borderRadius: 8,
+                  fontSize: 16,
+                  placeholderColor: "#9CA3AF",
+                }}
+                style={{
+                  width: "100%",
+                  height: 50,
+                }}
+                onCardChange={(details) => {
+                  setCardDetails(details);
+                }}
+              />
             </View>
 
-            {/* Credit Card Display */}
-            <TouchableOpacity
-              className="bg-linear-to-br from-gray-800 via-gray-900 to-black rounded-2xl p-6 mb-4 shadow-2xl border border-gray-700"
-              onPress={() => setSelectedMethod("credit_card")}
-            >
-              {/* Card Header */}
-              <View className="flex-row justify-between items-center mb-6">
-                <View className="flex-row items-center">
-                  <View className="w-12 h-8 bg-linear-to-r from-yellow-400 to-yellow-500 rounded-md mr-3 flex-row items-center justify-center">
-                    <Text className="text-black text-xs font-bold">VISA</Text>
-                  </View>
-                  <Ionicons name="wifi" size={20} color="white" />
-                </View>
-                <View className="flex-row items-center">
-                  <Ionicons name="card" size={20} color="white" />
-                </View>
-              </View>
-
-              {/* Card Number */}
-              <Text className="text-white text-xl font-mono mb-6 tracking-wider">
-                **** **** **** 1234
-              </Text>
-
-              {/* Card Footer */}
-              <View className="flex-row justify-between items-end">
-                <View>
-                  <Text className="text-gray-300 text-xs mb-1">
-                    Card Holder
-                  </Text>
-                  <Text className="text-white text-sm font-semibold">
-                    YOUR NAME
-                  </Text>
-                </View>
-                <View>
-                  <Text className="text-gray-300 text-xs mb-1">Expires</Text>
-                  <Text className="text-white text-sm font-semibold">
-                    MM/YY
-                  </Text>
-                </View>
-                <View className="w-16 h-10 bg-linear-to-r from-blue-500 to-blue-600 rounded-md items-center justify-center">
-                  <Text className="text-white text-xs font-bold">VISA</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            {/* Add Card Button */}
-            <TouchableOpacity className="border-2 border-dashed border-[#4461F2] py-4 rounded-2xl justify-center items-center">
-              <View className="flex-row items-center">
-                <Ionicons name="add-circle-outline" size={24} color="#4461F2" />
-                <Text className="text-base font-semibold text-[#4461F2] ml-2">
-                  Add New Card
+            {/* Card status indicator */}
+            {cardDetails?.complete && (
+              <View className="flex-row items-center mb-4">
+                <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+                <Text className="text-sm text-green-600 ml-2">
+                  Card details complete
+                  {cardDetails.brand && ` (${cardDetails.brand})`}
                 </Text>
               </View>
-            </TouchableOpacity>
+            )}
+
+            {/* Secure payment notice */}
+            <View className="flex-row items-center justify-center py-3">
+              <Ionicons name="lock-closed" size={16} color="#6B7280" />
+              <Text className="text-sm text-gray-500 ml-2">
+                Secured by Stripe
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Loading state for payment initialization */}
+        {canPay && !clientSecret && !loading && (
+          <View className="mb-6 items-center py-8">
+            <ActivityIndicator size="small" color="#4461F2" />
+            <Text className="text-sm text-gray-500 mt-2">
+              Initializing payment...
+            </Text>
           </View>
         )}
 
         {/* Process Payment Button */}
         <TouchableOpacity
           className={`py-4 rounded-[28px] justify-center items-center shadow-lg mt-5 ${
-            processing || !selectedMethod || !canPay
+            processing || !cardDetails?.complete || !canPay || !clientSecret
               ? "bg-[#B8C5E8]"
               : "bg-[#4461F2]"
           }`}
           onPress={handleProcessPayment}
-          disabled={processing || !selectedMethod || !canPay}
+          disabled={
+            processing || !cardDetails?.complete || !canPay || !clientSecret
+          }
         >
           {processing ? (
             <ActivityIndicator size="small" color="white" />
@@ -451,7 +486,10 @@ export default function PaymentPage() {
               Payment Not Available
             </Text>
           ) : (
-            <Text className="text-lg font-semibold text-white">Pay Now</Text>
+            <Text className="text-lg font-semibold text-white">
+              Pay {appointment?.payment?.amount}
+              {appointment?.payment?.currency === "USD" ? "$" : "€"}
+            </Text>
           )}
         </TouchableOpacity>
       </ScrollView>

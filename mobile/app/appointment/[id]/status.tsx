@@ -178,7 +178,6 @@ export default function AppointmentStatus() {
 
     if (currentIndex < statusOrder.length - 1) {
       const newStatus = statusOrder[currentIndex + 1];
-      console.log("Updating status to:", newStatus);
 
       try {
         if (!currentUser?.token) throw new Error("Not authenticated");

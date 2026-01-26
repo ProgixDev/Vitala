@@ -1,6 +1,7 @@
 const Payment = require("../models/Payment");
 const Appointment = require("../models/Appointment");
 const User = require("../models/User");
+const stripe = require("../config/stripe");
 
 // Service name mapping - matches frontend services data
 const serviceNameMap = {
@@ -33,10 +34,23 @@ const getServiceName = (serviceId) => {
   return serviceNameMap[serviceId.toString()] || "Unknown Service";
 };
 
-// Mock payment processing
-const processPayment = async (req, res) => {
+// Get Stripe publishable key for frontend
+const getStripeConfig = async (req, res) => {
   try {
-    const { appointmentId, paymentMethod, amount } = req.body;
+    res.json({
+      success: true,
+      publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+    });
+  } catch (error) {
+    console.error("Get Stripe config error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// Create Stripe PaymentIntent
+const createPaymentIntent = async (req, res) => {
+  try {
+    const { appointmentId } = req.body;
     const userId = req.user._id;
 
     // Validate appointment
@@ -66,56 +80,228 @@ const processPayment = async (req, res) => {
       });
     }
 
-    // Check if payment already exists
-    const payment = await Payment.findOne({
-      appointment: appointmentId,
-    });
+    // Check if payment already exists and is completed
+    let payment = await Payment.findOne({ appointment: appointmentId });
 
-    if (!payment) {
-      // If no payment exists, create a new one
-      const newPayment = new Payment({
-        appointment: appointmentId,
-        amount: appointment.price,
-        status: "pending",
-      });
-      await newPayment.save();
-      payment = newPayment;
-    }
-
-    if (payment.status === "completed") {
-      // If payment is already completed, don't allow another payment
-      console.log("Payment already completed for this appointment");
+    if (payment && payment.status === "completed") {
       return res.status(400).json({
         success: false,
         message: "Payment already completed for this appointment",
       });
     }
 
-    // Mock payment processing - simulate success/failure
-    const paymentSuccess = Math.random() > 0.1; // 90% success rate
+    // If there's an existing PaymentIntent that's still valid, return it
+    if (payment && payment.stripePaymentIntentId) {
+      try {
+        const existingIntent = await stripe.paymentIntents.retrieve(
+          payment.stripePaymentIntentId,
+        );
+        if (
+          existingIntent.status === "requires_payment_method" ||
+          existingIntent.status === "requires_confirmation"
+        ) {
+          return res.json({
+            success: true,
+            clientSecret: existingIntent.client_secret,
+            paymentIntentId: existingIntent.id,
+            amount: payment.amount,
+            currency: payment.currency,
+          });
+        }
+      } catch (stripeError) {
+        console.log("Existing PaymentIntent not found, creating new one");
+      }
+    }
 
-    payment.status = paymentSuccess ? "completed" : "failed";
-    await payment.save();
+    // Amount in cents for Stripe
+    const amountInCents = Math.round(appointment.price * 100);
 
-    if (paymentSuccess) {
-      res.status(201).json({
-        success: true,
-        message: "Payment processed successfully",
-        data: payment,
+    // Create Stripe PaymentIntent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amountInCents,
+      currency: "usd",
+      metadata: {
+        appointmentId: appointmentId.toString(),
+        userId: userId.toString(),
+      },
+      description: `Payment for ${getServiceName(appointment.service)} appointment`,
+    });
+
+    // Create or update payment record
+    if (!payment) {
+      payment = new Payment({
+        appointment: appointmentId,
+        user: userId,
+        amount: appointment.price,
+        currency: "USD",
+        status: "pending",
+        stripePaymentIntentId: paymentIntent.id,
+        paymentMethod: "stripe",
       });
     } else {
-      console.log("Payment failed");
-      res.status(400).json({
+      payment.stripePaymentIntentId = paymentIntent.id;
+      payment.status = "pending";
+    }
+    await payment.save();
+
+    res.json({
+      success: true,
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+      amount: payment.amount,
+      currency: payment.currency,
+    });
+  } catch (error) {
+    console.error("Create payment intent error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+// Confirm payment after frontend completion
+const confirmPayment = async (req, res) => {
+  try {
+    const { paymentIntentId } = req.body;
+    const userId = req.user._id;
+
+    // Retrieve the PaymentIntent from Stripe
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+    // Find the payment record
+    const payment = await Payment.findOne({
+      stripePaymentIntentId: paymentIntentId,
+    });
+
+    if (!payment) {
+      return res.status(404).json({
         success: false,
-        message: "Payment failed",
+        message: "Payment record not found",
       });
     }
+
+    // Verify ownership
+    if (payment.user.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    // Update payment status based on Stripe status
+    if (paymentIntent.status === "succeeded") {
+      payment.status = "completed";
+      payment.stripeChargeId = paymentIntent.latest_charge;
+    } else if (paymentIntent.status === "processing") {
+      payment.status = "processing";
+    } else if (
+      paymentIntent.status === "requires_payment_method" ||
+      paymentIntent.status === "canceled"
+    ) {
+      payment.status = "failed";
+    }
+
+    await payment.save();
+
+    res.json({
+      success: true,
+      message:
+        payment.status === "completed"
+          ? "Payment confirmed successfully"
+          : `Payment status: ${payment.status}`,
+      data: {
+        id: payment._id,
+        status: payment.status,
+        amount: payment.amount,
+        currency: payment.currency,
+      },
+    });
   } catch (error) {
-    console.error("Process payment error:", error);
-    res
-      .status(500)
-      .json({ success: false, message: "Server error", error: error.message });
+    console.error("Confirm payment error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
   }
+};
+
+// Handle Stripe webhooks
+const handleWebhook = async (req, res) => {
+  const sig = req.headers["stripe-signature"];
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+  } catch (err) {
+    console.error(`Webhook signature verification failed: ${err.message}`);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Handle the event
+  switch (event.type) {
+    case "payment_intent.succeeded": {
+      const paymentIntent = event.data.object;
+      console.log(`PaymentIntent ${paymentIntent.id} succeeded`);
+
+      // Update payment record
+      const payment = await Payment.findOne({
+        stripePaymentIntentId: paymentIntent.id,
+      });
+
+      if (payment) {
+        payment.status = "completed";
+        payment.stripeChargeId = paymentIntent.latest_charge;
+        await payment.save();
+        console.log(`Payment ${payment._id} marked as completed`);
+      }
+      break;
+    }
+
+    case "payment_intent.payment_failed": {
+      const paymentIntent = event.data.object;
+      console.log(
+        `PaymentIntent ${paymentIntent.id} failed: ${paymentIntent.last_payment_error?.message}`,
+      );
+
+      const payment = await Payment.findOne({
+        stripePaymentIntentId: paymentIntent.id,
+      });
+
+      if (payment) {
+        payment.status = "failed";
+        await payment.save();
+        console.log(`Payment ${payment._id} marked as failed`);
+      }
+      break;
+    }
+
+    case "charge.refunded": {
+      const charge = event.data.object;
+      console.log(`Charge ${charge.id} refunded`);
+
+      const payment = await Payment.findOne({
+        stripeChargeId: charge.id,
+      });
+
+      if (payment) {
+        payment.status = "refunded";
+        payment.refundedAt = new Date();
+        await payment.save();
+        console.log(`Payment ${payment._id} marked as refunded`);
+      }
+      break;
+    }
+
+    default:
+      console.log(`Unhandled event type: ${event.type}`);
+  }
+
+  res.json({ received: true });
 };
 
 // Save payment method
@@ -338,7 +524,7 @@ const downloadReceipt = async (req, res) => {
   }
 };
 
-// Process refund
+// Process refund via Stripe
 const processRefund = async (req, res) => {
   try {
     const { paymentId } = req.params;
@@ -355,7 +541,29 @@ const processRefund = async (req, res) => {
         .json({ message: "Only completed payments can be refunded" });
     }
 
-    // Mock refund processing
+    if (!payment.stripePaymentIntentId) {
+      return res.status(400).json({
+        message: "No Stripe payment found for this transaction",
+      });
+    }
+
+    // Calculate refund amount in cents
+    const refundAmountCents = amount
+      ? Math.round(amount * 100)
+      : Math.round(payment.amount * 100);
+
+    // Create Stripe refund
+    const refund = await stripe.refunds.create({
+      payment_intent: payment.stripePaymentIntentId,
+      amount: refundAmountCents,
+      reason: reason === "duplicate" ? "duplicate" : "requested_by_customer",
+      metadata: {
+        paymentId: paymentId.toString(),
+        reason: reason || "Customer requested refund",
+      },
+    });
+
+    // Update payment record
     const refundAmount = amount || payment.amount;
     payment.status = "refunded";
     payment.refundAmount = refundAmount;
@@ -368,6 +576,7 @@ const processRefund = async (req, res) => {
       message: "Refund processed successfully",
       refund: {
         paymentId: payment._id,
+        stripeRefundId: refund.id,
         amount: refundAmount,
         reason,
         refundedAt: payment.refundedAt,
@@ -375,6 +584,9 @@ const processRefund = async (req, res) => {
     });
   } catch (error) {
     console.error("Process refund error:", error);
+    if (error.type === "StripeInvalidRequestError") {
+      return res.status(400).json({ message: error.message });
+    }
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -562,7 +774,10 @@ const getUserStatistics = async (req, res) => {
 };
 
 module.exports = {
-  processPayment,
+  getStripeConfig,
+  createPaymentIntent,
+  confirmPayment,
+  handleWebhook,
   savePaymentMethod,
   getSavedPaymentMethods,
   setDefaultPaymentMethod,

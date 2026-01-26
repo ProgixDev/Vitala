@@ -582,7 +582,6 @@ exports.checkNurseAvailability = async (req, res) => {
 // @route   GET /api/appointments/unassigned
 // @access  Private (Nurse)
 exports.getUnassignedAppointments = async (req, res) => {
-  console.log("Fetching unassigned appointments...");
   try {
     const appointments = await Appointment.find({
       nurse: { $exists: false },
@@ -591,8 +590,6 @@ exports.getUnassignedAppointments = async (req, res) => {
       .populate("patient", "fullName email userType")
       .populate("payment")
       .sort({ scheduledDate: -1 });
-
-    console.log(appointments);
 
     res.status(200).json({
       success: true,

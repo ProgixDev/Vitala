@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "androidStatusBar": {
-      "hidden": true
+      "hidden": true,
+      "backgroundColor": "#ffffff"
     },
     "androidNavigationBar": {
       "visible": false
@@ -19,8 +20,9 @@
       "infoPlist": {
         "UIStatusBarHidden": true,
         "UIViewControllerBasedStatusBarAppearance": false,
-        "UIBackgroundModes": ["remote-notification"]
-      }
+        "UIBackgroundModes": ["remote-notification", "remote-notification"]
+      },
+      "bundleIdentifier": "com.anonymous.Vitala"
     },
     "android": {
       "adaptiveIcon": {
@@ -28,18 +30,30 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "usesCleartextTraffic": true
+      "usesCleartextTraffic": true,
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ],
+      "package": "com.anonymous.Vitala"
     },
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.vitala",
+          "enableGooglePay": true
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/favicon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
@@ -74,7 +88,8 @@
       "eas": {
         "projectId": "your-project-id-here"
       },
-      "apiUrl": "http://localhost:5000"
+      "apiUrl": "http://localhost:5000",
+      "stripePublishableKey": "pk_test_51SkbJ13vj5x2zzOgSv8wB5qoTsVQ9VHCgvKSRZabV6kaP0Zwe53uLlvR0CAXmHz1IhBSpXabH5116ISxbLM6t4w500n929praY"
     }
   }
 }

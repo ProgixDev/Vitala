@@ -34,7 +34,14 @@ const io = socketIo(server, {
 });
 
 // Body parser middleware
-app.use(express.json());
+// Skip JSON parsing for Stripe webhook route (needs raw body for signature verification)
+app.use((req, res, next) => {
+  if (req.originalUrl === "/api/payments/webhook") {
+    next();
+  } else {
+    express.json()(req, res, next);
+  }
+});
 app.use(express.urlencoded({ extended: true }));
 
 // Security middleware
