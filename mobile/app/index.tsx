@@ -1,6 +1,7 @@
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 import {
   Onboarding,
   isOnboardingCompleted,
@@ -11,19 +12,25 @@ export default function Index() {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<
     boolean | null
   >(null);
+  const { currentUser, loading } = useCurrentUser();
 
   useEffect(() => {
     checkOnboardingStatus();
   }, []);
 
+  // When onboarding is done, wait for auth state then go to tabs or signin (so logged-in users never see signin)
+  useEffect(() => {
+    if (hasCompletedOnboarding !== true || loading) return;
+    if (currentUser) {
+      router.replace("/(tabs)");
+    } else {
+      router.replace("/signin");
+    }
+  }, [hasCompletedOnboarding, loading, currentUser]);
+
   const checkOnboardingStatus = async () => {
     const completed = await isOnboardingCompleted();
     setHasCompletedOnboarding(completed);
-
-    // If onboarding is completed, navigate to signin
-    if (completed) {
-      router.push("/signin");
-    }
   };
 
   const handleComplete = async () => {
@@ -42,15 +49,22 @@ export default function Index() {
     router.replace("/signin");
   };
 
-  // Show loading or onboarding based on status
+  // Show loading while checking onboarding or auth (so logged-in users never see signin screen)
   if (hasCompletedOnboarding === null) {
-    // Still checking status, could show a loading screen here
-    return <View className="flex-1" />;
+    return (
+      <View className="flex-1 items-center justify-center bg-[#F6F6F6]">
+        <ActivityIndicator size="large" color="#4461F2" />
+      </View>
+    );
   }
 
   if (hasCompletedOnboarding) {
-    // User has completed onboarding, navigation will happen in useEffect
-    return <View className="flex-1" />;
+    // Auth check and navigation happen in useEffect; show loading until we redirect
+    return (
+      <View className="flex-1 items-center justify-center bg-[#F6F6F6]">
+        <ActivityIndicator size="large" color="#4461F2" />
+      </View>
+    );
   }
 
   // Show onboarding for first-time users
