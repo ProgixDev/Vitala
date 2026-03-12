@@ -10,6 +10,7 @@ import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   BackHandler,
   Image,
@@ -22,7 +23,7 @@ import {
 import Toast from "react-native-toast-message";
 
 export default function MyProfile() {
-  const { currentUser, refreshUser } = useCurrentUser();
+  const { currentUser, loading, refreshUser } = useCurrentUser();
   const [uploadingImage, setUploadingImage] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState<any>(null);
@@ -226,6 +227,30 @@ export default function MyProfile() {
       setSaving(false);
     }
   };
+
+  // Show loading with same header so user never sees "No user data" flash
+  if (loading) {
+    return (
+      <View className="flex-1 bg-[#F9FAFB]">
+        <View className="flex-row items-center justify-between px-4 pt-15 pb-4 bg-white border-b border-[#F3F4F6]">
+          <TouchableOpacity
+            className="w-10 h-10 items-center justify-center"
+            onPress={() => router.replace("/(tabs)/profile")}
+          >
+            <Ionicons name="arrow-back" size={24} color="#1F2937" />
+          </TouchableOpacity>
+          <Text className="text-lg font-semibold text-[#1F2937]">
+            My Profile
+          </Text>
+          <View className="w-10 h-10" />
+        </View>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#4461F2" />
+          <Text className="text-sm text-[#6B7280] mt-3">Loading profile...</Text>
+        </View>
+      </View>
+    );
+  }
 
   if (!currentUser) {
     return (
