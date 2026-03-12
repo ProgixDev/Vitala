@@ -199,8 +199,10 @@ export default function SignUp() {
           medicalProfile,
         });
 
-        const { token, refreshToken } = resp.data;
-        await setTokens(token, refreshToken);
+        const data = resp?.data;
+        if (data?.token && data?.refreshToken) {
+          await setTokens(data.token, data.refreshToken);
+        }
 
         // Start the resend timer
         setTimer(59);

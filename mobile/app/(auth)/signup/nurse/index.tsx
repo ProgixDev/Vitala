@@ -213,9 +213,10 @@ export default function NurseSignUp() {
 
         const resp = await registerNurse(form);
         console.log("Nurse registration response:", resp);
-        const { token, refreshToken } = resp.data;
-
-        await setTokens(token, refreshToken);
+        const data = resp?.data;
+        if (data?.token && data?.refreshToken) {
+          await setTokens(data.token, data.refreshToken);
+        }
 
         Toast.show({
           type: "success",
