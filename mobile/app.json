@@ -28,6 +28,11 @@
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE"
       },
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCTrS2LsXHaHjAAW6lQQubhczO4c0Yh6nE"
+        }
+      },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "usesCleartextTraffic": true,
@@ -42,6 +47,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "./plugins/withGoogleMapsApiKey",
       [
         "@stripe/stripe-react-native",
         {

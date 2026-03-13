@@ -64,9 +64,9 @@ export default function PaymentdPage() {
   useEffect(() => {
     // Fetch recent payments
     const fetchRecentPayments = async () => {
-      setIsLoading(true);
       try {
         if (!currentUser?.token) {
+          setLoadingPayments(false);
           return;
         }
 
