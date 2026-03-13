@@ -1,8 +1,10 @@
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
+import { Camera, MapView, PointAnnotation } from "@rnmapbox/maps";
 import { router } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import * as Location from "expo-location";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -15,17 +17,23 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import MapView, { LatLng, Marker, Region } from "react-native-maps";
 
-import * as Location from "expo-location";
+type Coordinate = { latitude: number; longitude: number };
+
+function toLngLat(c: Coordinate): [number, number] {
+  return [c.longitude, c.latitude];
+}
+
+const DEFAULT_CENTER: [number, number] = [-74.006, 40.7128];
+const DEFAULT_ZOOM = 12;
 
 export default function App() {
   const { currentUser, refreshUser } = useCurrentUser();
-  const mapRef = useRef<MapView | null>(null);
+  const cameraRef = useRef<Camera>(null);
 
   const [userLocation, setUserLocation] =
     useState<Location.LocationObject | null>(null);
-  const [newLocation, setNewLocation] = useState<LatLng | null>(null);
+  const [newLocation, setNewLocation] = useState<Coordinate | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [address, setAddress] = useState("");
   const [label, setLabel] = useState("");
@@ -33,6 +41,17 @@ export default function App() {
     number | null
   >(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
+
+  const animateTo = useCallback(
+    (lngLat: [number, number], zoom: number = 14) => {
+      cameraRef.current?.setCamera({
+        centerCoordinate: lngLat,
+        zoomLevel: zoom,
+        animationDuration: 350,
+      });
+    },
+    [],
+  );
 
   useEffect(() => {
     async function getCurrentLocation() {
@@ -57,20 +76,15 @@ export default function App() {
     getCurrentLocation();
   }, []);
 
-  // Animate to user location when it's loaded
   useEffect(() => {
-    if (userLocation && mapRef.current && !newLocation) {
-      const region: Region = {
-        latitude: userLocation.coords.latitude,
-        longitude: userLocation.coords.longitude,
-        latitudeDelta: 0.1,
-        longitudeDelta: 0.1,
-      };
-      mapRef.current.animateToRegion(region, 1000);
+    if (userLocation && !newLocation) {
+      animateTo([
+        userLocation.coords.longitude,
+        userLocation.coords.latitude,
+      ], 14);
     }
-  }, [userLocation]);
+  }, [userLocation, newLocation, animateTo]);
 
-  // Handle back button - go back to previous screen (booking flow)
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
       "hardwareBackPress",
@@ -79,15 +93,20 @@ export default function App() {
         return true;
       },
     );
-
     return () => backHandler.remove();
   }, []);
 
   const handleAddNewLocation = () => {
-    setNewLocation({
-      latitude: userLocation?.coords.latitude || 0,
-      longitude: userLocation?.coords.longitude || 0,
-    });
+    if (userLocation) {
+      setNewLocation({
+        latitude: userLocation.coords.latitude,
+        longitude: userLocation.coords.longitude,
+      });
+      animateTo(
+        [userLocation.coords.longitude, userLocation.coords.latitude],
+        14,
+      );
+    }
     setSelectedLocationIndex(null);
   };
 
@@ -96,16 +115,9 @@ export default function App() {
     setIsModalVisible(true);
   };
 
-  const handleCenterOnLocation = (coordinate: LatLng, index: number) => {
-    if (!mapRef.current) return;
+  const handleCenterOnLocation = (coordinate: Coordinate, index: number) => {
     setSelectedLocationIndex(index);
-    const region: Region = {
-      latitude: coordinate.latitude,
-      longitude: coordinate.longitude,
-      latitudeDelta: 0.06,
-      longitudeDelta: 0.06,
-    };
-    mapRef.current.animateToRegion(region, 350);
+    animateTo([coordinate.longitude, coordinate.latitude], 14);
   };
 
   const handleSaveLocation = async () => {
@@ -157,23 +169,23 @@ export default function App() {
       return;
     }
 
-    if (!userLocation || !mapRef.current) {
+    if (!userLocation) {
       Alert.alert("Error", "Unable to get your current location");
       return;
     }
 
-    const region: Region = {
-      latitude: userLocation.coords.latitude,
-      longitude: userLocation.coords.longitude,
-      latitudeDelta: 0.1,
-      longitudeDelta: 0.1,
-    };
-    mapRef.current.animateToRegion(region, 350);
+    animateTo([
+      userLocation.coords.longitude,
+      userLocation.coords.latitude,
+    ], 14);
   };
+
+  const initialCenter = userLocation
+    ? [userLocation.coords.longitude, userLocation.coords.latitude]
+    : DEFAULT_CENTER;
 
   return (
     <View className="flex-1 relative">
-      {/* Back Button */}
       <View className="absolute top-12 left-4 z-10">
         <TouchableOpacity
           className="w-12 h-12 bg-white rounded-full justify-center items-center shadow-lg"
@@ -183,47 +195,50 @@ export default function App() {
         </TouchableOpacity>
       </View>
 
-      <MapView
-        ref={(ref) => {
-          mapRef.current = ref;
-        }}
-        showsUserLocation
-        showsMyLocationButton={false}
-        toolbarEnabled={false}
-        style={styles.map}
-        initialRegion={{
-          latitude: userLocation?.coords.latitude || 40.7128, // Default to New York
-          longitude: userLocation?.coords.longitude || -74.006,
-          latitudeDelta: 0.1,
-          longitudeDelta: 0.1,
-        }}
-      >
-        {/* Existing user locations */}
+      <MapView style={styles.map}>
+        <Camera
+          ref={cameraRef}
+          defaultSettings={{
+            centerCoordinate: initialCenter,
+            zoomLevel: DEFAULT_ZOOM,
+          }}
+        />
+
         {!newLocation &&
           currentUser?.locations?.map((location, index) => (
-            <Marker
-              key={index}
-              coordinate={location.coordinates}
+            <PointAnnotation
+              key={`loc-${index}`}
+              id={`loc-${index}`}
+              coordinate={toLngLat(location.coordinates)}
               title={location.label}
-              description={location.address}
-              pinColor={selectedLocationIndex === index ? "#4461F2" : "red"}
-            />
+            >
+              <View
+                style={[
+                  styles.marker,
+                  selectedLocationIndex === index && styles.markerSelected,
+                ]}
+              />
+            </PointAnnotation>
           ))}
 
-        {/* New draggable location marker */}
         {newLocation && (
-          <Marker
+          <PointAnnotation
+            id="new-location"
+            coordinate={toLngLat(newLocation)}
             draggable
-            onDragEnd={(e) => setNewLocation(e.nativeEvent.coordinate)}
-            coordinate={newLocation}
+            onDragEnd={(payload) => {
+              const coords = payload?.geometry?.coordinates;
+              if (Array.isArray(coords) && coords.length >= 2) {
+                setNewLocation({ longitude: coords[0], latitude: coords[1] });
+              }
+            }}
             title="New Location"
-            description="Drag to adjust position"
-            pinColor="blue"
-          />
+          >
+            <View style={[styles.marker, styles.markerNew]} />
+          </PointAnnotation>
         )}
       </MapView>
 
-      {/* Bottom Panel */}
       <View className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-5 shadow-2xl pb-12">
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -273,7 +288,6 @@ export default function App() {
           )}
         </ScrollView>
 
-        {/* Action Buttons */}
         {!newLocation ? (
           <View className="flex-row gap-3">
             <TouchableOpacity
@@ -319,7 +333,6 @@ export default function App() {
         )}
       </View>
 
-      {/* Modal for Address and Label Input */}
       <Modal
         visible={isModalVisible}
         transparent
@@ -333,7 +346,6 @@ export default function App() {
               Save Location
             </Text>
 
-            {/* Label Input */}
             <View className="mb-4">
               <Text className="text-sm font-semibold text-[#2D3142] mb-2">
                 Label
@@ -347,7 +359,6 @@ export default function App() {
               />
             </View>
 
-            {/* Address Input */}
             <View className="mb-6">
               <Text className="text-sm font-semibold text-[#2D3142] mb-2">
                 Address
@@ -364,7 +375,6 @@ export default function App() {
               />
             </View>
 
-            {/* Coordinates Display */}
             {newLocation && (
               <View className="bg-[#4461F2]/10 rounded-2xl p-3 mb-6">
                 <Text className="text-xs text-[#9E9E9E] mb-1">
@@ -377,7 +387,6 @@ export default function App() {
               </View>
             )}
 
-            {/* Buttons */}
             <View className="flex-row gap-3">
               <TouchableOpacity
                 onPress={() => {
@@ -406,10 +415,21 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   map: {
     flex: 1,
+  },
+  marker: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#E53935",
+    borderWidth: 2,
+    borderColor: "#fff",
+  },
+  markerSelected: {
+    backgroundColor: "#4461F2",
+  },
+  markerNew: {
+    backgroundColor: "#2196F3",
   },
 });

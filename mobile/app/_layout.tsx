@@ -1,5 +1,6 @@
 import { useNotifications } from "@/hooks/useNotifications";
 import { StripeProvider } from "@stripe/stripe-react-native";
+import Mapbox from "@rnmapbox/maps";
 import Constants from "expo-constants";
 import { Stack } from "expo-router";
 import { LogBox } from "react-native";
@@ -9,6 +10,13 @@ import "./global.css";
 
 // Initialize react-native-css
 import "react-native-css";
+
+// Mapbox access token (from env or app config)
+const MAPBOX_TOKEN =
+  process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ||
+  (Constants.expoConfig?.extra as any)?.mapboxAccessToken ||
+  "";
+if (MAPBOX_TOKEN) Mapbox.setAccessToken(MAPBOX_TOKEN);
 
 // Suppress Expo Go notification warnings
 LogBox.ignoreLogs([
