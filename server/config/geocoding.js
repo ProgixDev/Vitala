@@ -1,8 +1,8 @@
 const NodeGeocoder = require("node-geocoder");
 
 const options = {
-  provider: "google",
-  apiKey: process.env.GOOGLE_MAPS_API_KEY,
+  provider: "mapbox",
+  apiKey: process.env.MAPBOX_ACCESS_TOKEN,
   formatter: null,
 };
 
