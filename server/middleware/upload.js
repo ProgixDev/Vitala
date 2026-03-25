@@ -1,6 +1,9 @@
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const { ensureUploadTempDir } = require("../utils/uploadTempDir");
+
+const profileUploadTempDir = ensureUploadTempDir();
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -21,7 +24,7 @@ const storage = new CloudinaryStorage({
 // Local storage for profile pictures (will be uploaded to Cloudinary manually)
 const profileStorage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/temp/");
+    cb(null, profileUploadTempDir);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);

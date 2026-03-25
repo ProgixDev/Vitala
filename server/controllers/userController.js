@@ -1,13 +1,6 @@
 const User = require("../models/User");
 const cloudinary = require("../config/cloudinary");
 const fs = require("fs");
-const path = require("path");
-
-// Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, "../uploads/temp");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
 
 // @desc    Get user profile
 // @route   GET /api/users/profile
