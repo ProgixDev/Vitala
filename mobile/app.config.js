@@ -3,22 +3,23 @@ require("dotenv").config({ path: path.resolve(__dirname, ".env") });
 
 const base = require("./app.json");
 
-const googleMapsApiKey =
-  process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY ||
-  process.env.GOOGLE_MAPS_ANDROID_API_KEY ||
+const mapboxAccessToken =
+  process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ||
+  process.env.MAPBOX_ACCESS_TOKEN ||
   "";
 
 module.exports = {
   expo: {
     ...base.expo,
-    android: {
-      ...base.expo.android,
-      config: {
-        ...(base.expo.android.config || {}),
-        googleMaps: {
-          apiKey: googleMapsApiKey || base.expo.android.config?.googleMaps?.apiKey,
-        },
-      },
+    plugins: base.expo.plugins.map((plugin) => {
+      if (Array.isArray(plugin) && plugin[0] === "@rnmapbox/maps") {
+        return ["@rnmapbox/maps", { accessToken: mapboxAccessToken }];
+      }
+      return plugin;
+    }),
+    extra: {
+      ...base.expo.extra,
+      mapboxAccessToken,
     },
   },
 };
