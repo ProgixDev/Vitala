@@ -115,37 +115,12 @@ app.use(mongoSanitize());
 app.use(hpp());
 
 // CORS
-const vercelOrigin = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : null;
-
+// Accept requests from any origin. We still reflect the request's origin
+// so `credentials: true` works with browsers.
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-
-      const allowedOrigins = [
-        "http://localhost:8081",
-        "http://192.168.1.165:8081",
-        "exp://192.168.1.165:8081",
-        process.env.FRONTEND_URL,
-        vercelOrigin,
-      ].filter(Boolean);
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      if (
-        origin.includes("192.168.1.") ||
-        origin.includes("localhost") ||
-        origin.includes("exp://") ||
-        origin.includes(".vercel.app")
-      ) {
-        return callback(null, true);
-      }
-
-      return callback(new Error("Not allowed by CORS"));
+    origin: function (_origin, callback) {
+      callback(null, true);
     },
     credentials: true,
   }),

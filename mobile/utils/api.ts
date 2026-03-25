@@ -6,13 +6,15 @@ import { Platform } from "react-native";
 const RAW_API_BASE_URL: string =
   process.env.EXPO_PUBLIC_API_URL ||
   (Constants?.expoConfig?.extra as any)?.apiUrl ||
-  "http://localhost:5000";
+  "https://vitala-sigma.vercel.app";
 
 // Android emulator cannot reach host machine via localhost.
+const NORMALIZED_RAW_API_BASE_URL = RAW_API_BASE_URL.replace(/\/$/, "");
+
 const API_BASE_URL =
   Platform.OS === "android"
-    ? RAW_API_BASE_URL.replace("://localhost", "://10.0.2.2")
-    : RAW_API_BASE_URL;
+    ? NORMALIZED_RAW_API_BASE_URL.replace("://localhost", "://10.0.2.2")
+    : NORMALIZED_RAW_API_BASE_URL;
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 

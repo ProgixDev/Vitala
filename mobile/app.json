@@ -89,7 +89,7 @@
       "eas": {
         "projectId": "your-project-id-here"
       },
-      "apiUrl": "http://localhost:5000",
+      "apiUrl": "https://vitala-sigma.vercel.app",
       "stripePublishableKey": "pk_test_51SkbJ13vj5x2zzOgSv8wB5qoTsVQ9VHCgvKSRZabV6kaP0Zwe53uLlvR0CAXmHz1IhBSpXabH5116ISxbLM6t4w500n929praY"
     }
   }
