@@ -7,8 +7,16 @@ if (!cached) {
 }
 
 const connectDB = async () => {
-  if (!process.env.MONGODB_URI) {
-    throw new Error("MONGODB_URI is not defined");
+  if (!process.env.MONGODB_URI || !String(process.env.MONGODB_URI).trim()) {
+    const err = new Error("MONGODB_URI is not defined");
+    err.code = "MONGODB_URI_MISSING";
+    throw err;
+  }
+
+  // Drop stale handles after cold sleep or network blips (common on serverless).
+  if (cached.conn && cached.conn.connection?.readyState !== 1) {
+    cached.conn = null;
+    cached.promise = null;
   }
 
   if (cached.conn) {
@@ -17,8 +25,11 @@ const connectDB = async () => {
 
   if (!cached.promise) {
     const opts = {
-      maxPoolSize: 10,
-      serverSelectionTimeoutMS: 10_000,
+      maxPoolSize: 5,
+      serverSelectionTimeoutMS: 20_000,
+      socketTimeoutMS: 45_000,
+      // Prefer IPv4; some serverless runtimes have flaky IPv6 to Atlas.
+      family: 4,
     };
     cached.promise = mongoose.connect(process.env.MONGODB_URI, opts);
   }
@@ -31,6 +42,7 @@ const connectDB = async () => {
     return cached.conn;
   } catch (error) {
     cached.promise = null;
+    cached.conn = null;
     console.error(`MongoDB connection error: ${error.message}`);
     if (!process.env.VERCEL) {
       process.exit(1);

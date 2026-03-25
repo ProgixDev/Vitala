@@ -82,10 +82,19 @@ app.use(async (req, res, next) => {
     next();
   } catch (err) {
     console.error("Database connection failed:", err);
-    res.status(503).json({
+    const code =
+      err.code === "MONGODB_URI_MISSING" || err.message === "MONGODB_URI is not defined"
+        ? "MONGODB_URI_MISSING"
+        : "MONGODB_CONNECTION_FAILED";
+    const payload = {
       success: false,
       message: "Database unavailable",
-    });
+      code,
+    };
+    if (process.env.NODE_ENV === "development") {
+      payload.detail = err.message;
+    }
+    res.status(503).json(payload);
   }
 });
 
