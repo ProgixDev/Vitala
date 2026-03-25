@@ -70,6 +70,18 @@ exports.registerPatient = async (req, res) => {
       success: true,
       message:
         "Patient registered successfully. Please check your email to verify your account.",
+      data: {
+        user: {
+          id: user._id,
+          fullName: user.fullName,
+          email: user.email,
+          userType: user.userType,
+          isEmailVerified: user.isEmailVerified,
+        },
+        token,
+        refreshToken,
+        requiresEmailVerification: true,
+      },
     });
   } catch (error) {
     res.status(500).json({
@@ -178,6 +190,17 @@ exports.registerNurse = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Nurse registered successfully. Account pending verification.",
+      data: {
+        user: {
+          id: user._id,
+          fullName: user.fullName,
+          email: user.email,
+          userType: user.userType,
+          status: user.status,
+        },
+        token,
+        refreshToken,
+      },
     });
   } catch (error) {
     res.status(500).json({

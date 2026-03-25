@@ -1,11 +1,18 @@
 import Constants from "expo-constants";
+import { Platform } from "react-native";
 
 // Get API URL from environment variable or app config
 // Priority: EXPO_PUBLIC_API_URL > app.json extra.apiUrl > localhost
-const API_BASE_URL: string =
+const RAW_API_BASE_URL: string =
   process.env.EXPO_PUBLIC_API_URL ||
   (Constants?.expoConfig?.extra as any)?.apiUrl ||
   "http://localhost:5000";
+
+// Android emulator cannot reach host machine via localhost.
+const API_BASE_URL =
+  Platform.OS === "android"
+    ? RAW_API_BASE_URL.replace("://localhost", "://10.0.2.2")
+    : RAW_API_BASE_URL;
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 

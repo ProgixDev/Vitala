@@ -11,12 +11,18 @@ import "./global.css";
 // Initialize react-native-css
 import "react-native-css";
 
-// Mapbox access token (from env or app config)
+// Mapbox access token (Expo inlines EXPO_PUBLIC_*; app.config.js also puts it in extra)
 const MAPBOX_TOKEN =
-  process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ||
   (Constants.expoConfig?.extra as any)?.mapboxAccessToken ||
+  process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ||
   "";
-if (MAPBOX_TOKEN) Mapbox.setAccessToken(MAPBOX_TOKEN);
+if (MAPBOX_TOKEN) {
+  Mapbox.setAccessToken(MAPBOX_TOKEN);
+} else if (__DEV__) {
+  console.warn(
+    "Mapbox: set EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN in mobile/.env (see .env.example), then restart Expo with cache cleared.",
+  );
+}
 
 // Suppress Expo Go notification warnings
 LogBox.ignoreLogs([
