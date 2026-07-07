@@ -1,0 +1,240 @@
+import React, { useEffect, useState } from "react";
+import {
+  BackHandler,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+import LoadingScreen from "@/components/LoadingScreen";
+import PasswordInput from "@/components/PasswordInput";
+import { login as apiLogin } from "@/utils/api";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import Toast from "react-native-toast-message";
+
+export default function SignIn() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { setTokens } = useCurrentUser();
+
+  // Handle back button - prevent going back from signin page
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        // Return true to prevent default back behavior (exit app)
+        return true;
+      },
+    );
+
+    return () => backHandler.remove();
+  }, []);
+
+  const handleContinue = async () => {
+    // Validate inputs
+    if (!email || !password) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Please enter both email and password",
+      });
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      const resp = await apiLogin(email, password);
+      const { user: apiUser, token, refreshToken } = resp.data;
+
+      // Store tokens
+      await setTokens(token, refreshToken);
+
+      if (apiUser.userType === "nurse" && apiUser.status === "pending") {
+        router.replace("/profile/pending");
+      } else {
+        router.replace("/(tabs)");
+      }
+    } catch (apiErr: any) {
+      if (
+        apiErr.message?.includes("Email not verified") ||
+        apiErr.message?.includes("403")
+      ) {
+        Toast.show({
+          type: "info",
+          text1: "Email Verification Required",
+          text2: "Redirecting to email verification...",
+        });
+
+        // Navigate to signup verification step
+        router.replace({
+          pathname: "/(auth)/signup",
+          params: { step: "verification", email: email },
+        });
+      } else {
+        console.warn("API login failed:", apiErr);
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: apiErr.message || "Invalid email or password",
+        });
+
+        console.error("Error during sign in:", apiErr);
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Error signing in. Please try again.",
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = () => {
+    // Use entered email to request reset
+    if (!email) {
+      Toast.show({
+        type: "error",
+        text1: "Forgot Password",
+        text2: "Please enter your email above first",
+      });
+      return;
+    }
+    apiLogin; // noop to keep imports used
+    (async () => {
+      try {
+        setIsLoading(true);
+        const { forgotPassword } = await import("@/utils/api");
+        const response = await forgotPassword(email);
+
+        setIsLoading(false);
+
+        // Navigate to verify reset code screen
+        router.push({
+          pathname: "/(auth)/verify-reset-code",
+          params: {
+            email,
+            // In development, include the reset code for easy testing
+            ...(response?.resetCode &&
+              __DEV__ && { resetCode: response.resetCode }),
+          },
+        });
+
+        Toast.show({
+          type: "success",
+          text1: "Code Sent",
+          text2: "Check your email for the reset code",
+          visibilityTime: 4000,
+        });
+      } catch (err: any) {
+        setIsLoading(false);
+        console.error("Forgot password error:", err);
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: err?.message || "Could not send reset code",
+        });
+      }
+    })();
+  };
+
+  const handleCreateAccount = () => {
+    router.replace("/signup/choose");
+  };
+
+  return (
+    <KeyboardAvoidingView
+      className="flex-1"
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Sign In Title */}
+        <Text className="text-4xl font-semibold text-[#2D3142] text-center my-[15%]">
+          Sign In
+        </Text>
+
+        {/* Email Input */}
+        <View className="mb-5">
+          <View className="flex-row items-center bg-white rounded-2xl px-4 h-15 shadow-sm">
+            <Ionicons
+              name="person-outline"
+              size={24}
+              color="#4461F2"
+              className="mr-3"
+            />
+            <TextInput
+              className="flex-1 text-base text-[#2D3142]"
+              placeholder="Enter email address"
+              placeholderTextColor="#B8B8B8"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+        </View>
+
+        {/* Password Input */}
+        <View className="mb-5">
+          <PasswordInput
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Enter password"
+            showIcon={true}
+          />
+        </View>
+
+        {/* Forgot Password */}
+        <TouchableOpacity
+          className="self-end mt-2 mb-10"
+          onPress={handleForgotPassword}
+        >
+          <Text className="text-[15px] text-[#2D3142] font-medium">
+            Forgot password?
+          </Text>
+        </TouchableOpacity>
+
+        {/* Continue Button */}
+        <TouchableOpacity
+          className="bg-[#4461F2] rounded-[28px] h-14 justify-center items-center shadow-lg mb-8"
+          onPress={handleContinue}
+          disabled={isLoading}
+        >
+          <Text className="text-lg font-semibold text-white">Continue</Text>
+        </TouchableOpacity>
+
+        {/* Create Account */}
+        <View className="flex-row justify-center items-center">
+          <Text className="text-[15px] text-gray-500">
+            Don&apos;t have an account?{" "}
+          </Text>
+          <TouchableOpacity onPress={handleCreateAccount}>
+            <Text className="text-[15px] text-[#2D3142] font-semibold">
+              Create Account
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+
+      <LoadingScreen
+        visible={isLoading}
+        message="Signing you in..."
+        subtitle="Please wait while we authenticate you"
+      />
+    </KeyboardAvoidingView>
+  );
+}
