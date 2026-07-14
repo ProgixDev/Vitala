@@ -67,6 +67,7 @@ import {
   Pill,
   Stethoscope,
   Pulse,
+  Siren,
   Ambulance,
   Car,
   // brand / social
@@ -175,6 +176,7 @@ const MAP = {
   'bandage-outline': Bandaids,
   'accessibility-outline': Wheelchair,
   'medical-outline': Pill,
+  siren: Siren,
   'fitness-outline': Stethoscope,
   'car-sport': Ambulance,
   'car-outline': Car,

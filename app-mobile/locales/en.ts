@@ -221,6 +221,14 @@ export const en: Record<string, string> = {
   'learn.minRead': '{min} min read',
   'learn.startScenario': 'Start',
   'learn.comingSoon': 'Coming soon',
+  'learn.heroLede': 'Four proven protocols. Learn them once, act on instinct.',
+  'learn.statProtocols': 'protocols',
+  'learn.statLearn': 'min to learn',
+  'learn.statFree': 'no account',
+  'learn.protocolsTitle': 'Emergency protocols',
+  'learn.protocolsDesc': 'Clear, calm steps you can follow under pressure.',
+  'learn.soon': 'Soon',
+  'learn.steps': 'The steps',
 
   // ---- nurse home ----
   'nurseHome.greeting': 'Hello, {name}',
