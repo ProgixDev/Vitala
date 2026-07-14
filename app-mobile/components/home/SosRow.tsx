@@ -20,7 +20,7 @@ export function SosRow() {
         style={shadow.e2}
         className="flex-row items-center gap-3.5 rounded-card bg-emergency p-3.5 active:opacity-90"
       >
-        <Well size={54} radius={18} elevated={false} photoUri={categoryImage('emergency')} />
+        <Well size={54} radius={18} elevated={false} source={{ uri: categoryImage('emergency') }} />
         <View className="flex-1">
           <Text
             variant="label"
