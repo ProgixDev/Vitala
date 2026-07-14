@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Card,
   CardContent,
@@ -7,19 +5,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
-import { Search, UserPlus, MoreVertical, Mail, Phone } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Phone } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -28,68 +16,43 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { apiGet } from "@/lib/api";
 
-const users = [
-  {
-    id: 1,
-    name: "John Doe",
-    email: "john.doe@example.com",
-    phone: "+1 234 567 8900",
-    role: "patient",
-    status: "active",
-    avatar: null,
-    registeredDate: "2024-01-15",
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    email: "jane.smith@example.com",
-    phone: "+1 234 567 8901",
-    role: "provider",
-    status: "active",
-    avatar: null,
-    registeredDate: "2024-01-20",
-  },
-  {
-    id: 3,
-    name: "Mike Johnson",
-    email: "mike.j@example.com",
-    phone: "+1 234 567 8902",
-    role: "patient",
-    status: "inactive",
-    avatar: null,
-    registeredDate: "2024-02-01",
-  },
-  {
-    id: 4,
-    name: "Sarah Williams",
-    email: "sarah.w@example.com",
-    phone: "+1 234 567 8903",
-    role: "provider",
-    status: "active",
-    avatar: null,
-    registeredDate: "2024-02-10",
-  },
-  {
-    id: 5,
-    name: "David Brown",
-    email: "david.brown@example.com",
-    phone: "+1 234 567 8904",
-    role: "patient",
-    status: "active",
-    avatar: null,
-    registeredDate: "2024-02-15",
-  },
-];
+interface Profile {
+  id: string;
+  full_name: string;
+  phone: string | null;
+  role: "patient" | "nurse" | "admin";
+  status: string;
+  avatar_url: string | null;
+  created_at: string;
+}
 
-export default function UsersPage() {
-  const getInitials = (name: string) => {
-    return name
+function initials(name: string) {
+  return (
+    name
       .split(" ")
       .map((n) => n[0])
       .join("")
-      .toUpperCase();
-  };
+      .toUpperCase()
+      .slice(0, 2) || "?"
+  );
+}
+
+const roleVariant: Record<string, "default" | "secondary" | "outline"> = {
+  nurse: "default",
+  admin: "outline",
+  patient: "secondary",
+};
+
+export default async function UsersPage() {
+  let users: Profile[] = [];
+  let error: string | null = null;
+  try {
+    users = await apiGet<Profile[]>("/admin/users");
+  } catch (e) {
+    error = e instanceof Error ? e.message : "Failed to load users";
+  }
 
   return (
     <div className="space-y-6">
@@ -97,117 +60,93 @@ export default function UsersPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Users</h1>
           <p className="text-muted-foreground mt-1">
-            Manage and view all registered users
+            {users.length} registered user{users.length === 1 ? "" : "s"}
           </p>
         </div>
-        <Button>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Add User
-        </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>All Users</CardTitle>
-              <CardDescription>
-                A list of all users in the system
-              </CardDescription>
-            </div>
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Search users..." className="pl-9" />
-            </div>
-          </div>
+          <CardTitle>All Users</CardTitle>
+          <CardDescription>
+            Live data from the Vitala API
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Registered</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage src={user.avatar || undefined} />
-                        <AvatarFallback>
-                          {getInitials(user.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium">{user.name}</div>
-                        <div className="text-sm text-muted-foreground flex items-center gap-1">
-                          <Mail className="h-3 w-3" />
-                          {user.email}
+          {error ? (
+            <div className="py-12 text-center text-sm text-red-600">
+              {error}
+            </div>
+          ) : users.length === 0 ? (
+            <div className="py-12 text-center text-sm text-muted-foreground">
+              No users yet.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Registered</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarFallback>
+                            {initials(user.full_name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">
+                            {user.full_name || "—"}
+                          </div>
+                          <div className="text-xs text-muted-foreground font-mono">
+                            {user.id.slice(0, 8)}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1 text-sm">
-                      <Phone className="h-3 w-3 text-muted-foreground" />
-                      {user.phone}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        user.role === "provider" ? "default" : "secondary"
-                      }
-                      className="capitalize"
-                    >
-                      {user.role}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        user.status === "active" ? "default" : "secondary"
-                      }
-                      className={
-                        user.status === "active"
-                          ? "bg-green-500 hover:bg-green-600 text-white"
-                          : "bg-gray-500 hover:bg-gray-600 text-white"
-                      }
-                    >
-                      {user.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{user.registeredDate}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>View Details</DropdownMenuItem>
-                        <DropdownMenuItem>Edit User</DropdownMenuItem>
-                        <DropdownMenuItem>Send Message</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600">
-                          Delete User
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1 text-sm">
+                        <Phone className="h-3 w-3 text-muted-foreground" />
+                        {user.phone ?? "—"}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={roleVariant[user.role] ?? "secondary"}
+                        className="capitalize"
+                      >
+                        {user.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={
+                          user.status === "active"
+                            ? "bg-green-500 hover:bg-green-600 text-white"
+                            : user.status === "pending"
+                              ? "bg-amber-500 hover:bg-amber-600 text-white"
+                              : "bg-gray-500 hover:bg-gray-600 text-white"
+                        }
+                      >
+                        {user.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

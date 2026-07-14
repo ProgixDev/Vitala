@@ -1,6 +1,6 @@
 "use client";
 
-import { authClient } from "@/lib/auth-client";
+import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -32,11 +32,13 @@ export default function SignUpPage() {
     setLoading(true);
 
     try {
-      const { data, error } = await authClient.signUp.email({
+      const supabase = createClient();
+      const { error } = await supabase.auth.signUp({
         email,
         password,
-        name,
-        lastName,
+        options: {
+          data: { full_name: `${name} ${lastName}`.trim(), role: "admin" },
+        },
       });
 
       if (error) {
@@ -45,9 +47,7 @@ export default function SignUpPage() {
         return;
       }
 
-      if (data) {
-        router.push("/");
-      }
+      router.push("/signin");
     } catch {
       setError("An unexpected error occurred");
       setLoading(false);

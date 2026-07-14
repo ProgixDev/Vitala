@@ -1,6 +1,6 @@
 "use client";
 
-import { authClient } from "@/lib/auth-client";
+import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -18,7 +18,8 @@ export default function SignInPage() {
     setLoading(true);
 
     try {
-      const { data, error } = await authClient.signIn.email({
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -29,9 +30,17 @@ export default function SignInPage() {
         return;
       }
 
-      if (data) {
-        router.push("/");
+      // Admin dashboard is admin-only.
+      const role = data.user?.app_metadata?.role;
+      if (role !== "admin") {
+        await supabase.auth.signOut();
+        setError("This dashboard is for administrators only.");
+        setLoading(false);
+        return;
       }
+
+      router.push("/dashboard");
+      router.refresh();
     } catch {
       setError("An unexpected error occurred");
       setLoading(false);

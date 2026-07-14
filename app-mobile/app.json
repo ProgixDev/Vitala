@@ -1,0 +1,90 @@
+{
+  "expo": {
+    "name": "Vitala",
+    "slug": "vitala",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "vitala",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F7F9FC"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.vitala.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Vitala uses your location to find nearby nurses, set your visit address, and dispatch emergency help.",
+        "NSCameraUsageDescription": "Vitala uses the camera to capture your professional ID and a verification selfie.",
+        "NSPhotoLibraryUsageDescription": "Vitala lets you choose a photo for your profile and verification.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.vitala.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#1D4ED8",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "CAMERA"
+      ],
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-image",
+      "expo-font",
+      "expo-web-browser",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Vitala uses your location to find nearby nurses and dispatch emergency help."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Vitala uses the camera to capture your professional ID and a verification selfie."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Vitala lets you choose a photo for your profile and verification."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#1D4ED8"
+        }
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.vitala.app",
+          "enableGooglePay": true
+        }
+      ]
+    ],
+    "extra": {
+      "apiBaseUrl": "http://localhost:4000/api",
+      "supabaseUrl": "https://dieuytwiwtjzkxeuxett.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpZXV5dHdpd3Rqemt4ZXV4ZXR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3OTI3ODEsImV4cCI6MjA5OTM2ODc4MX0.p0w2oPwJovWOsqDYwyDmaTEXYM4JqhqzylpZnliktIU",
+      "stripePublishableKey": "REPLACE_WITH_STRIPE_PUBLISHABLE_KEY",
+      "stripeMerchantId": "merchant.com.vitala.app"
+    }
+  }
+}

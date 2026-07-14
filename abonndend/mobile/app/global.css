@@ -1,0 +1,88 @@
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css";
+
+@import "nativewind/theme";
+
+/* ------------------------------------------------------------------ *
+ * Vitala design tokens — premium, but colorful.
+ * Indigo brand + emerald + a warm/rose supporting set, on cool paper,
+ * with ink text and soft floating cards. Service categories get their own
+ * tints (see constants/theme.ts) so lists feel alive, not monochrome.
+ * All small-text pairings meet WCAG AA. Red reserved for emergencies.
+ * ------------------------------------------------------------------ */
+
+@theme {
+  /* Brand — indigo */
+  --color-primary: #5346de;
+  --color-primary-soft: #ecebfe;
+  --color-primary-strong: #4938c9;
+  --color-on-primary: #ffffff;
+
+  /* Positive / success accent — emerald */
+  --color-accent: #0a8259;
+  --color-accent-soft: #e6f6ef;
+  --color-on-accent: #ffffff;
+
+  /* Surfaces */
+  --color-background: #f5f6fa;
+  --color-surface: #ffffff;
+  --color-surface-alt: #edeff5;
+
+  /* Text */
+  --color-foreground: #12141a;
+  --color-muted-foreground: #565b6a;
+
+  /* Hairlines */
+  --color-border: #e5e7ef;
+
+  /* Status */
+  --color-emergency: #d51f45;
+  --color-emergency-soft: #fbe6ec;
+  --color-on-emergency: #ffffff;
+  --color-warning: #b45309;
+  --color-warning-soft: #fbeedc;
+  --color-success: #0a8259;
+  --color-info: #5346de;
+
+  /* Type families */
+  --font-sans: "NotoSans_400Regular";
+  --font-heading: "Figtree_600SemiBold";
+
+  /* Radii */
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+  --radius-2xl: 34px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-primary: #6355e8;
+    --color-primary-soft: #211e3d;
+    --color-primary-strong: #8b80ff;
+    --color-on-primary: #ffffff;
+
+    --color-accent: #34d39e;
+    --color-accent-soft: #0f2e24;
+    --color-on-accent: #04231a;
+
+    --color-background: #0c0e14;
+    --color-surface: #161923;
+    --color-surface-alt: #20242f;
+
+    --color-foreground: #f1f2f6;
+    --color-muted-foreground: #9ba0ae;
+
+    --color-border: #282c38;
+
+    --color-emergency: #fb7185;
+    --color-emergency-soft: #2a1418;
+    --color-on-emergency: #2a0a0c;
+    --color-warning: #e3b341;
+    --color-warning-soft: #2a2410;
+    --color-success: #34d39e;
+    --color-info: #8b80ff;
+  }
+}

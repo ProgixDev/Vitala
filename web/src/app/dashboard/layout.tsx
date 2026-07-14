@@ -11,41 +11,51 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { authClient } from "@/lib/auth-client";
+import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { User } from "better-auth";
 import { Bell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+
+interface DashboardUser {
+  name: string;
+  image?: string | null;
+}
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<DashboardUser | null>(null);
   const router = useRouter();
 
   useEffect(() => {
+    const supabase = createClient();
     const checkAuth = async () => {
-      try {
-        const session = await authClient.getSession();
-        if (!session.data?.user) {
-          router.push("/signin");
-          return;
-        }
-        setUser(session.data.user);
-      } catch {
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+      if (!authUser) {
         router.push("/signin");
+        return;
       }
+      setUser({
+        name:
+          (authUser.user_metadata?.full_name as string) ??
+          authUser.email ??
+          "Admin",
+        image: (authUser.user_metadata?.avatar_url as string) ?? null,
+      });
     };
-
     checkAuth();
   }, [router]);
 
   const handleSignOut = async () => {
-    await authClient.signOut();
+    const supabase = createClient();
+    await supabase.auth.signOut();
     router.push("/signin");
+    router.refresh();
   };
 
   if (!user) {

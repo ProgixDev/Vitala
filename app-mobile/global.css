@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Vitala — "Concierge Care" design tokens.
+ * Warm neutral paper + one deep clinical-teal brand hue; all vivid color comes
+ * from the illustrations, never the chrome. Editorial restraint.
+ * Red / `emergency` is reserved exclusively for SOS + destructive actions.
+ * Values are space-separated RGB channels so Tailwind can apply <alpha-value>.
+ * Auto-switches with the device color scheme (no manual toggle needed).
+ */
+@layer base {
+  :root {
+    --background: 251 249 245;      /* #FBF9F5 warm off-white paper */
+    --surface: 255 255 255;         /* #FFFFFF floating cards       */
+    --surface-alt: 244 241 234;     /* #F4F1EA warm inset fill      */
+    --foreground: 20 32 29;         /* #14201D green-tinted ink     */
+    --muted-foreground: 91 107 102; /* #5B6B66 warm slate           */
+    --border: 233 228 218;          /* #E9E4DA warm hairline        */
+
+    --primary: 14 124 107;          /* #0E7C6B deep clinical teal   */
+    --primary-deep: 11 90 79;       /* #0B5A4F pressed / gradient   */
+    --on-primary: 255 255 255;
+    --primary-soft: 227 240 236;    /* #E3F0EC teal well fill       */
+
+    --accent: 11 90 79;             /* #0B5A4F deep teal support    */
+    --success: 18 128 95;           /* #12805F paid / completed     */
+    --warning: 180 121 31;          /* #B4791F warm amber pending   */
+    --emergency: 196 67 58;         /* #C4433A warm brick SOS       */
+    --on-emergency: 255 255 255;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background: 14 21 18;        /* #0E1512 warm near-black      */
+      --surface: 20 29 25;           /* #141D19                      */
+      --surface-alt: 27 38 33;       /* #1B2621                      */
+      --foreground: 234 240 236;     /* #EAF0EC                      */
+      --muted-foreground: 148 166 158;/* #94A69E                     */
+      --border: 42 54 48;            /* #2A3630                      */
+
+      --primary: 43 157 134;         /* #2B9D86 brighter for dark    */
+      --primary-deep: 30 118 100;    /* #1E7664                      */
+      --on-primary: 255 255 255;
+      --primary-soft: 22 43 38;      /* #162B26 deep teal tint       */
+
+      --accent: 63 184 160;          /* #3FB8A0                      */
+      --success: 52 192 138;         /* #34C08A                      */
+      --warning: 224 166 75;         /* #E0A64B                      */
+      --emergency: 228 105 94;       /* #E4695E                      */
+      --on-emergency: 255 255 255;
+    }
+  }
+}
