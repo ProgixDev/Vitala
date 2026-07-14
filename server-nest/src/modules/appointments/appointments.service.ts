@@ -113,7 +113,9 @@ export class AppointmentsService {
   async findOne(user: AuthUser, id: string) {
     const { data, error } = await this.db(user)
       .from('appointments')
-      .select('*, service:services(*), payment:payments(*)')
+      .select(
+        '*, service:services(*), payment:payments(*), review:reviews(id, rating, comment, created_at)',
+      )
       .eq('id', id)
       .maybeSingle();
     if (error) throw error;

@@ -344,6 +344,21 @@ export const en: Record<string, string> = {
   'nurse.reviews.replyPlaceholder': 'Write a reply…',
   'nurse.reviews.send': 'Send',
   'nurse.reviews.replied': 'Reply posted',
+  'nurse.reviews.averageLabel': 'Average rating',
+  'nurse.reviews.count': '{count} reviews',
+
+  // ---- patient review ----
+  'review.cta': 'Rate your visit',
+  'review.ctaSubtitle': 'Share how your visit went to help others.',
+  'review.title': 'Rate your visit',
+  'review.subtitle': 'How was the care you received?',
+  'review.commentLabel': 'Add a comment (optional)',
+  'review.commentPlaceholder': 'Tell us about your experience…',
+  'review.submit': 'Submit review',
+  'review.thanks': 'Thanks for your review',
+  'review.alreadyRated': 'Already reviewed',
+  'review.yourRating': 'You rated this visit',
+  'review.pickRating': 'Tap a star to rate',
 
   // ---- booking ----
   'booking.title': 'Book appointment',

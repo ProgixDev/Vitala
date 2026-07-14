@@ -113,6 +113,7 @@ export const Endpoints = {
   // ---- reviews ----
   nurseReviews: (nurseId: string) =>
     api.get<Review[]>(`/reviews/nurse/${nurseId}`, { public: true }),
+  myReviews: () => api.get<Review[]>('/reviews/me'),
   createReview: (dto: Record<string, unknown>) => api.post<Review>('/reviews', dto),
   respondReview: (id: string, nurse_response: string) =>
     api.put<Review>(`/reviews/${id}/respond`, { nurse_response }),

@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { Screen, Header, Text, Card, Button, Badge, Avatar, Icon, type IconName } from '@/components/ui';
 import { CompletionSheet } from '@/components/nurse/CompletionSheet';
+import { ReviewSheet } from '@/components/ReviewSheet';
 import { useAsync } from '@/hooks/useAsync';
 import { useNurseLocationPing } from '@/hooks/useNurseLocationPing';
 import { Endpoints } from '@/lib/endpoints';
@@ -49,6 +50,10 @@ export default function AppointmentStatusScreen() {
   const [notesOpen, setNotesOpen] = useState(false);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   // Share live location while this nurse is on the way (hook is a no-op otherwise).
   const activePing =
@@ -80,6 +85,9 @@ export default function AppointmentStatusScreen() {
   const unpaid = appt.payment?.status !== 'completed';
   const person = me?.role === 'nurse' ? appt.patient : appt.nurse;
   const enRoutePhase = appt.status === 'confirmed' || appt.status === 'on-the-way';
+  const isPatient = me?.role === 'patient' && appt.patient_id === me?.id;
+  const canReview = isPatient && appt.status === 'completed' && !appt.review;
+  const existingReview = isPatient ? appt.review : null;
 
   const advance = async () => {
     if (!next) return;
@@ -109,6 +117,27 @@ export default function AppointmentStatusScreen() {
       Toast.show({ type: 'error', text1: t('status.advanceError'), text2: msg(e) });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const submitReview = async () => {
+    if (reviewRating < 1) return;
+    setSubmittingReview(true);
+    try {
+      await Endpoints.createReview({
+        appointment_id: id,
+        rating: reviewRating,
+        comment: reviewComment.trim() || undefined,
+      });
+      setReviewOpen(false);
+      setReviewComment('');
+      setReviewRating(0);
+      Toast.show({ type: 'success', text1: t('review.thanks') });
+      void refetch();
+    } catch (e) {
+      Toast.show({ type: 'error', text1: t('common.somethingWrong'), text2: msg(e) });
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
@@ -215,6 +244,48 @@ export default function AppointmentStatusScreen() {
           </Card>
         ) : null}
 
+        {/* Patient review prompt / summary */}
+        {canReview ? (
+          <Card elevation="flat" className="gap-3 bg-primary-soft">
+            <View className="gap-1">
+              <Text variant="bodyMedium" className="text-primary">
+                {t('review.cta')}
+              </Text>
+              <Text variant="caption">{t('review.ctaSubtitle')}</Text>
+            </View>
+            <Button
+              label={t('review.cta')}
+              icon="star"
+              onPress={() => {
+                setReviewRating(0);
+                setReviewComment('');
+                setReviewOpen(true);
+              }}
+            />
+          </Card>
+        ) : existingReview ? (
+          <Card elevation="e1" className="gap-2">
+            <Text variant="caption">{t('review.yourRating')}</Text>
+            <View className="flex-row items-center gap-2">
+              <View className="flex-row gap-0.5">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <Icon
+                    key={n}
+                    name="star"
+                    size={16}
+                    color={n <= Math.round(existingReview.rating) ? colors.warning : colors.border}
+                    weight="fill"
+                  />
+                ))}
+              </View>
+              <Text variant="bodyMedium">{existingReview.rating.toFixed(1)}</Text>
+            </View>
+            {existingReview.comment ? (
+              <Text variant="body">{existingReview.comment}</Text>
+            ) : null}
+          </Card>
+        ) : null}
+
         {/* Stepper */}
         <Card elevation="e1" padded className="gap-0">
           {terminal ? (
@@ -315,6 +386,17 @@ export default function AppointmentStatusScreen() {
         submitting={submitting}
         onCancel={() => setNotesOpen(false)}
         onConfirm={completeVisit}
+      />
+
+      <ReviewSheet
+        visible={reviewOpen}
+        rating={reviewRating}
+        comment={reviewComment}
+        onChangeRating={setReviewRating}
+        onChangeComment={setReviewComment}
+        submitting={submittingReview}
+        onCancel={() => setReviewOpen(false)}
+        onConfirm={submitReview}
       />
     </Screen>
   );

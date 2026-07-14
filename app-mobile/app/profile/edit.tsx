@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { View, Pressable } from 'react-native';
 import { router } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
 import Toast from 'react-native-toast-message';
 import { Screen, Header, Input, Button, Avatar, Icon } from '@/components/ui';
 import { Endpoints } from '@/lib/endpoints';
-import { uploadImage } from '@/lib/upload';
-import { supabase } from '@/lib/supabase';
+import { pickAndUploadAvatar } from '@/lib/upload';
 import { useSession } from '@/providers/SessionProvider';
 import { useTranslation } from '@/utils/i18n';
 import { useThemeColors } from '@/constants/theme';
@@ -21,20 +19,8 @@ export default function EditProfile() {
   const [saving, setSaving] = useState(false);
 
   const pickAvatar = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.6,
-    });
-    if (result.canceled || !result.assets[0]?.uri) return;
-    try {
-      const path = await uploadImage('avatars', result.assets[0].uri);
-      const { data } = supabase.storage.from('avatars').getPublicUrl(path);
-      setAvatar(data.publicUrl);
-    } catch {
-      setAvatar(result.assets[0].uri);
-    }
+    const url = await pickAndUploadAvatar();
+    if (url) setAvatar(url);
   };
 
   const save = async () => {

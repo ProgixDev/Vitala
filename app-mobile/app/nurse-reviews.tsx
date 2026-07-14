@@ -26,7 +26,7 @@ export default function NurseReviews() {
   const colors = useThemeColors();
 
   const { data, loading, refetch } = useAsync<Review[]>(
-    () => (me?.id ? Endpoints.nurseReviews(me.id) : Promise.resolve([])),
+    () => (me?.id ? Endpoints.myReviews() : Promise.resolve([])),
     [me?.id],
   );
 
@@ -35,6 +35,9 @@ export default function NurseReviews() {
   const [busy, setBusy] = useState(false);
 
   const reviews = data ?? [];
+  const average = reviews.length
+    ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+    : 0;
 
   const openReply = (id: string) => {
     setRespondingId(id);
@@ -66,6 +69,21 @@ export default function NurseReviews() {
       <Header title={t('nurse.reviews.title')} />
 
       <View className="gap-3 px-1 pt-1">
+        {reviews.length > 0 ? (
+          <Card elevation="e2" className="flex-row items-center gap-4">
+            <View className="items-center">
+              <Text variant="title">{average.toFixed(1)}</Text>
+              <Stars rating={average} />
+            </View>
+            <View className="flex-1 border-l border-border pl-4">
+              <Text variant="bodyMedium">{t('nurse.reviews.averageLabel')}</Text>
+              <Text variant="caption">
+                {t('nurse.reviews.count', { count: reviews.length })}
+              </Text>
+            </View>
+          </Card>
+        ) : null}
+
         {loading && !data ? (
           <SkeletonList count={3} />
         ) : reviews.length === 0 ? (

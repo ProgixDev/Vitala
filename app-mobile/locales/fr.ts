@@ -345,6 +345,21 @@ export const fr: Record<string, string> = {
   'nurse.reviews.replyPlaceholder': 'Écrivez une réponse…',
   'nurse.reviews.send': 'Envoyer',
   'nurse.reviews.replied': 'Réponse publiée',
+  'nurse.reviews.averageLabel': 'Note moyenne',
+  'nurse.reviews.count': '{count} avis',
+
+  // ---- patient review ----
+  'review.cta': 'Évaluez votre visite',
+  'review.ctaSubtitle': 'Partagez votre expérience pour aider les autres.',
+  'review.title': 'Évaluez votre visite',
+  'review.subtitle': 'Comment se sont passés les soins reçus ?',
+  'review.commentLabel': 'Ajouter un commentaire (facultatif)',
+  'review.commentPlaceholder': 'Parlez-nous de votre expérience…',
+  'review.submit': 'Envoyer l’avis',
+  'review.thanks': 'Merci pour votre avis',
+  'review.alreadyRated': 'Déjà évalué',
+  'review.yourRating': 'Vous avez évalué cette visite',
+  'review.pickRating': 'Touchez une étoile pour noter',
 
   // ---- booking ----
   'booking.title': 'Réserver un rendez-vous',

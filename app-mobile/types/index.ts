@@ -173,6 +173,7 @@ export interface Appointment {
   nurse?: PersonRef | null;
   patient?: PersonRef | null;
   payment?: Payment | null;
+  review?: Pick<Review, 'id' | 'rating' | 'comment' | 'created_at'> | null;
 }
 
 export interface Payment {

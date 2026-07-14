@@ -1,17 +1,43 @@
-import { View, ScrollView, Alert, Pressable } from 'react-native';
+import { useState } from 'react';
+import { View, ScrollView, Alert, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import Toast from 'react-native-toast-message';
 import { Text, Card, Badge, Avatar, Divider, Chip, Icon, type IconName } from '@/components/ui';
 import { MenuRow } from '@/components/MenuRow';
+import { Endpoints } from '@/lib/endpoints';
+import { pickAndUploadAvatar } from '@/lib/upload';
 import { useSession } from '@/providers/SessionProvider';
 import { useTranslation } from '@/utils/i18n';
 import { useThemeColors } from '@/constants/theme';
 
 export default function NurseProfile() {
   const { t } = useTranslation();
-  const { me, signOut } = useSession();
+  const { me, signOut, refreshMe } = useSession();
   const colors = useThemeColors();
   const np = me?.nurseProfile;
+  const [uploading, setUploading] = useState(false);
+
+  const changeAvatar = async () => {
+    if (uploading) return;
+    setUploading(true);
+    try {
+      const url = await pickAndUploadAvatar();
+      if (url) {
+        await Endpoints.updateMe({ avatar_url: url });
+        await refreshMe();
+        Toast.show({ type: 'success', text1: t('profile.saved') });
+      }
+    } catch (e) {
+      Toast.show({
+        type: 'error',
+        text1: t('common.somethingWrong'),
+        text2: e instanceof Error ? e.message : undefined,
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const confirmLogout = () => {
     Alert.alert(t('profile.logoutConfirm'), undefined, [
@@ -35,7 +61,17 @@ export default function NurseProfile() {
         {/* Header */}
         <Card elevation="e2" className="mt-4 gap-4">
           <View className="flex-row items-center gap-4">
-            <Avatar name={me?.full_name} uri={me?.avatar_url} size={60} />
+            <Pressable onPress={changeAvatar} disabled={uploading} className="active:opacity-80">
+              <Avatar name={me?.full_name} uri={me?.avatar_url} size={60} />
+              <View className="absolute -bottom-0.5 -right-0.5 h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-primary">
+                <Icon name="camera" size={12} color={colors.onPrimary} />
+              </View>
+              {uploading ? (
+                <View className="absolute inset-0 items-center justify-center rounded-full bg-black/30">
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                </View>
+              ) : null}
+            </Pressable>
             <View className="flex-1">
               <Text variant="heading" numberOfLines={1}>
                 {me?.full_name}

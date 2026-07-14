@@ -5,7 +5,8 @@ import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 // not the TypeScript source. Vercel bundles this file with esbuild, which does
 // not emit `emitDecoratorMetadata` — compiling Nest's decorated classes here
 // would silently break dependency injection. The precompiled `dist/` keeps the
-// reflection metadata that Nest needs.
+// reflection metadata that Nest needs. `vercel.json` -> functions.includeFiles
+// guarantees `dist/**` ships inside the function bundle.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { createApp } = require('../dist/create-app') as typeof import('../src/create-app');
 
@@ -36,7 +37,30 @@ export default async function handler(
   req: IncomingMessage,
   res: ServerResponse,
 ): Promise<void> {
-  const app = await getApp();
-  const instance = app.getHttpAdapter().getInstance();
-  instance.server.emit('request', req, res);
+  let app: NestFastifyApplication;
+  try {
+    app = await getApp();
+  } catch (err) {
+    // Bootstrap failed (e.g. missing env vars, bad module wiring). Surface the
+    // real reason instead of Vercel's opaque FUNCTION_INVOCATION_FAILED, and
+    // reset the cache so the next request retries a fresh bootstrap.
+    readyApp = undefined;
+    const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    // eslint-disable-next-line no-console
+    console.error('[vitala-api] bootstrap failed:', stack ?? message);
+    res.statusCode = 500;
+    res.setHeader('content-type', 'application/json');
+    res.end(
+      JSON.stringify({
+        success: false,
+        statusCode: 500,
+        error: 'Bootstrap Error',
+        message,
+      }),
+    );
+    return;
+  }
+
+  app.getHttpAdapter().getInstance().server.emit('request', req, res);
 }

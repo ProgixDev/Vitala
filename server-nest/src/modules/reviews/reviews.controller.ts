@@ -16,6 +16,12 @@ export class ReviewsController {
     return this.reviews.create(user, dto);
   }
 
+  @Roles('nurse')
+  @Get('me')
+  listMine(@CurrentUser() user: AuthUser) {
+    return this.reviews.listForNurse(user.id);
+  }
+
   @Public()
   @Get('nurse/:nurseId')
   listForNurse(@Param('nurseId') nurseId: string) {
