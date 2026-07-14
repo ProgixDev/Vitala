@@ -27,7 +27,7 @@
     --accent: 11 90 79;             /* #0B5A4F deep teal support    */
     --success: 18 128 95;           /* #12805F paid / completed     */
     --warning: 180 121 31;          /* #B4791F warm amber pending   */
-    --emergency: 196 67 58;         /* #C4433A warm brick SOS       */
+    --emergency: 220 38 38;         /* #DC2626 true red SOS         */
     --on-emergency: 255 255 255;
   }
 
@@ -48,7 +48,7 @@
       --accent: 63 184 160;          /* #3FB8A0                      */
       --success: 52 192 138;         /* #34C08A                      */
       --warning: 224 166 75;         /* #E0A64B                      */
-      --emergency: 228 105 94;       /* #E4695E                      */
+      --emergency: 240 68 56;        /* #F04438 brighter for dark    */
       --on-emergency: 255 255 255;
     }
   }

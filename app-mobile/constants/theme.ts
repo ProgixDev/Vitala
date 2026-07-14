@@ -20,7 +20,7 @@ export const palette = {
     accent: '#0B5A4F',
     success: '#12805F',
     warning: '#B4791F',
-    emergency: '#C4433A',
+    emergency: '#DC2626',
     onEmergency: '#FFFFFF',
   },
   dark: {
@@ -37,7 +37,7 @@ export const palette = {
     accent: '#3FB8A0',
     success: '#34C08A',
     warning: '#E0A64B',
-    emergency: '#E4695E',
+    emergency: '#F04438',
     onEmergency: '#FFFFFF',
   },
 } as const;
