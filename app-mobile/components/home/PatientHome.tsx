@@ -8,6 +8,7 @@ import { Hero } from '@/components/home/Hero';
 import { ConciergeCard } from '@/components/home/ConciergeCard';
 import { PromoCarousel } from '@/components/home/PromoCarousel';
 import { SosRow } from '@/components/home/SosRow';
+import { SosSetupCard } from '@/components/home/SosSetupCard';
 import { useAsync } from '@/hooks/useAsync';
 import { Endpoints } from '@/lib/endpoints';
 import { useTranslation } from '@/utils/i18n';
@@ -38,23 +39,26 @@ export function PatientHome() {
           <Hero />
         </FadeInView>
 
+        {/* SOS setup nudge — self-hides when complete (no empty gap) */}
+        <SosSetupCard />
+
         {/* Concierge — next step (signature) */}
-        <FadeInView index={1} className="mt-7">
+        <FadeInView index={2} className="mt-7">
           <ConciergeCard />
         </FadeInView>
 
         {/* Hero carousel */}
-        <FadeInView index={2} className="mt-8">
+        <FadeInView index={3} className="mt-8">
           <PromoCarousel />
         </FadeInView>
 
         {/* Emergency */}
-        <FadeInView index={3} className="mt-4">
+        <FadeInView index={4} className="mt-4">
           <SosRow />
         </FadeInView>
 
         {/* Services */}
-        <FadeInView index={4} className="mb-3 mt-9 flex-row items-end justify-between px-5">
+        <FadeInView index={5} className="mb-3 mt-9 flex-row items-end justify-between px-5">
           <Text variant="heading">{t('home.services')}</Text>
           {services.length > 6 ? (
             <Pressable hitSlop={8} onPress={() => setShowAll((v) => !v)}>
@@ -80,7 +84,7 @@ export function PatientHome() {
         ) : (
           <View className="flex-row flex-wrap justify-between gap-y-3 px-5">
             {visible.map((s, i) => (
-              <FadeInView key={s.id} index={i + 5} className="w-[48%]">
+              <FadeInView key={s.id} index={i + 6} className="w-[48%]">
                 <ServiceMedallion
                   service={s}
                   onPress={() => router.push(`/booking/${s.id}`)}

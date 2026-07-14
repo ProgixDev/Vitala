@@ -20,6 +20,9 @@ import { SlideToConfirm } from '@/components/SlideToConfirm';
 import { useThemeColors, type ThemeColors } from '@/constants/theme';
 import { getCurrentPoint } from '@/lib/location';
 import { Endpoints } from '@/lib/endpoints';
+import { getSosPrefs } from '@/lib/sosPrefs';
+import { composeSosMessage } from '@/lib/sosMessage';
+import { useSession } from '@/providers/SessionProvider';
 import { useTranslation } from '@/utils/i18n';
 import type { EmergencyType } from '@/types';
 
@@ -50,6 +53,7 @@ const CHANNELS: SosChannel[] = [
 export default function Sos() {
   const { t } = useTranslation();
   const colors = useThemeColors();
+  const { me } = useSession();
   const [selected, setSelected] = useState<EmergencyType>('nurse-alert');
   const [sending, setSending] = useState<EmergencyType | null>(null);
 
@@ -72,9 +76,15 @@ export default function Sos() {
         Toast.show({ type: 'error', text1: t('sos.locationNeeded') });
         return;
       }
+      // Family alerts carry the patient's pre-composed message + medical context;
+      // other channels use the channel title.
+      const description =
+        type === 'family-alert'
+          ? composeSosMessage(await getSosPrefs(), me, t)
+          : t(CHANNELS.find((c) => c.type === type)!.titleKey);
       const req = await Endpoints.raiseEmergency({
         type,
-        description: t(CHANNELS.find((c) => c.type === type)!.titleKey),
+        description,
         address: point.address,
         latitude: point.latitude,
         longitude: point.longitude,

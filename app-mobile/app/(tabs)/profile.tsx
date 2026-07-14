@@ -58,8 +58,15 @@ export default function Profile() {
         {/* Activity */}
         <Card elevation="e1" className="mt-4 py-1">
           <MenuRow icon="receipt-outline" label={t('profile.transactions')} onPress={() => router.push('/profile/transactions')} />
-          <Divider />
+        </Card>
+
+        {/* Emergency / SOS */}
+        <Card elevation="e1" className="mt-4 py-1">
           <MenuRow icon="people-outline" label={t('profile.emergencyContacts')} onPress={() => router.push('/profile/emergency-contacts')} />
+          <Divider />
+          <MenuRow icon="chatbubble-outline" label={t('profile.sosMessage')} onPress={() => router.push('/profile/sos-message')} />
+          <Divider />
+          <MenuRow icon="pulse" label={t('profile.emergencyMedical')} onPress={() => router.push('/profile/emergency-medical')} />
         </Card>
 
         {/* Support */}
