@@ -128,6 +128,8 @@ export default function PatientSignup() {
 
   return (
     <AuthScaffold
+      showLogo
+      logoVariant="mark"
       title={headings[step].title}
       subtitle={headings[step].subtitle}
       onBack={back}

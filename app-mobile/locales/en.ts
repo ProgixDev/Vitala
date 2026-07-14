@@ -30,14 +30,24 @@ export const en: Record<string, string> = {
   'common.somethingWrong': 'Something went wrong. Please try again.',
 
   // ---- onboarding ----
+  'onb.slide1.eyebrow': 'Home care',
   'onb.slide1.title': 'Healthcare, anytime, anywhere',
   'onb.slide1.subtitle': 'Quality home healthcare wherever you are, whenever you need it.',
+  'onb.slide1.tagA': 'At home',
+  'onb.slide1.tagB': '24/7',
+  'onb.slide2.eyebrow': 'Made for you',
   'onb.slide2.title': 'Services made for you',
   'onb.slide2.subtitle': 'Personalized care tailored to your needs and your schedule.',
+  'onb.slide2.tagA': 'Tailored',
+  'onb.slide2.tagB': 'Flexible',
+  'onb.slide3.eyebrow': 'Trust & safety',
   'onb.slide3.title': 'Your well-being, our priority',
   'onb.slide3.subtitle': 'Trusted, verified professionals caring for you at home.',
+  'onb.slide3.tagA': 'Verified',
+  'onb.slide3.tagB': 'Trusted',
   'onb.createAccount': 'Create account',
   'onb.login': 'Log in',
+  'onb.haveAccount': 'Already have an account?',
 
   // ---- auth ----
   'auth.welcomeBack': 'Welcome back',
@@ -59,6 +69,8 @@ export const en: Record<string, string> = {
   'auth.patient': 'Patient',
   'auth.nurse': 'Nurse',
   'auth.iAmA': "I'm a…",
+  'auth.signInPatientHint': 'Sign in to book and manage your home care.',
+  'auth.signInNurseHint': 'Sign in to manage your visits and availability.',
 
   'auth.chooseRole': 'How can we help?',
   'auth.chooseRoleSubtitle': 'Tell us who you are to personalize your experience.',
@@ -74,6 +86,7 @@ export const en: Record<string, string> = {
   'auth.phone': 'Phone number',
   'auth.phonePlaceholder': '+1 555 000 0000',
   'auth.confirmPassword': 'Confirm password',
+  'auth.confirmPasswordPlaceholder': 'Re-enter your password',
   'auth.createAccount': 'Create account',
 
   'auth.verifyEmail': 'Verify your email',
@@ -113,8 +126,11 @@ export const en: Record<string, string> = {
   // ---- nurse signup / KYC ----
   'nurse.info.title': 'Your details',
   'nurse.license': 'License number',
+  'nurse.licensePlaceholder': 'e.g. RN-1029384',
   'nurse.specializations': 'Specializations',
+  'nurse.specializationsPlaceholder': 'e.g. Wound care — press add',
   'nurse.experience': 'Years of experience',
+  'nurse.experiencePlaceholder': 'e.g. 5',
   'nurse.id.title': 'Verify your license',
   'nurse.id.subtitle': 'Capture the front and back of your professional ID.',
   'nurse.id.front': 'Front of ID',
@@ -214,6 +230,120 @@ export const en: Record<string, string> = {
   'nurseHome.accepted': 'Request accepted',
   'nurseHome.declined': 'Request declined',
   'nurseHome.assigned': 'Assigned to you',
+
+  // ---- nurse tabs ----
+  'nurseTab.today': 'Today',
+  'nurseTab.schedule': 'Schedule',
+  'nurseTab.jobs': 'Jobs',
+  'nurseTab.earnings': 'Earnings',
+  'nurseTab.profile': 'Profile',
+
+  // ---- nurse duty banner ----
+  'nurse.duty.on': 'On duty',
+  'nurse.duty.off': 'Off duty',
+  'nurse.duty.available': 'Available for new visits',
+  'nurse.duty.waiting': '{count} waiting nearby',
+  'nurse.duty.offDesc': 'You won’t receive new visits',
+
+  // ---- nurse today ----
+  'nurse.today.morning': 'Good morning, {name}',
+  'nurse.today.afternoon': 'Good afternoon, {name}',
+  'nurse.today.evening': 'Good evening, {name}',
+  'nurse.today.nextVisit': 'Your next visit',
+  'nurse.today.noNext': 'No upcoming visits',
+  'nurse.today.noNextDesc': 'Accept a request and it will show up here.',
+  'nurse.today.offHint': 'Go on duty to start receiving visits.',
+  'nurse.today.today': 'Today’s visits',
+  'nurse.today.requests': 'Waiting requests',
+  'nurse.today.noRequests': 'No requests right now',
+  'nurse.today.noRequestsDesc': 'New visits nearby will appear here.',
+  'nurse.today.thisWeek': 'This week',
+
+  // ---- nurse jobs ----
+  'nurse.jobs.title': 'Jobs',
+  'nurse.jobs.requests': 'Requests',
+  'nurse.jobs.active': 'Active',
+  'nurse.jobs.noRequests': 'No open requests',
+  'nurse.jobs.noRequestsDesc': 'You’re all caught up. New visits will appear here.',
+  'nurse.jobs.noActive': 'No active visits',
+  'nurse.jobs.noActiveDesc': 'Visits you accept will show up here until they’re done.',
+  'nurse.jobs.accept': 'Accept',
+  'nurse.jobs.decline': 'Decline',
+  'nurse.jobs.accepted': 'Visit accepted',
+  'nurse.jobs.declined': 'Request dismissed',
+  'nurse.jobs.payout': 'Payout',
+  'nurse.jobs.patient': 'Patient',
+
+  // ---- nurse schedule ----
+  'nurse.schedule.title': 'Your visits',
+  'nurse.schedule.noUpcoming': 'No upcoming visits',
+  'nurse.schedule.noUpcomingDesc': 'Accepted visits will appear here.',
+  'nurse.schedule.noHistory': 'No past visits',
+  'nurse.schedule.noHistoryDesc': 'Completed and cancelled visits will appear here.',
+
+  // ---- nurse earnings ----
+  'nurse.earnings.title': 'Earnings',
+  'nurse.earnings.month': 'This month',
+  'nurse.earnings.week': 'This week',
+  'nurse.earnings.visits': '{count} completed visits',
+  'nurse.earnings.completed': 'Completed visits',
+  'nurse.earnings.none': 'No earnings yet',
+  'nurse.earnings.noneDesc': 'Completed visits will appear here.',
+  'nurse.earnings.period.week': 'Week',
+  'nurse.earnings.period.month': 'Month',
+  'nurse.earnings.period.all': 'All time',
+  'nurse.earnings.visitsAvg': '{count} visits · {avg} avg',
+  'nurse.earnings.paid': 'Paid',
+  'nurse.earnings.awaiting': 'Awaiting',
+
+  // ---- nurse profile ----
+  'nurse.profile.verified': 'Verified',
+  'nurse.profile.new': 'New',
+  'nurse.profile.reviews': '{count} reviews',
+  'nurse.profile.credentials': 'Credentials',
+  'nurse.profile.years': '{count} yrs experience',
+
+  // ---- nurse active visit ----
+  'nurse.visit.onMyWay': 'I’m on my way',
+  'nurse.visit.arrived': 'I’ve arrived',
+  'nurse.visit.complete': 'Complete visit',
+  'nurse.visit.navigate': 'Navigate',
+  'nurse.visit.navUnavailable': 'No location set for this visit.',
+  'nurse.visit.sharing': 'Sharing your live location',
+  'nurse.visit.locationDenied': 'Enable location to share your position with the patient.',
+  'nurse.visit.completeTitle': 'Complete this visit',
+  'nurse.visit.completeSubtitle': 'Add a note about the care you provided (optional).',
+  'nurse.visit.notesPlaceholder': 'What did you do? Any follow-up needed?',
+  'nurse.visit.completeConfirm': 'Mark completed',
+  'nurse.visit.completed': 'Visit completed',
+  'nurse.visit.symptoms': 'Symptoms',
+  'nurse.visit.notes': 'Patient notes',
+  'nurse.visit.careNotes': 'Care notes',
+
+  // ---- nurse availability ----
+  'nurse.availability.title': 'Availability',
+  'nurse.availability.subtitle': 'Set the hours you’re available for visits each week.',
+  'nurse.availability.off': 'Off',
+  'nurse.availability.startTime': 'Start time',
+  'nurse.availability.endTime': 'End time',
+  'nurse.availability.saved': 'Availability saved',
+  'nurse.availability.invalid': 'End time must be after start time',
+
+  // ---- nurse credentials ----
+  'nurse.credentials.title': 'Edit credentials',
+  'nurse.credentials.subtitle': 'Keep your professional details up to date.',
+  'nurse.credentials.licensePlaceholder': 'e.g. RN-123456',
+  'nurse.credentials.saved': 'Credentials updated',
+
+  // ---- nurse reviews ----
+  'nurse.reviews.title': 'My reviews',
+  'nurse.reviews.none': 'No reviews yet',
+  'nurse.reviews.noneDesc': 'Reviews from patients you’ve cared for will appear here.',
+  'nurse.reviews.respond': 'Respond',
+  'nurse.reviews.yourReply': 'Your reply',
+  'nurse.reviews.replyPlaceholder': 'Write a reply…',
+  'nurse.reviews.send': 'Send',
+  'nurse.reviews.replied': 'Reply posted',
 
   // ---- booking ----
   'booking.title': 'Book appointment',

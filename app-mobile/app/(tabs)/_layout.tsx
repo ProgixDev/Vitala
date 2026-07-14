@@ -3,10 +3,12 @@ import { useSession } from '@/providers/SessionProvider';
 import { TabBar } from '@/components/TabBar';
 
 export default function TabsLayout() {
-  const { booting, isLoggedIn } = useSession();
+  const { booting, isLoggedIn, me } = useSession();
 
   if (booting) return null;
   if (!isLoggedIn) return <Redirect href="/(auth)/sign-in" />;
+  // Nurses have their own shell — never the patient tab set.
+  if (me?.role === 'nurse') return <Redirect href="/(nurse)" />;
 
   return (
     <Tabs

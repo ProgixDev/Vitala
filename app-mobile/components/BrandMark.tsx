@@ -1,6 +1,6 @@
 import { View } from 'react-native';
-import { Text, Icon } from '@/components/ui';
-import { shadow } from '@/constants/theme';
+import { Image } from 'expo-image';
+import { Text } from '@/components/ui';
 import { cn } from '@/utils/cn';
 
 interface BrandMarkProps {
@@ -9,16 +9,13 @@ interface BrandMarkProps {
   className?: string;
 }
 
-/** Vitala logo: a rounded "pulse" tile + optional wordmark. */
+const LOGO = require('../assets/logo.png');
+
+/** Vitala logo — the medical-cross mark, optionally with the wordmark. */
 export function BrandMark({ size = 56, withWordmark = false, className }: BrandMarkProps) {
   return (
     <View className={cn('flex-row items-center gap-3', className)}>
-      <View
-        style={[{ width: size, height: size, borderRadius: size * 0.32 }, shadow.e2]}
-        className="items-center justify-center bg-primary"
-      >
-        <Icon name="pulse" size={size * 0.56} color="#FFFFFF" />
-      </View>
+      <Image source={LOGO} style={{ width: size, height: size }} contentFit="contain" />
       {withWordmark ? (
         <Text className="font-display-bold text-foreground" style={{ fontSize: size * 0.5 }}>
           Vitala

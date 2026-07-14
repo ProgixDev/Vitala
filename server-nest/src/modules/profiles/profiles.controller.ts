@@ -13,6 +13,7 @@ import type { AuthUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import {
+  UpdateAvailabilityDto,
   UpdateMedicalDto,
   UpdateNurseDto,
   UpdateProfileDto,
@@ -44,6 +45,18 @@ export class ProfilesController {
   @Put('me/nurse')
   updateNurse(@CurrentUser() user: AuthUser, @Body() dto: UpdateNurseDto) {
     return this.profiles.updateNurse(user, dto);
+  }
+
+  @Roles('nurse')
+  @Get('me/availability')
+  getAvailability(@CurrentUser() user: AuthUser) {
+    return this.profiles.getAvailability(user);
+  }
+
+  @Roles('nurse')
+  @Put('me/availability')
+  updateAvailability(@CurrentUser() user: AuthUser, @Body() dto: UpdateAvailabilityDto) {
+    return this.profiles.updateAvailability(user, dto);
   }
 
   @Put('me/settings')

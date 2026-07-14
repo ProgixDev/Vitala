@@ -3,6 +3,7 @@ import type {
   AppNotification,
   Appointment,
   AppointmentStatus,
+  AvailabilitySlot,
   EmergencyContact,
   EmergencyRequest,
   EmergencyType,
@@ -23,6 +24,11 @@ export const Endpoints = {
   updateMedical: (dto: Record<string, unknown>) => api.put('/me/medical', dto),
   updateNurse: (dto: Record<string, unknown>) => api.put('/me/nurse', dto),
   updateSettings: (dto: Record<string, unknown>) => api.put('/me/settings', dto),
+
+  // ---- nurse availability ----
+  availability: () => api.get<AvailabilitySlot[]>('/me/availability'),
+  updateAvailability: (slots: { weekday: number; start_time: string; end_time: string }[]) =>
+    api.put<AvailabilitySlot[]>('/me/availability', { slots }),
 
   // ---- locations ----
   listLocations: () => api.get<SavedLocation[]>('/me/locations'),
@@ -63,6 +69,8 @@ export const Endpoints = {
     id: string,
     dto: { status: AppointmentStatus; reason?: string; completion_notes?: string },
   ) => api.put<Appointment>(`/appointments/${id}/status`, dto),
+  updateNurseLocation: (id: string, dto: { latitude: number; longitude: number }) =>
+    api.put<Appointment>(`/appointments/${id}/location`, dto),
 
   // ---- emergency ----
   raiseEmergency: (dto: {
@@ -106,6 +114,8 @@ export const Endpoints = {
   nurseReviews: (nurseId: string) =>
     api.get<Review[]>(`/reviews/nurse/${nurseId}`, { public: true }),
   createReview: (dto: Record<string, unknown>) => api.post<Review>('/reviews', dto),
+  respondReview: (id: string, nurse_response: string) =>
+    api.put<Review>(`/reviews/${id}/respond`, { nurse_response }),
 
   // ---- storage ----
   signUpload: (bucket: 'avatars' | 'nurse-docs' | 'receipts', filename: string) =>

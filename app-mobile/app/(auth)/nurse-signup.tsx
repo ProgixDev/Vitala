@@ -110,6 +110,8 @@ export default function NurseSignup() {
 
   return (
     <AuthScaffold
+      showLogo
+      logoVariant="mark"
       title={headings[step].title}
       subtitle={headings[step].subtitle}
       onBack={back}
@@ -127,27 +129,68 @@ export default function NurseSignup() {
               if (r === 'patient') router.replace('/(auth)/patient-signup');
             }}
           />
-          <Input label={t('auth.fullName')} icon="person-outline" value={fullName} onChangeText={setFullName} />
+          <Input
+            label={t('auth.fullName')}
+            icon="person-outline"
+            placeholder={t('auth.fullNamePlaceholder')}
+            value={fullName}
+            onChangeText={setFullName}
+          />
           <Input
             label={t('auth.email')}
             icon="mail-outline"
+            placeholder={t('auth.emailPlaceholder')}
             autoCapitalize="none"
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
           />
-          <Input label={t('auth.phone')} icon="call-outline" keyboardType="phone-pad" value={phone} onChangeText={setPhone} />
-          <Input label={t('nurse.license')} icon="card-outline" value={license} onChangeText={setLicense} />
+          <Input
+            label={t('auth.phone')}
+            icon="call-outline"
+            placeholder={t('auth.phonePlaceholder')}
+            keyboardType="phone-pad"
+            value={phone}
+            onChangeText={setPhone}
+          />
+          <Input
+            label={t('nurse.license')}
+            icon="card-outline"
+            placeholder={t('nurse.licensePlaceholder')}
+            autoCapitalize="characters"
+            value={license}
+            onChangeText={setLicense}
+          />
           <Input
             label={t('nurse.experience')}
             icon="briefcase-outline"
+            placeholder={t('nurse.experiencePlaceholder')}
             keyboardType="number-pad"
             value={experience}
             onChangeText={setExperience}
           />
-          <TagInput label={t('nurse.specializations')} value={specializations} onChange={setSpecializations} />
-          <Input label={t('auth.password')} icon="lock-closed-outline" secure value={password} onChangeText={setPassword} />
-          <Input label={t('auth.confirmPassword')} icon="lock-closed-outline" secure value={confirm} onChangeText={setConfirm} />
+          <TagInput
+            label={t('nurse.specializations')}
+            placeholder={t('nurse.specializationsPlaceholder')}
+            value={specializations}
+            onChange={setSpecializations}
+          />
+          <Input
+            label={t('auth.password')}
+            icon="lock-closed-outline"
+            placeholder={t('auth.passwordPlaceholder')}
+            secure
+            value={password}
+            onChangeText={setPassword}
+          />
+          <Input
+            label={t('auth.confirmPassword')}
+            icon="lock-closed-outline"
+            placeholder={t('auth.confirmPasswordPlaceholder')}
+            secure
+            value={confirm}
+            onChangeText={setConfirm}
+          />
           <PasswordRules checks={checks} />
           <Button label={t('common.continue')} disabled={!infoValid} onPress={() => setStep(2)} />
         </View>

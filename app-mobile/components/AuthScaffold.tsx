@@ -6,13 +6,17 @@ import {
   ScrollView,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, Icon } from '@/components/ui';
 import { FadeInView } from '@/components/ui/motion';
 import { brand } from '@/constants/brand';
+import { shadow } from '@/constants/theme';
 import { cn } from '@/utils/cn';
+
+const LOGO = require('../assets/logo.png');
 
 interface AuthScaffoldProps {
   title: string;
@@ -22,6 +26,10 @@ interface AuthScaffoldProps {
   onBack?: () => void;
   /** Rendered top-right in the header (e.g. a step counter). */
   headerRight?: ReactNode;
+  /** Shows the Vitala logo coin centered in the header. */
+  showLogo?: boolean;
+  /** `full` = coin + wordmark (default), `mark` = coin only (tight headers). */
+  logoVariant?: 'full' | 'mark';
   /** Rendered under the card, centered on the page background. */
   footer?: ReactNode;
   cardClassName?: string;
@@ -38,6 +46,8 @@ export function AuthScaffold({
   children,
   onBack,
   headerRight,
+  showLogo,
+  logoVariant = 'full',
   footer,
   cardClassName,
 }: AuthScaffoldProps) {
@@ -87,6 +97,27 @@ export function AuthScaffold({
             />
 
             <View className="min-h-11 flex-row items-center justify-between">
+              {showLogo ? (
+                <View
+                  pointerEvents="none"
+                  className="absolute inset-0 flex-row items-center justify-center gap-2.5"
+                >
+                  <View
+                    style={shadow.e1}
+                    className="h-11 w-11 items-center justify-center rounded-2xl bg-white"
+                  >
+                    <Image source={LOGO} style={{ width: 30, height: 30 }} contentFit="contain" />
+                  </View>
+                  {logoVariant === 'full' ? (
+                    <Text
+                      className="font-display-bold text-[20px]"
+                      style={{ color: brand.authOnHeader }}
+                    >
+                      Vitala
+                    </Text>
+                  ) : null}
+                </View>
+              ) : null}
               {onBack ? (
                 <Pressable
                   hitSlop={10}

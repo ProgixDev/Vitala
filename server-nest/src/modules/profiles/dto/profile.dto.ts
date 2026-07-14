@@ -2,10 +2,15 @@ import {
   IsArray,
   IsBoolean,
   IsIn,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
+  Max,
+  Min,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class UpdateProfileDto {
   @IsOptional() @IsString() full_name?: string;
@@ -30,6 +35,20 @@ export class UpdateNurseDto {
   @IsOptional() @IsString() id_doc_front_url?: string;
   @IsOptional() @IsString() id_doc_back_url?: string;
   @IsOptional() @IsString() selfie_url?: string;
+  @IsOptional() @IsBoolean() is_online?: boolean;
+}
+
+export class AvailabilitySlotDto {
+  @IsInt() @Min(0) @Max(6) weekday!: number; // 0 = Sunday
+  @IsString() start_time!: string; // HH:mm
+  @IsString() end_time!: string; // HH:mm
+}
+
+export class UpdateAvailabilityDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AvailabilitySlotDto)
+  slots!: AvailabilitySlotDto[];
 }
 
 export class UpsertLocationDto {

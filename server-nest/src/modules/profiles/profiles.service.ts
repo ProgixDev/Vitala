@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import type { AuthUser } from '../../common/decorators/current-user.decorator';
 import {
+  UpdateAvailabilityDto,
   UpdateMedicalDto,
   UpdateNurseDto,
   UpdateProfileDto,
@@ -82,6 +83,36 @@ export class ProfilesService {
       .single();
     if (error) throw error;
     return data;
+  }
+
+  /** The nurse's weekly availability slots, ordered for display. */
+  async getAvailability(user: AuthUser) {
+    const db = this.supabase.forUser(user.token);
+    const { data, error } = await db
+      .from('nurse_availability')
+      .select('*')
+      .eq('nurse_id', user.id)
+      .order('weekday', { ascending: true })
+      .order('start_time', { ascending: true });
+    if (error) throw error;
+    return data ?? [];
+  }
+
+  /** Replace the nurse's whole weekly availability set in one call. */
+  async updateAvailability(user: AuthUser, dto: UpdateAvailabilityDto) {
+    const db = this.supabase.forUser(user.token);
+    const del = await db.from('nurse_availability').delete().eq('nurse_id', user.id);
+    if (del.error) throw del.error;
+    if (dto.slots.length === 0) return [];
+    const rows = dto.slots.map((s) => ({
+      nurse_id: user.id,
+      weekday: s.weekday,
+      start_time: s.start_time,
+      end_time: s.end_time,
+    }));
+    const { data, error } = await db.from('nurse_availability').insert(rows).select();
+    if (error) throw error;
+    return data ?? [];
   }
 
   async updateSettings(user: AuthUser, dto: UpdateSettingsDto) {

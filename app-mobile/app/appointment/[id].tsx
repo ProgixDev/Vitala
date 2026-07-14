@@ -1,14 +1,17 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { Screen, Header, Text, Card, Button, Badge, Avatar, Icon, type IconName } from '@/components/ui';
+import { CompletionSheet } from '@/components/nurse/CompletionSheet';
 import { useAsync } from '@/hooks/useAsync';
+import { useNurseLocationPing } from '@/hooks/useNurseLocationPing';
 import { Endpoints } from '@/lib/endpoints';
 import { useSession } from '@/providers/SessionProvider';
 import { useTranslation } from '@/utils/i18n';
 import { useThemeColors } from '@/constants/theme';
 import { formatDate, formatTime, formatPrice } from '@/utils/format';
+import { openDirections } from '@/utils/maps';
 import type { Appointment, AppointmentStatus } from '@/types';
 
 const STEP_ORDER: AppointmentStatus[] = [
@@ -43,6 +46,14 @@ export default function AppointmentStatusScreen() {
     () => Endpoints.appointment(id),
     [id],
   );
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [notes, setNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  // Share live location while this nurse is on the way (hook is a no-op otherwise).
+  const activePing =
+    me?.role === 'nurse' && !!appt && appt.nurse_id === me?.id && appt.status === 'on-the-way';
+  const { sharing, denied } = useNurseLocationPing(activePing, id);
 
   // Light polling so both sides see live progress.
   useEffect(() => {
@@ -68,6 +79,7 @@ export default function AppointmentStatusScreen() {
   const next = NEXT_STATUS[appt.status];
   const unpaid = appt.payment?.status !== 'completed';
   const person = me?.role === 'nurse' ? appt.patient : appt.nurse;
+  const enRoutePhase = appt.status === 'confirmed' || appt.status === 'on-the-way';
 
   const advance = async () => {
     if (!next) return;
@@ -77,9 +89,46 @@ export default function AppointmentStatusScreen() {
       Toast.show({ type: 'success', text1: t('status.advanced') });
       void refetch();
     } catch (e) {
-      Toast.show({ type: 'error', text1: t('status.advanceError'), text2: e instanceof Error ? e.message : '' });
+      Toast.show({ type: 'error', text1: t('status.advanceError'), text2: msg(e) });
     }
   };
+
+  const completeVisit = async () => {
+    setSubmitting(true);
+    try {
+      const updated = await Endpoints.updateAppointmentStatus(id, {
+        status: 'completed',
+        completion_notes: notes.trim() || undefined,
+      });
+      setData(() => ({ ...appt, ...updated }));
+      setNotesOpen(false);
+      setNotes('');
+      Toast.show({ type: 'success', text1: t('nurse.visit.completed') });
+      void refetch();
+    } catch (e) {
+      Toast.show({ type: 'error', text1: t('status.advanceError'), text2: msg(e) });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const navigate = () => {
+    const ok = openDirections({
+      latitude: appt.latitude,
+      longitude: appt.longitude,
+      address: appt.address,
+    });
+    if (!ok) Toast.show({ type: 'error', text1: t('nurse.visit.navUnavailable') });
+  };
+
+  const primary =
+    next === 'on-the-way'
+      ? { label: t('nurse.visit.onMyWay'), icon: 'car-outline' as IconName, action: advance }
+      : next === 'in-progress'
+        ? { label: t('nurse.visit.arrived'), icon: 'checkmark' as IconName, action: advance }
+        : next === 'completed'
+          ? { label: t('nurse.visit.complete'), icon: 'ribbon-outline' as IconName, action: () => setNotesOpen(true) }
+          : null;
 
   return (
     <Screen scroll edges={['top']} contentClassName="pb-10">
@@ -124,6 +173,22 @@ export default function AppointmentStatusScreen() {
               <Text variant="bodyMedium">{person.full_name}</Text>
             </View>
             <Icon name="call-outline" size={22} color={colors.primary} />
+          </Card>
+        ) : null}
+
+        {/* Visit details — symptoms / notes / care notes */}
+        {appt.symptoms || appt.notes || appt.completion_notes ? (
+          <Card elevation="e1" className="gap-3">
+            <Text variant="label">{t('status.details')}</Text>
+            {appt.symptoms ? (
+              <DetailLine icon="alert-circle-outline" label={t('nurse.visit.symptoms')} value={appt.symptoms} />
+            ) : null}
+            {appt.notes ? (
+              <DetailLine icon="chatbox-outline" label={t('nurse.visit.notes')} value={appt.notes} />
+            ) : null}
+            {appt.completion_notes ? (
+              <DetailLine icon="checkmark-circle-outline" label={t('nurse.visit.careNotes')} value={appt.completion_notes} />
+            ) : null}
           </Card>
         ) : null}
 
@@ -210,15 +275,66 @@ export default function AppointmentStatusScreen() {
           )}
         </Card>
 
-        {/* Nurse advance control */}
-        {isNurse && next ? (
-          <Button
-            label={t('status.advance', { next: t(stepMeta[next].titleKey) })}
-            icon="arrow-forward-circle-outline"
-            onPress={advance}
-          />
+        {/* Nurse active-visit controls */}
+        {isNurse && !terminal ? (
+          <View className="gap-3">
+            {appt.status === 'on-the-way' && sharing ? (
+              <View className="flex-row items-center gap-2 self-start rounded-full bg-primary-soft px-3 py-1.5">
+                <View className="h-2 w-2 rounded-full bg-primary" />
+                <Text variant="caption" className="text-primary">
+                  {t('nurse.visit.sharing')}
+                </Text>
+              </View>
+            ) : null}
+            {appt.status === 'on-the-way' && denied ? (
+              <Text variant="caption" className="text-warning">
+                {t('nurse.visit.locationDenied')}
+              </Text>
+            ) : null}
+
+            {enRoutePhase ? (
+              <Button
+                label={t('nurse.visit.navigate')}
+                variant="secondary"
+                icon="map-outline"
+                onPress={navigate}
+              />
+            ) : null}
+
+            {primary ? (
+              <Button label={primary.label} icon={primary.icon} onPress={primary.action} />
+            ) : null}
+          </View>
         ) : null}
       </View>
+
+      <CompletionSheet
+        visible={notesOpen}
+        notes={notes}
+        onChangeNotes={setNotes}
+        submitting={submitting}
+        onCancel={() => setNotesOpen(false)}
+        onConfirm={completeVisit}
+      />
     </Screen>
   );
+}
+
+function DetailLine({ icon, label, value }: { icon: IconName; label: string; value: string }) {
+  const colors = useThemeColors();
+  return (
+    <View className="flex-row gap-3">
+      <Icon name={icon} size={18} color={colors.mutedForeground} />
+      <View className="flex-1">
+        <Text variant="caption">{label}</Text>
+        <Text variant="body" className="mt-0.5">
+          {value}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function msg(e: unknown): string {
+  return e instanceof Error ? e.message : '';
 }

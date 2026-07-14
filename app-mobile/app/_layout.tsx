@@ -1,5 +1,5 @@
 import '../global.css';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -22,6 +22,7 @@ import {
   HankenGrotesk_700Bold,
 } from '@expo-google-fonts/hanken-grotesk';
 import { SessionProvider } from '@/providers/SessionProvider';
+import { AnimatedSplash } from '@/components/AnimatedSplash';
 import { useToastConfig } from '@/components/AppToast';
 import { NotificationsBridge } from '@/components/NotificationsBridge';
 import { config, isPlaceholder } from '@/lib/config';
@@ -44,6 +45,8 @@ export default function RootLayout() {
     HankenGrotesk_600SemiBold,
     HankenGrotesk_700Bold,
   });
+
+  const [splashDone, setSplashDone] = useState(false);
 
   const onReady = useCallback(() => {
     if (fontsLoaded) void SplashScreen.hideAsync();
@@ -82,6 +85,7 @@ export default function RootLayout() {
                 <Stack.Screen name="onboarding" />
                 <Stack.Screen name="(auth)" />
                 <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="(nurse)" />
                 <Stack.Screen
                   name="booking/map"
                   options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
@@ -92,6 +96,7 @@ export default function RootLayout() {
         </StripeProvider>
       </SafeAreaProvider>
       <ToastHost />
+      {!splashDone ? <AnimatedSplash onDone={() => setSplashDone(true)} /> : null}
     </GestureHandlerRootView>
   );
 }

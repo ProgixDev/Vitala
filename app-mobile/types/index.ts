@@ -101,6 +101,15 @@ export interface NurseProfile {
   rejection_reason?: string | null;
   rating: number;
   total_reviews: number;
+  is_online?: boolean;
+}
+
+/** A weekly availability window for a nurse. weekday: 0 = Sunday … 6 = Saturday. */
+export interface AvailabilitySlot {
+  id?: string;
+  weekday: number;
+  start_time: string; // HH:mm[:ss]
+  end_time: string; // HH:mm[:ss]
 }
 
 export interface Me {

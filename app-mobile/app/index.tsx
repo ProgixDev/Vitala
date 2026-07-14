@@ -6,11 +6,13 @@ import { BrandMark } from '@/components/BrandMark';
 import { useThemeColors } from '@/constants/theme';
 
 export default function Index() {
-  const { booting, isLoggedIn } = useSession();
+  const { booting, isLoggedIn, me, loadingMe } = useSession();
   const { completed } = useOnboarding();
   const colors = useThemeColors();
 
-  if (booting || completed === null) {
+  // Wait while booting, resolving onboarding, or loading the profile we need to
+  // route by role — so a nurse lands straight in their shell, no flash of tabs.
+  if (booting || completed === null || (isLoggedIn && !me && loadingMe)) {
     return (
       <View className="flex-1 items-center justify-center bg-background">
         <BrandMark size={64} />
@@ -21,5 +23,6 @@ export default function Index() {
 
   if (!completed) return <Redirect href="/onboarding" />;
   if (!isLoggedIn) return <Redirect href="/(auth)/sign-in" />;
+  if (me?.role === 'nurse') return <Redirect href="/(nurse)" />;
   return <Redirect href="/(tabs)" />;
 }

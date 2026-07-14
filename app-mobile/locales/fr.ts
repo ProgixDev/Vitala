@@ -30,14 +30,24 @@ export const fr: Record<string, string> = {
   'common.somethingWrong': "Une erreur s'est produite. Veuillez réessayer.",
 
   // ---- onboarding ----
+  'onb.slide1.eyebrow': 'Soins à domicile',
   'onb.slide1.title': 'Des soins, partout, à tout moment',
   'onb.slide1.subtitle': 'Des soins de santé à domicile de qualité, où que vous soyez.',
+  'onb.slide1.tagA': 'À domicile',
+  'onb.slide1.tagB': '24/7',
+  'onb.slide2.eyebrow': 'Pour vous',
   'onb.slide2.title': 'Des services faits pour vous',
   'onb.slide2.subtitle': 'Des soins personnalisés adaptés à vos besoins et à votre horaire.',
+  'onb.slide2.tagA': 'Sur mesure',
+  'onb.slide2.tagB': 'Flexible',
+  'onb.slide3.eyebrow': 'Confiance et sécurité',
   'onb.slide3.title': 'Votre bien-être, notre priorité',
   'onb.slide3.subtitle': 'Des professionnels vérifiés et de confiance à votre domicile.',
+  'onb.slide3.tagA': 'Vérifiés',
+  'onb.slide3.tagB': 'De confiance',
   'onb.createAccount': 'Créer un compte',
   'onb.login': 'Se connecter',
+  'onb.haveAccount': 'Vous avez déjà un compte ?',
 
   // ---- auth ----
   'auth.welcomeBack': 'Bon retour',
@@ -59,6 +69,8 @@ export const fr: Record<string, string> = {
   'auth.patient': 'Patient',
   'auth.nurse': 'Infirmier',
   'auth.iAmA': 'Je suis…',
+  'auth.signInPatientHint': 'Connectez-vous pour réserver et gérer vos soins à domicile.',
+  'auth.signInNurseHint': 'Connectez-vous pour gérer vos visites et vos disponibilités.',
 
   'auth.chooseRole': 'Comment pouvons-nous aider ?',
   'auth.chooseRoleSubtitle': 'Dites-nous qui vous êtes pour personnaliser votre expérience.',
@@ -74,6 +86,7 @@ export const fr: Record<string, string> = {
   'auth.phone': 'Numéro de téléphone',
   'auth.phonePlaceholder': '+1 555 000 0000',
   'auth.confirmPassword': 'Confirmer le mot de passe',
+  'auth.confirmPasswordPlaceholder': 'Saisissez à nouveau le mot de passe',
   'auth.createAccount': 'Créer un compte',
 
   'auth.verifyEmail': 'Vérifiez votre courriel',
@@ -114,8 +127,11 @@ export const fr: Record<string, string> = {
   // ---- nurse signup / KYC ----
   'nurse.info.title': 'Vos informations',
   'nurse.license': 'Numéro de licence',
+  'nurse.licensePlaceholder': 'ex. RN-1029384',
   'nurse.specializations': 'Spécialisations',
+  'nurse.specializationsPlaceholder': 'ex. Soins des plaies — appuyez sur ajouter',
   'nurse.experience': "Années d'expérience",
+  'nurse.experiencePlaceholder': 'ex. 5',
   'nurse.id.title': 'Vérifiez votre licence',
   'nurse.id.subtitle': "Capturez le recto et le verso de votre pièce professionnelle.",
   'nurse.id.front': 'Recto de la pièce',
@@ -215,6 +231,120 @@ export const fr: Record<string, string> = {
   'nurseHome.accepted': 'Demande acceptée',
   'nurseHome.declined': 'Demande refusée',
   'nurseHome.assigned': 'Attribuée à vous',
+
+  // ---- nurse tabs ----
+  'nurseTab.today': "Aujourd'hui",
+  'nurseTab.schedule': 'Agenda',
+  'nurseTab.jobs': 'Visites',
+  'nurseTab.earnings': 'Revenus',
+  'nurseTab.profile': 'Profil',
+
+  // ---- nurse duty banner ----
+  'nurse.duty.on': 'En service',
+  'nurse.duty.off': 'Hors service',
+  'nurse.duty.available': 'Disponible pour de nouvelles visites',
+  'nurse.duty.waiting': '{count} en attente à proximité',
+  'nurse.duty.offDesc': 'Vous ne recevrez pas de nouvelles visites',
+
+  // ---- nurse today ----
+  'nurse.today.morning': 'Bonjour, {name}',
+  'nurse.today.afternoon': 'Bon après-midi, {name}',
+  'nurse.today.evening': 'Bonsoir, {name}',
+  'nurse.today.nextVisit': 'Votre prochaine visite',
+  'nurse.today.noNext': 'Aucune visite à venir',
+  'nurse.today.noNextDesc': 'Acceptez une demande et elle apparaîtra ici.',
+  'nurse.today.offHint': 'Passez en service pour recevoir des visites.',
+  'nurse.today.today': "Visites d'aujourd'hui",
+  'nurse.today.requests': 'Demandes en attente',
+  'nurse.today.noRequests': 'Aucune demande pour le moment',
+  'nurse.today.noRequestsDesc': 'Les nouvelles visites à proximité apparaîtront ici.',
+  'nurse.today.thisWeek': 'Cette semaine',
+
+  // ---- nurse jobs ----
+  'nurse.jobs.title': 'Visites',
+  'nurse.jobs.requests': 'Demandes',
+  'nurse.jobs.active': 'En cours',
+  'nurse.jobs.noRequests': 'Aucune demande ouverte',
+  'nurse.jobs.noRequestsDesc': 'Tout est à jour. Les nouvelles visites apparaîtront ici.',
+  'nurse.jobs.noActive': 'Aucune visite en cours',
+  'nurse.jobs.noActiveDesc': 'Les visites acceptées apparaîtront ici jusqu’à leur fin.',
+  'nurse.jobs.accept': 'Accepter',
+  'nurse.jobs.decline': 'Refuser',
+  'nurse.jobs.accepted': 'Visite acceptée',
+  'nurse.jobs.declined': 'Demande ignorée',
+  'nurse.jobs.payout': 'Rémunération',
+  'nurse.jobs.patient': 'Patient',
+
+  // ---- nurse schedule ----
+  'nurse.schedule.title': 'Vos visites',
+  'nurse.schedule.noUpcoming': 'Aucune visite à venir',
+  'nurse.schedule.noUpcomingDesc': 'Les visites acceptées apparaîtront ici.',
+  'nurse.schedule.noHistory': 'Aucune visite passée',
+  'nurse.schedule.noHistoryDesc': 'Les visites terminées et annulées apparaîtront ici.',
+
+  // ---- nurse earnings ----
+  'nurse.earnings.title': 'Revenus',
+  'nurse.earnings.month': 'Ce mois-ci',
+  'nurse.earnings.week': 'Cette semaine',
+  'nurse.earnings.visits': '{count} visites terminées',
+  'nurse.earnings.completed': 'Visites terminées',
+  'nurse.earnings.none': 'Aucun revenu pour le moment',
+  'nurse.earnings.noneDesc': 'Les visites terminées apparaîtront ici.',
+  'nurse.earnings.period.week': 'Semaine',
+  'nurse.earnings.period.month': 'Mois',
+  'nurse.earnings.period.all': 'Tout',
+  'nurse.earnings.visitsAvg': '{count} visites · {avg} en moy.',
+  'nurse.earnings.paid': 'Payé',
+  'nurse.earnings.awaiting': 'En attente',
+
+  // ---- nurse profile ----
+  'nurse.profile.verified': 'Vérifié',
+  'nurse.profile.new': 'Nouveau',
+  'nurse.profile.reviews': '{count} avis',
+  'nurse.profile.credentials': 'Qualifications',
+  'nurse.profile.years': "{count} ans d'expérience",
+
+  // ---- nurse active visit ----
+  'nurse.visit.onMyWay': 'Je suis en route',
+  'nurse.visit.arrived': 'Je suis arrivé(e)',
+  'nurse.visit.complete': 'Terminer la visite',
+  'nurse.visit.navigate': 'Itinéraire',
+  'nurse.visit.navUnavailable': 'Aucun lieu défini pour cette visite.',
+  'nurse.visit.sharing': 'Partage de votre position en direct',
+  'nurse.visit.locationDenied': 'Activez la localisation pour partager votre position avec le patient.',
+  'nurse.visit.completeTitle': 'Terminer cette visite',
+  'nurse.visit.completeSubtitle': 'Ajoutez une note sur les soins prodigués (facultatif).',
+  'nurse.visit.notesPlaceholder': 'Qu’avez-vous fait ? Un suivi est-il nécessaire ?',
+  'nurse.visit.completeConfirm': 'Marquer comme terminée',
+  'nurse.visit.completed': 'Visite terminée',
+  'nurse.visit.symptoms': 'Symptômes',
+  'nurse.visit.notes': 'Notes du patient',
+  'nurse.visit.careNotes': 'Notes de soins',
+
+  // ---- nurse availability ----
+  'nurse.availability.title': 'Disponibilités',
+  'nurse.availability.subtitle': 'Définissez vos heures de disponibilité pour les visites chaque semaine.',
+  'nurse.availability.off': 'Indisponible',
+  'nurse.availability.startTime': 'Heure de début',
+  'nurse.availability.endTime': 'Heure de fin',
+  'nurse.availability.saved': 'Disponibilités enregistrées',
+  'nurse.availability.invalid': "L'heure de fin doit être après l'heure de début",
+
+  // ---- nurse credentials ----
+  'nurse.credentials.title': 'Modifier les qualifications',
+  'nurse.credentials.subtitle': 'Gardez vos informations professionnelles à jour.',
+  'nurse.credentials.licensePlaceholder': 'ex. RN-123456',
+  'nurse.credentials.saved': 'Qualifications mises à jour',
+
+  // ---- nurse reviews ----
+  'nurse.reviews.title': 'Mes avis',
+  'nurse.reviews.none': 'Aucun avis pour le moment',
+  'nurse.reviews.noneDesc': 'Les avis des patients que vous avez soignés apparaîtront ici.',
+  'nurse.reviews.respond': 'Répondre',
+  'nurse.reviews.yourReply': 'Votre réponse',
+  'nurse.reviews.replyPlaceholder': 'Écrivez une réponse…',
+  'nurse.reviews.send': 'Envoyer',
+  'nurse.reviews.replied': 'Réponse publiée',
 
   // ---- booking ----
   'booking.title': 'Réserver un rendez-vous',

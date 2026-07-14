@@ -68,7 +68,7 @@ export function PatientHome() {
         {loading && !data ? (
           <View className="flex-row flex-wrap justify-between gap-y-3 px-5">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} width="48%" height={186} radius={28} />
+              <Skeleton key={i} width="48%" height={192} radius={28} />
             ))}
           </View>
         ) : services.length === 0 ? (
