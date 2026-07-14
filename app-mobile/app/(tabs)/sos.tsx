@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import { View, Pressable, ActivityIndicator } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import Svg, { Circle } from 'react-native-svg';
 import Animated, {
-  cancelAnimation,
   Easing,
-  runOnJS,
-  useAnimatedProps,
+  FadeIn,
+  FadeInDown,
+  FadeOut,
+  LinearTransition,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -16,28 +16,35 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import Toast from 'react-native-toast-message';
 import { Text, Icon, type IconName } from '@/components/ui';
-import { useThemeColors } from '@/constants/theme';
+import { SlideToConfirm } from '@/components/SlideToConfirm';
+import { useThemeColors, type ThemeColors } from '@/constants/theme';
 import { getCurrentPoint } from '@/lib/location';
 import { Endpoints } from '@/lib/endpoints';
 import { useTranslation } from '@/utils/i18n';
-import { cn } from '@/utils/cn';
 import type { EmergencyType } from '@/types';
 
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-const HOLD_MS = 1500;
+const SPRING = LinearTransition.springify().damping(20).stiffness(190);
 
-interface SosType {
+interface SosChannel {
   type: EmergencyType;
   icon: IconName;
+  /** Resolve the channel's triage accent from the active palette. */
+  accent: (c: ThemeColors) => string;
   labelKey: string;
   titleKey: string;
   descKey: string;
+  etaKey: string;
 }
 
-const TYPES: SosType[] = [
-  { type: 'nurse-alert', icon: 'medkit', labelKey: 'sos.type.nurse', titleKey: 'sos.nurse.title', descKey: 'sos.nurse.desc' },
-  { type: 'ambulance', icon: 'car-sport', labelKey: 'sos.type.ambulance', titleKey: 'sos.ambulance.title', descKey: 'sos.ambulance.desc' },
-  { type: 'family-alert', icon: 'people', labelKey: 'sos.type.family', titleKey: 'sos.family.title', descKey: 'sos.family.desc' },
+/**
+ * Triage colour coding — a panicking eye finds the right channel by hue.
+ * Nurse → the app's own care teal, Ambulance → emergency red (most critical),
+ * Family → a softer amber alert.
+ */
+const CHANNELS: SosChannel[] = [
+  { type: 'nurse-alert', icon: 'medkit', accent: (c) => c.primary, labelKey: 'sos.type.nurse', titleKey: 'sos.nurse.title', descKey: 'sos.nurse.desc', etaKey: 'sos.nurse.eta' },
+  { type: 'ambulance', icon: 'car-sport', accent: (c) => c.emergency, labelKey: 'sos.type.ambulance', titleKey: 'sos.ambulance.title', descKey: 'sos.ambulance.desc', etaKey: 'sos.ambulance.eta' },
+  { type: 'family-alert', icon: 'people', accent: (c) => c.warning, labelKey: 'sos.type.family', titleKey: 'sos.family.title', descKey: 'sos.family.desc', etaKey: 'sos.family.eta' },
 ];
 
 export default function Sos() {
@@ -45,8 +52,6 @@ export default function Sos() {
   const colors = useThemeColors();
   const [selected, setSelected] = useState<EmergencyType>('nurse-alert');
   const [sending, setSending] = useState<EmergencyType | null>(null);
-
-  const active = TYPES.find((x) => x.type === selected)!;
 
   const fire = async (type: EmergencyType) => {
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -69,7 +74,7 @@ export default function Sos() {
       }
       const req = await Endpoints.raiseEmergency({
         type,
-        description: t(TYPES.find((c) => c.type === type)!.titleKey),
+        description: t(CHANNELS.find((c) => c.type === type)!.titleKey),
         address: point.address,
         latitude: point.latitude,
         longitude: point.longitude,
@@ -87,200 +92,160 @@ export default function Sos() {
     }
   };
 
+  const selectChannel = (type: EmergencyType) => {
+    if (sending) return;
+    void Haptics.selectionAsync();
+    setSelected(type);
+  };
+
   return (
     <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-background">
+      {/* Header */}
       <View className="px-5 pt-2">
-        <Text variant="title" className="text-emergency">
-          {t('sos.title')}
-        </Text>
-        <Text variant="subtitle" className="mt-1">
-          {t('sos.subtitle')}
-        </Text>
-      </View>
-
-      {/* Type selector */}
-      <View className="mt-6 px-5">
-        <Text variant="label" className="mb-2 text-muted-foreground">
-          {t('sos.selectType')}
-        </Text>
-        <View className="flex-row gap-2.5">
-          {TYPES.map((x) => {
-            const on = x.type === selected;
-            return (
-              <Pressable
-                key={x.type}
-                disabled={sending !== null}
-                onPress={() => {
-                  void Haptics.selectionAsync();
-                  setSelected(x.type);
-                }}
-                className={cn(
-                  'flex-1 items-center gap-2 rounded-3xl border py-4',
-                  on ? 'border-emergency bg-emergency/10' : 'border-border bg-surface',
-                )}
-              >
-                <Icon
-                  name={x.icon}
-                  size={26}
-                  color={on ? colors.emergency : colors.mutedForeground}
-                  weight={on ? 'fill' : 'regular'}
-                />
-                <Text
-                  variant="caption"
-                  className={cn('font-semibold', on ? 'text-emergency' : 'text-muted-foreground')}
-                >
-                  {t(x.labelKey)}
-                </Text>
-              </Pressable>
-            );
-          })}
+        <View className="flex-row items-center gap-2">
+          <View className="h-2.5 w-2.5 rounded-full bg-emergency" />
+          <Text variant="label" className="uppercase text-emergency" style={{ letterSpacing: 1.5, fontSize: 11 }}>
+            {t('sos.title')}
+          </Text>
         </View>
+        <Text className="mt-1.5 font-display-bold text-[28px] leading-[32px] text-foreground">
+          {t('sos.chooseWho')}
+        </Text>
       </View>
 
-      {/* Hold-to-alert hero */}
-      <View className="flex-1 items-center justify-center">
-        <HoldButton
-          disabled={sending !== null}
-          sending={sending === selected}
-          color={colors.emergency}
-          trackColor={colors.border}
-          icon={active.icon}
-          onComplete={() => fire(selected)}
-        />
-        <Text className="mt-8 font-display-bold text-[22px] text-foreground">
-          {t(active.titleKey)}
-        </Text>
-        <Text variant="subtitle" className="mt-1 max-w-[280px] text-center">
-          {t(active.descKey)}
-        </Text>
+      {/* Channel accordion */}
+      <View className="flex-1 justify-center gap-3 px-5">
+        {CHANNELS.map((ch) => (
+          <ChannelCard
+            key={ch.type}
+            channel={ch}
+            expanded={selected === ch.type}
+            sending={sending === ch.type}
+            locked={sending !== null && sending !== ch.type}
+            accent={ch.accent(colors)}
+            colors={colors}
+            onSelect={() => selectChannel(ch.type)}
+            onConfirm={() => fire(ch.type)}
+          />
+        ))}
       </View>
 
       {/* Location footer */}
-      <View className="mb-4 flex-row items-center justify-center gap-2 px-5">
-        <Icon name="location" size={16} color={colors.mutedForeground} />
+      <View className="mb-3 flex-row items-center justify-center gap-2 px-5">
+        <Icon name="location" size={15} color={colors.mutedForeground} />
         <Text variant="caption">{t('sos.shareLocation')}</Text>
       </View>
     </SafeAreaView>
   );
 }
 
-function HoldButton({
-  disabled,
+function ChannelCard({
+  channel,
+  expanded,
   sending,
-  color,
-  trackColor,
-  icon,
-  onComplete,
+  locked,
+  accent,
+  colors,
+  onSelect,
+  onConfirm,
 }: {
-  disabled: boolean;
+  channel: SosChannel;
+  expanded: boolean;
   sending: boolean;
-  color: string;
-  trackColor: string;
-  icon: IconName;
-  onComplete: () => void;
+  locked: boolean;
+  accent: string;
+  colors: ThemeColors;
+  onSelect: () => void;
+  onConfirm: () => void;
 }) {
   const { t } = useTranslation();
-  const SIZE = 240;
-  const STROKE = 12;
-  const R = (SIZE - STROKE) / 2;
-  const C = 2 * Math.PI * R;
 
-  const progress = useSharedValue(0);
+  return (
+    <Animated.View
+      layout={SPRING}
+      style={{
+        borderRadius: 26,
+        borderWidth: 1.5,
+        borderColor: expanded ? accent : colors.border,
+        backgroundColor: expanded ? `${accent}0F` : colors.surface,
+        overflow: 'hidden',
+        opacity: locked ? 0.45 : 1,
+      }}
+    >
+      <Pressable onPress={onSelect} disabled={expanded} className="flex-row items-center gap-3.5 p-4">
+        {/* Icon chip with a breathing glow when open */}
+        <View className="items-center justify-center" style={{ width: 52, height: 52 }}>
+          {expanded ? <BreathingGlow color={accent} /> : null}
+          <View
+            className="items-center justify-center"
+            style={{ width: 52, height: 52, borderRadius: 18, backgroundColor: expanded ? accent : `${accent}1A` }}
+          >
+            <Icon name={channel.icon} size={28} color={expanded ? '#FFFFFF' : accent} weight={expanded ? 'fill' : 'duotone'} />
+          </View>
+        </View>
+
+        <View className="flex-1">
+          <Text className="font-display-bold text-[18px] leading-[22px]" style={{ color: expanded ? accent : colors.foreground }}>
+            {t(channel.titleKey)}
+          </Text>
+          {!expanded ? (
+            <Text variant="caption" className="mt-0.5" numberOfLines={1}>
+              {t(channel.descKey)}
+            </Text>
+          ) : null}
+        </View>
+
+        {!expanded ? (
+          <View className="h-8 w-8 items-center justify-center rounded-full" style={{ backgroundColor: `${accent}14` }}>
+            <Icon name="chevron-forward" size={16} color={accent} weight="bold" />
+          </View>
+        ) : null}
+      </Pressable>
+
+      {/* Revealed detail + confirm gesture */}
+      {expanded ? (
+        <Animated.View entering={FadeInDown.duration(260)} exiting={FadeOut.duration(120)} className="px-4 pb-4">
+          <View className="mb-3 flex-row items-center gap-2">
+            <Icon name="time-outline" size={15} color={accent} />
+            <Text variant="caption" style={{ color: colors.foreground }}>
+              {t(channel.etaKey)}
+            </Text>
+          </View>
+          <SlideToConfirm
+            label={t('sos.slide')}
+            releaseLabel={t('sos.slideRelease')}
+            sendingLabel={t('sos.sending')}
+            sending={sending}
+            color={accent}
+            icon={channel.icon}
+            onConfirm={onConfirm}
+          />
+        </Animated.View>
+      ) : null}
+    </Animated.View>
+  );
+}
+
+/** Slow radial breath behind the active channel's icon — a quiet "listening" pulse. */
+function BreathingGlow({ color }: { color: string }) {
   const pulse = useSharedValue(0);
-  const [holding, setHolding] = useState(false);
+  useEffect(() => {
+    pulse.value = withRepeat(withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.ease) }), -1, true);
+  }, [pulse]);
 
-  const start = () => {
-    if (disabled) return;
-    setHolding(true);
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    pulse.value = withRepeat(withTiming(1, { duration: 1100, easing: Easing.out(Easing.ease) }), -1, false);
-    progress.value = withTiming(1, { duration: HOLD_MS, easing: Easing.linear }, (finished) => {
-      if (finished) {
-        runOnJS(setHolding)(false);
-        runOnJS(onComplete)();
-        progress.value = 0;
-        cancelAnimation(pulse);
-        pulse.value = 0;
-      }
-    });
-  };
-
-  const end = () => {
-    setHolding(false);
-    cancelAnimation(progress);
-    cancelAnimation(pulse);
-    progress.value = withTiming(0, { duration: 220 });
-    pulse.value = 0;
-  };
-
-  const ringProps = useAnimatedProps(() => ({
-    strokeDashoffset: C * (1 - progress.value),
-  }));
-
-  const pulseStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 + pulse.value * 0.35 }],
-    opacity: (1 - pulse.value) * 0.35,
-  }));
-
-  const coreStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 - progress.value * 0.04 }],
+  const style = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + pulse.value * 0.28 }],
+    opacity: 0.14 + pulse.value * 0.16,
   }));
 
   return (
-    <View style={{ width: SIZE, height: SIZE }} className="items-center justify-center">
-      {/* Pulse halo */}
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          { position: 'absolute', width: SIZE, height: SIZE, borderRadius: SIZE / 2, backgroundColor: color },
-          pulseStyle,
-        ]}
-      />
-
-      {/* Progress ring */}
-      <Svg width={SIZE} height={SIZE} style={{ position: 'absolute' }}>
-        <Circle cx={SIZE / 2} cy={SIZE / 2} r={R} stroke={trackColor} strokeWidth={STROKE} fill="none" />
-        <AnimatedCircle
-          cx={SIZE / 2}
-          cy={SIZE / 2}
-          r={R}
-          stroke={color}
-          strokeWidth={STROKE}
-          fill="none"
-          strokeLinecap="round"
-          strokeDasharray={C}
-          animatedProps={ringProps}
-          transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
-        />
-      </Svg>
-
-      {/* Core button */}
-      <Animated.View style={coreStyle}>
-        <Pressable
-          disabled={disabled}
-          onPressIn={start}
-          onPressOut={end}
-          accessibilityRole="button"
-          accessibilityLabel={t('sos.hold')}
-          style={{ width: SIZE - 48, height: SIZE - 48, borderRadius: (SIZE - 48) / 2, backgroundColor: color }}
-          className={cn('items-center justify-center', disabled && 'opacity-60')}
-        >
-          {sending ? (
-            <>
-              <ActivityIndicator color="#FFFFFF" />
-              <Text className="mt-2 font-semibold text-white">{t('sos.sending')}</Text>
-            </>
-          ) : (
-            <>
-              <Icon name={icon} size={52} color="#FFFFFF" weight="fill" />
-              <Text className="mt-2 font-display-bold text-[20px] text-white">SOS</Text>
-              <Text className="mt-0.5 font-sans text-[12px] text-white/85">
-                {holding ? t('sos.holding') : t('sos.hold')}
-              </Text>
-            </>
-          )}
-        </Pressable>
-      </Animated.View>
-    </View>
+    <Animated.View
+      entering={FadeIn}
+      pointerEvents="none"
+      style={[
+        { position: 'absolute', width: 52, height: 52, borderRadius: 26, backgroundColor: color },
+        style,
+      ]}
+    />
   );
 }
