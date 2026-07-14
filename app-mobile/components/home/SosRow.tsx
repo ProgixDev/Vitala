@@ -1,22 +1,23 @@
 import { View, Pressable } from 'react-native';
-import { router } from 'expo-router';
 import { Text, Icon, Well } from '@/components/ui';
 import { useTranslation } from '@/utils/i18n';
+import { useSosSheet } from '@/providers/SosSheetProvider';
 import { shadow } from '@/constants/theme';
 import { categoryImage } from '@/utils/status';
 
 /**
  * Emergency affordance for Home — the emergency photo in a Well, a red SOS
- * eyebrow, and a red "Get help now" CTA that pulls the eye. The full SOS flow
- * lives on its own tab.
+ * eyebrow, and a red "Get help now" CTA that pulls the eye. Opens the SOS
+ * bottom sheet (channel picker → slide-to-alert).
  */
 export function SosRow() {
   const { t } = useTranslation();
+  const { open } = useSosSheet();
 
   return (
     <View className="px-5">
       <Pressable
-        onPress={() => router.push('/(tabs)/sos')}
+        onPress={open}
         style={shadow.e1}
         className="flex-row items-center gap-3.5 rounded-card border border-border bg-surface p-3.5 active:opacity-90"
       >

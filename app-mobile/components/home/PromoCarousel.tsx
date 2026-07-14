@@ -15,19 +15,23 @@ import { Text, Icon } from '@/components/ui';
 import { shadow, useThemeColors } from '@/constants/theme';
 import { categoryImage } from '@/utils/status';
 import { useTranslation } from '@/utils/i18n';
+import { useSosSheet } from '@/providers/SosSheetProvider';
 
 interface Slide {
   /** i18n prefix — expects `${key}.eyebrow|title|cta`. */
   key: string;
   photo: string;
-  href: Href;
+  /** Destination route. Omitted for `sos`, which opens the SOS sheet instead. */
+  href?: Href;
+  /** Open the SOS bottom sheet rather than navigating. */
+  sos?: boolean;
   /** Render the CTA in emergency red — draws the eye for urgent actions. */
   urgent?: boolean;
 }
 
 const SLIDES: Slide[] = [
   { key: 'promo.book', photo: categoryImage('general-care'), href: '/booking/map' },
-  { key: 'promo.sos', photo: categoryImage('emergency'), href: '/(tabs)/sos', urgent: true },
+  { key: 'promo.sos', photo: categoryImage('emergency'), sos: true, urgent: true },
   { key: 'promo.learn', photo: categoryImage('vital-monitoring'), href: '/learn' },
 ];
 
@@ -94,10 +98,12 @@ function PromoSlide({
   style?: object;
 }) {
   const { t } = useTranslation();
+  const { open: openSos } = useSosSheet();
 
   const onPress = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push(slide.href);
+    if (slide.sos) openSos();
+    else if (slide.href) router.push(slide.href);
   };
 
   return (

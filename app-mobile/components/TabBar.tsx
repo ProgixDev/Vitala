@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Text } from '@/components/ui';
 import { SosTabButton } from '@/components/ui/SosTabButton';
+import { useSosSheet } from '@/providers/SosSheetProvider';
 import { shadow, useThemeColors } from '@/constants/theme';
 import { useTranslation } from '@/utils/i18n';
 
@@ -30,6 +31,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const { t } = useTranslation();
+  const { open: openSos } = useSosSheet();
 
   return (
     <View
@@ -48,8 +50,10 @@ export function TabBar({ state, navigation }: TabBarProps) {
           }
         };
 
+        // SOS is not a destination — it opens the emergency bottom sheet instead
+        // of switching tabs, so the current screen stays put behind it.
         if (isSos) {
-          return <SosTabButton key={route.key} focused={focused} onPress={onPress} />;
+          return <SosTabButton key={route.key} focused={focused} onPress={openSos} />;
         }
 
         const meta = icons[route.name];
