@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Text, Icon } from '@/components/ui';
 import { shadow } from '@/constants/theme';
-import { categoryIcon, categoryCover, categoryImage } from '@/utils/status';
+import { categoryCover, categoryImage } from '@/utils/status';
 import { formatPrice, formatDuration } from '@/utils/format';
 import type { Service } from '@/types';
 
@@ -19,7 +19,6 @@ interface ServiceMedallionProps {
  */
 export function ServiceMedallion({ service, onPress }: ServiceMedallionProps) {
   const cover = categoryCover(service.category);
-  const icon = categoryIcon(service.category);
   const imageUri = service.image_url ?? categoryImage(service.category);
 
   return (
@@ -47,11 +46,6 @@ export function ServiceMedallion({ service, onPress }: ServiceMedallionProps) {
           locations={[0, 0.5, 1]}
           style={{ position: 'absolute', inset: 0 }}
         />
-
-        {/* Category glyph chip */}
-        <View className="absolute left-3 top-3 h-9 w-9 items-center justify-center rounded-xl bg-white/20">
-          <Icon name={icon} size={19} color="#FFFFFF" weight="fill" />
-        </View>
 
         {/* Overlaid details */}
         <View className="absolute inset-x-0 bottom-0 gap-1.5 p-3.5">

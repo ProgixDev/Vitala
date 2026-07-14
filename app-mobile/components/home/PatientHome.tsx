@@ -6,7 +6,7 @@ import { Text, EmptyState, Skeleton, FadeInView } from '@/components/ui';
 import { ServiceMedallion } from '@/components/ServiceMedallion';
 import { Hero } from '@/components/home/Hero';
 import { ConciergeCard } from '@/components/home/ConciergeCard';
-import { QuickActions } from '@/components/home/QuickActions';
+import { PromoCarousel } from '@/components/home/PromoCarousel';
 import { SosRow } from '@/components/home/SosRow';
 import { useAsync } from '@/hooks/useAsync';
 import { Endpoints } from '@/lib/endpoints';
@@ -43,9 +43,9 @@ export function PatientHome() {
           <ConciergeCard />
         </FadeInView>
 
-        {/* Quick actions */}
+        {/* Hero carousel */}
         <FadeInView index={2} className="mt-8">
-          <QuickActions />
+          <PromoCarousel />
         </FadeInView>
 
         {/* Emergency */}

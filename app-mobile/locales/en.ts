@@ -170,15 +170,22 @@ export const en: Record<string, string> = {
   'home.heroLine1': 'Care that comes',
   'home.heroLine2': 'to you.',
   'home.nextVisit': 'Next visit',
-  'home.getStarted': 'Get started',
-  'home.bookFirstTitle': 'Book your first visit',
-  'home.bookFirstDesc': 'A verified nurse, at your door in hours.',
-  'home.bookCta': 'Book a nurse',
   'home.viewDetails': 'View details',
   'home.withNurse': 'with {name}',
   'home.findingNurse': 'Matching you with a nurse',
   'home.sosTitle': 'Urgent help, now',
-  'home.sosDesc': 'Nurse, ambulance or family alert',
+  'home.sosCta': 'Get help now',
+
+  // ---- home carousel ----
+  'promo.book.eyebrow': 'Home visits',
+  'promo.book.title': 'Care that comes to you',
+  'promo.book.cta': 'Book a nurse',
+  'promo.sos.eyebrow': 'Emergency',
+  'promo.sos.title': 'Help in an instant',
+  'promo.sos.cta': 'Get help now',
+  'promo.learn.eyebrow': 'First aid',
+  'promo.learn.title': 'Be ready for anything',
+  'promo.learn.cta': 'Start learning',
 
   // ---- quick actions ----
   'quick.title': 'Quick actions',

@@ -171,15 +171,22 @@ export const fr: Record<string, string> = {
   'home.heroLine1': 'Des soins qui',
   'home.heroLine2': 'viennent à vous.',
   'home.nextVisit': 'Prochain rendez-vous',
-  'home.getStarted': 'Commencer',
-  'home.bookFirstTitle': 'Réservez votre première visite',
-  'home.bookFirstDesc': 'Un infirmier vérifié, chez vous en quelques heures.',
-  'home.bookCta': 'Réserver un infirmier',
   'home.viewDetails': 'Voir les détails',
   'home.withNurse': 'avec {name}',
   'home.findingNurse': 'Recherche d’un infirmier',
   'home.sosTitle': 'Aide urgente, maintenant',
-  'home.sosDesc': 'Infirmier, ambulance ou proche',
+  'home.sosCta': "Obtenir de l'aide",
+
+  // ---- home carousel ----
+  'promo.book.eyebrow': 'Visites à domicile',
+  'promo.book.title': 'Des soins qui viennent à vous',
+  'promo.book.cta': 'Réserver un infirmier',
+  'promo.sos.eyebrow': 'Urgence',
+  'promo.sos.title': "De l'aide en un instant",
+  'promo.sos.cta': "Obtenir de l'aide",
+  'promo.learn.eyebrow': 'Premiers soins',
+  'promo.learn.title': 'Soyez prêt à tout',
+  'promo.learn.cta': 'Commencer',
 
   // ---- quick actions ----
   'quick.title': 'Actions rapides',

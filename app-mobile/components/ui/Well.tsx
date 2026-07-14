@@ -6,6 +6,8 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeColors, shadow } from '@/constants/theme';
 import { illustrations, type IllustrationKey } from '@/constants/illustrations';
 
@@ -16,6 +18,12 @@ export interface WellProps {
   illustration?: IllustrationKey;
   /** Or a raw image source (overrides `illustration`). */
   source?: ImageSourcePropType;
+  /**
+   * Full-bleed photograph (remote URI) that fills the tile edge-to-edge with a
+   * gentle brand tint — the premium, photographic treatment. Wins over
+   * `illustration` / `source` / `children`.
+   */
+  photoUri?: string;
   size?: number;
   radius?: number;
   /** `warm` cream tile (default) or a branded `teal` tint. */
@@ -37,6 +45,7 @@ export interface WellProps {
 export function Well({
   illustration,
   source,
+  photoUri,
   size = 64,
   radius = 20,
   tone = 'warm',
@@ -51,6 +60,43 @@ export function Well({
   const bg = tone === 'teal' ? colors.primarySoft : colors.surfaceAlt;
   const img = source ?? (illustration ? illustrations[illustration] : undefined);
   const imgSize = Math.round(size * imageScale);
+
+  // Photographic tile — the full-bleed premium treatment.
+  if (photoUri) {
+    return (
+      <View
+        style={[
+          elevated ? shadow.e1 : null,
+          {
+            width: size,
+            height: size,
+            borderRadius: radius,
+            backgroundColor: bg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            overflow: 'hidden',
+          },
+          style,
+        ]}
+      >
+        <ExpoImage
+          source={{ uri: photoUri }}
+          style={{ width: '100%', height: '100%' }}
+          contentFit="cover"
+          transition={240}
+        />
+        {/* Brand tint + soft bottom shade — unifies disparate photos into one set. */}
+        <LinearGradient
+          colors={
+            dark
+              ? ['rgba(10,20,18,0.10)', 'rgba(10,20,18,0.42)']
+              : ['rgba(13,124,107,0.06)', 'rgba(13,40,35,0.30)']
+          }
+          style={{ position: 'absolute', inset: 0 }}
+        />
+      </View>
+    );
+  }
 
   return (
     <View
