@@ -9,16 +9,31 @@ import { SocialAuthRow } from '@/components/SocialAuthRow';
 import { useSession } from '@/providers/SessionProvider';
 import { useTranslation } from '@/utils/i18n';
 
+// Accounts created by server-nest/scripts/seed-accounts.mjs. Dev builds only —
+// stripped from release bundles by the __DEV__ guard.
+const SEED_ACCOUNTS: Record<AuthRole, { email: string; password: string }> = {
+  patient: { email: 'patient@vitala.app', password: 'Vitala123!' },
+  nurse: { email: 'nurse@vitala.app', password: 'Vitala123!' },
+};
+
 export default function SignIn() {
   const { t } = useTranslation();
   const { signIn } = useSession();
   const [role, setRole] = useState<AuthRole>('patient');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState(__DEV__ ? SEED_ACCOUNTS.patient.email : '');
+  const [password, setPassword] = useState(__DEV__ ? SEED_ACCOUNTS.patient.password : '');
   const [loading, setLoading] = useState(false);
 
   const signupHref =
     role === 'nurse' ? '/(auth)/nurse-signup' : '/(auth)/patient-signup';
+
+  const changeRole = (next: AuthRole) => {
+    setRole(next);
+    if (__DEV__) {
+      setEmail(SEED_ACCOUNTS[next].email);
+      setPassword(SEED_ACCOUNTS[next].password);
+    }
+  };
 
   const submit = async () => {
     if (!email.trim() || !password) return;
@@ -62,7 +77,7 @@ export default function SignIn() {
       <View className="gap-5">
         <View className="gap-2">
           <Text variant="label">{t('auth.iAmA')}</Text>
-          <RoleToggle value={role} onChange={setRole} />
+          <RoleToggle value={role} onChange={changeRole} />
           <Text variant="caption" className="text-muted-foreground">
             {role === 'nurse' ? t('auth.signInNurseHint') : t('auth.signInPatientHint')}
           </Text>

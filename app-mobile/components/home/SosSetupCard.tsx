@@ -66,28 +66,33 @@ export function SosSetupCard() {
 
   const doneCount = steps.filter((s) => s.done).length;
 
+  // Completed steps float to the top so remaining work reads as one block below.
+  const orderedSteps = [...steps].sort((a, b) => Number(b.done) - Number(a.done));
+
   return (
     <FadeInView className="mt-6 px-5">
-      <View style={shadow.e2} className="overflow-hidden rounded-card bg-surface">
+      <View style={shadow.e3} className="overflow-hidden rounded-card border border-border bg-surface">
         {/* Header band */}
-        <View className="flex-row items-center gap-3 bg-emergency/10 px-4 py-3.5">
-          <View className="h-9 w-9 items-center justify-center rounded-full bg-emergency">
+        <View className="flex-row items-center gap-3 bg-emergency px-4 py-3.5">
+          <View className="h-9 w-9 items-center justify-center rounded-full bg-white/20">
             <Icon name="alert" size={20} color="#FFFFFF" weight="fill" />
           </View>
           <View className="flex-1">
-            <Text variant="bodyMedium" className="text-foreground">
+            <Text variant="bodyMedium" className="text-white">
               {t('sosSetup.cardTitle')}
             </Text>
-            <Text variant="caption">{t('sosSetup.cardSubtitle')}</Text>
+            <Text variant="caption" className="text-white/80">
+              {t('sosSetup.cardSubtitle')}
+            </Text>
           </View>
-          <Text variant="caption" className="font-semibold text-emergency">
+          <Text variant="caption" className="font-semibold text-white">
             {doneCount}/{steps.length}
           </Text>
         </View>
 
         {/* Steps */}
         <View className="px-2 py-1">
-          {steps.map((s) => (
+          {orderedSteps.map((s) => (
             <Pressable
               key={s.key}
               onPress={() => router.push(s.route)}
@@ -95,12 +100,12 @@ export function SosSetupCard() {
             >
               <View
                 className="h-8 w-8 items-center justify-center rounded-full"
-                style={{ backgroundColor: s.done ? colors.success : `${colors.emergency}14` }}
+                style={{ backgroundColor: s.done ? colors.success : colors.emergency }}
               >
                 <Icon
                   name={s.done ? 'checkmark' : s.icon}
                   size={s.done ? 18 : 17}
-                  color={s.done ? '#FFFFFF' : colors.emergency}
+                  color="#FFFFFF"
                   weight={s.done ? 'bold' : 'regular'}
                 />
               </View>

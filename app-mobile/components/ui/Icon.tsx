@@ -177,6 +177,8 @@ const MAP = {
   'accessibility-outline': Wheelchair,
   'medical-outline': Pill,
   siren: Siren,
+  stethoscope: Stethoscope,
+  heart: Heart,
   'fitness-outline': Stethoscope,
   'car-sport': Ambulance,
   'car-outline': Car,

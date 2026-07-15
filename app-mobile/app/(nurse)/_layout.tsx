@@ -10,7 +10,7 @@ export default function NurseLayout() {
   const colors = useThemeColors();
 
   if (booting) return null;
-  if (!isLoggedIn) return <Redirect href="/(auth)/sign-in" />;
+  if (!isLoggedIn) return <Redirect href="/onboarding" />;
 
   // Wait for the profile before deciding what the nurse shell should show.
   if (!me) {

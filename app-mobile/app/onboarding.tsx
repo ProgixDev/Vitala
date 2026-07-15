@@ -1,315 +1,306 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
-  View,
   FlatList,
-  useWindowDimensions,
   Pressable,
+  StyleSheet,
+  View,
+  useWindowDimensions,
   type ViewToken,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 import Animated, {
-  Easing,
+  Extrapolation,
+  interpolate,
+  useAnimatedScrollHandler,
   useAnimatedStyle,
-  useReducedMotion,
+  useDerivedValue,
   useSharedValue,
-  withDelay,
-  withRepeat,
   withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
-import { Text, Button } from '@/components/ui';
+import { Text, Icon } from '@/components/ui';
 import { FadeInView } from '@/components/ui/motion';
-import { OnboardingArt, type OnboardingArtKey } from '@/components/onboarding/OnboardingArt';
-import { useOnboarding } from '@/hooks/useOnboarding';
+import { BrandMark } from '@/components/BrandMark';
+import { onboardingPhotos, type OnboardingPhotoKey } from '@/constants/onboardingPhotos';
 import { useTranslation } from '@/utils/i18n';
-import { shadow } from '@/constants/theme';
-import { brand } from '@/constants/brand';
-import { cn } from '@/utils/cn';
-
-const LOGO = require('../assets/logo.png');
+import { useThemeColors, shadow, fonts } from '@/constants/theme';
 
 interface Slide {
-  scene: OnboardingArtKey;
-  eyebrowKey: string;
+  photo: OnboardingPhotoKey;
   titleKey: string;
   subtitleKey: string;
-  tagA: string;
-  tagB: string;
-  dotA: string;
-  dotB: string;
 }
 
-const AMBER = '#F0B429';
-
 const slides: Slide[] = [
-  {
-    scene: 'home',
-    eyebrowKey: 'onb.slide1.eyebrow',
-    titleKey: 'onb.slide1.title',
-    subtitleKey: 'onb.slide1.subtitle',
-    tagA: 'onb.slide1.tagA',
-    tagB: 'onb.slide1.tagB',
-    dotA: '#0E7C6B',
-    dotB: AMBER,
-  },
-  {
-    scene: 'personalized',
-    eyebrowKey: 'onb.slide2.eyebrow',
-    titleKey: 'onb.slide2.title',
-    subtitleKey: 'onb.slide2.subtitle',
-    tagA: 'onb.slide2.tagA',
-    tagB: 'onb.slide2.tagB',
-    dotA: AMBER,
-    dotB: '#0E7C6B',
-  },
-  {
-    scene: 'trust',
-    eyebrowKey: 'onb.slide3.eyebrow',
-    titleKey: 'onb.slide3.title',
-    subtitleKey: 'onb.slide3.subtitle',
-    tagA: 'onb.slide3.tagA',
-    tagB: 'onb.slide3.tagB',
-    dotA: '#0E7C6B',
-    dotB: AMBER,
-  },
+  { photo: 'anywhere', titleKey: 'onb.slide1.title', subtitleKey: 'onb.slide1.subtitle' },
+  { photo: 'tailored', titleKey: 'onb.slide2.title', subtitleKey: 'onb.slide2.subtitle' },
+  { photo: 'trust', titleKey: 'onb.slide3.title', subtitleKey: 'onb.slide3.subtitle' },
 ];
 
-/** A frosted proof-chip that gently drifts — the screen's one signature flourish. */
-function FloatChip({
-  label,
-  dotColor,
-  phase,
-  className,
-}: {
-  label: string;
-  dotColor: string;
-  phase: number;
-  className?: string;
-}) {
-  const reduced = useReducedMotion();
-  const t = useSharedValue(0);
+const SEGMENT_W = 22;
 
-  useEffect(() => {
-    if (reduced) return;
-    t.value = withDelay(
-      phase,
-      withRepeat(withTiming(1, { duration: 2200, easing: Easing.inOut(Easing.quad) }), -1, true),
-    );
-  }, [reduced, phase, t]);
-
-  const anim = useAnimatedStyle(() => ({ transform: [{ translateY: t.value * -8 }] }));
+/** The pastel wash the photo cards sit on — mint pooling into warm paper. */
+function Wash() {
+  const colors = useThemeColors();
+  const dark = colors.scheme === 'dark';
 
   return (
-    <Animated.View
-      style={[
-        anim,
-        shadow.e2,
-        { backgroundColor: 'rgba(255,255,255,0.96)' },
-      ]}
-      className={cn('absolute flex-row items-center gap-2 rounded-full py-2 pl-3 pr-3.5', className)}
-    >
-      <View className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: dotColor }} />
-      <Text className="font-semibold text-[12px] text-foreground">{label}</Text>
-    </Animated.View>
+    <LinearGradient
+      colors={
+        dark
+          ? ['#1A3830', '#0E1512', '#0E1512', '#16302A']
+          : ['#C7E6DA', '#FBF9F5', '#FBF9F5', '#DFEDD6']
+      }
+      locations={[0, 0.36, 0.64, 1]}
+      start={{ x: 0.12, y: 0 }}
+      end={{ x: 0.88, y: 1 }}
+      style={StyleSheet.absoluteFill}
+      pointerEvents="none"
+    />
   );
 }
 
-function CarePanel({ slide, width }: { slide: Slide; width: number }) {
-  const { t } = useTranslation();
-  const panelW = Math.min(width - 72, 300);
+/**
+ * Copy marks its own emphasis with asterisks — "Services made *for you*" — so the
+ * bold words stay with the translator rather than being hard-coded per language.
+ */
+function Headline({ text }: { text: string }) {
+  const parts = text.split('*');
+  // Both the scale and the family are set explicitly on every run. The Text
+  // primitive defaults to variant="body", so a nested run would otherwise inherit
+  // 15px, and its `font-sans` would collide with `font-bold` (cn is a plain join,
+  // not a merge) leaving the weight up to stylesheet order.
+  const scale = 'text-[33px] leading-[41px] tracking-[-0.8px] text-foreground';
+  return (
+    <Text className={scale} style={{ fontFamily: fonts.body }}>
+      {parts.map((part, i) =>
+        i % 2 === 1 ? (
+          <Text key={`${part}-${i}`} className={scale} style={{ fontFamily: fonts.bold }}>
+            {part}
+          </Text>
+        ) : (
+          part
+        ),
+      )}
+    </Text>
+  );
+}
+
+function Segment({ index, progress }: { index: number; progress: SharedValue<number> }) {
+  const colors = useThemeColors();
+  const fill = useAnimatedStyle(() => ({
+    width: interpolate(progress.value, [index - 1, index], [0, SEGMENT_W], Extrapolation.CLAMP),
+  }));
 
   return (
-    <View style={{ width: panelW, height: panelW * 0.94 }}>
-      {/* framed art card */}
-      <LinearGradient
-        colors={['#FFFFFF', '#E9F5F0']}
-        start={{ x: 0.3, y: 0 }}
-        end={{ x: 0.7, y: 1 }}
-        style={[
-          shadow.e3,
-          {
-            flex: 1,
-            borderRadius: 34,
-            borderWidth: 1,
-            borderColor: 'rgba(14,124,107,0.10)',
-            alignItems: 'center',
-            justifyContent: 'center',
-            overflow: 'hidden',
-          },
-        ]}
-      >
-        <OnboardingArt scene={slide.scene} size={panelW * 0.82} />
-      </LinearGradient>
-
-      {/* orbiting proof-chips */}
-      <FloatChip
-        label={t(slide.tagA)}
-        dotColor={slide.dotA}
-        phase={0}
-        className="-left-3 top-6"
-      />
-      <FloatChip
-        label={t(slide.tagB)}
-        dotColor={slide.dotB}
-        phase={900}
-        className="-right-2 bottom-8"
+    <View
+      style={{
+        width: SEGMENT_W,
+        height: 3,
+        borderRadius: 1.5,
+        backgroundColor: colors.border,
+        overflow: 'hidden',
+      }}
+    >
+      <Animated.View
+        style={[{ height: 3, borderRadius: 1.5, backgroundColor: colors.primary }, fill]}
       />
     </View>
   );
 }
 
-export default function Onboarding() {
-  const { width, height } = useWindowDimensions();
+/** Advances the sequence; on the last slide it goes on to sign-up. */
+function NextButton({ label, onPress }: { label: string; onPress: () => void }) {
+  const colors = useThemeColors();
+  const scale = useSharedValue(1);
+  const press = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  return (
+    <Animated.View style={press}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        onPressIn={() => {
+          scale.value = withTiming(0.94, { duration: 90 });
+        }}
+        onPressOut={() => {
+          scale.value = withTiming(1, { duration: 130 });
+        }}
+        onPress={() => {
+          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPress();
+        }}
+        style={shadow.e2}
+        className="h-[58px] w-[58px] items-center justify-center rounded-full bg-primary"
+      >
+        <Icon name="arrow-forward" size={20} color={colors.onPrimary} weight="bold" />
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+function Page({
+  slide,
+  index,
+  progress,
+  width,
+}: {
+  slide: Slide;
+  index: number;
+  progress: SharedValue<number>;
+  width: number;
+}) {
   const { t } = useTranslation();
-  const { complete } = useOnboarding();
+  const colors = useThemeColors();
+
+  // The card drifts and settles; the words lift in behind it.
+  const photo = useAnimatedStyle(() => {
+    const d = progress.value - index;
+    const away = Math.abs(d);
+    return {
+      opacity: interpolate(away, [0, 0.9], [1, 0], Extrapolation.CLAMP),
+      transform: [
+        { translateX: -d * 44 },
+        { scale: interpolate(away, [0, 1], [1, 0.92], Extrapolation.CLAMP) },
+      ],
+    };
+  });
+
+  const words = useAnimatedStyle(() => {
+    const away = Math.abs(progress.value - index);
+    return {
+      opacity: interpolate(away, [0, 0.8], [1, 0], Extrapolation.CLAMP),
+      transform: [{ translateY: interpolate(away, [0, 1], [0, 20], Extrapolation.CLAMP) }],
+    };
+  });
+
+  return (
+    <View style={{ width }} className="flex-1">
+      <Animated.View style={[{ flex: 1 }, photo]} className="px-6 pt-2" pointerEvents="none">
+        <View
+          style={[
+            shadow.e3,
+            { flex: 1, borderRadius: 32, overflow: 'hidden', backgroundColor: colors.surfaceAlt },
+          ]}
+        >
+          <Image
+            source={onboardingPhotos[slide.photo]}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            transition={280}
+          />
+          {/* The same brand tint the Well gives photography, so three separately
+              shot images read as one set rather than three stock photos. */}
+          <LinearGradient
+            colors={
+              colors.scheme === 'dark'
+                ? ['rgba(10,20,18,0.12)', 'rgba(10,20,18,0.44)']
+                : ['rgba(14,124,107,0.06)', 'rgba(13,40,35,0.26)']
+            }
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+          />
+        </View>
+      </Animated.View>
+
+      <Animated.View style={words} className="px-7 pt-6">
+        <Headline text={t(slide.titleKey)} />
+        <Text className="mt-3 max-w-[310px] font-sans text-[15px] leading-[23px] text-muted-foreground">
+          {t(slide.subtitleKey)}
+        </Text>
+      </Animated.View>
+    </View>
+  );
+}
+
+export default function Onboarding() {
+  const { width } = useWindowDimensions();
+  const { t } = useTranslation();
   const [index, setIndex] = useState(0);
   const listRef = useRef<FlatList<Slide>>(null);
 
   const isLast = index === slides.length - 1;
-  const panelZone = Math.round(height * 0.46);
+
+  const scrollX = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler((e) => {
+    scrollX.value = e.contentOffset.x;
+  });
+  const progress = useDerivedValue(() => scrollX.value / width);
 
   const onViewable = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     if (viewableItems[0]?.index != null) setIndex(viewableItems[0].index);
   }).current;
 
-  const finish = async (dest: '/(auth)/patient-signup' | '/(auth)/sign-in') => {
-    await complete();
-    router.replace(dest);
-  };
-
-  const goNext = () => {
-    if (isLast) return;
+  const advance = () => {
+    if (isLast) {
+      router.push('/(auth)/patient-signup');
+      return;
+    }
     listRef.current?.scrollToIndex({ index: index + 1, animated: true });
   };
 
   return (
     <View className="flex-1 bg-background">
-      <StatusBar style="light" />
-
-      {/* teal canvas — the same world the auth screens live in */}
-      <LinearGradient
-        colors={brand.authGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: height * 0.54 }}
-      />
-      {/* decorative orbs */}
-      <View
-        pointerEvents="none"
-        style={{ backgroundColor: brand.authOrb }}
-        className="absolute -right-12 top-10 h-60 w-60 rounded-full"
-      />
-      <View
-        pointerEvents="none"
-        style={{ backgroundColor: brand.authOrb }}
-        className="absolute -left-16 top-40 h-56 w-56 rounded-full"
-      />
-
-      {/* overlapping white sheet */}
-      <View
-        pointerEvents="none"
-        style={[shadow.e3, { height: height * 0.5 }]}
-        className="absolute bottom-0 left-0 right-0 rounded-t-[36px] bg-surface"
-      />
+      <StatusBar style="auto" />
+      <Wash />
 
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
-        {/* header */}
-        <View className="flex-row items-center justify-between px-6 pt-2">
-          <View className="flex-row items-center gap-2.5">
-            <View
-              style={shadow.e1}
-              className="h-10 w-10 items-center justify-center rounded-2xl bg-white"
-            >
-              <Image source={LOGO} style={{ width: 27, height: 27 }} contentFit="contain" />
-            </View>
-            <Text className="font-display-bold text-[19px] text-white">Vitala</Text>
-          </View>
-          {!isLast ? (
-            <Pressable
-              hitSlop={8}
-              onPress={() => finish('/(auth)/sign-in')}
-              className="rounded-full px-3 py-1.5"
-              style={{ backgroundColor: 'rgba(255,255,255,0.16)' }}
-            >
-              <Text className="font-medium text-[13px] text-white">{t('common.skip')}</Text>
-            </Pressable>
-          ) : (
-            <View className="h-8 w-14" />
-          )}
-        </View>
+        <FadeInView className="px-7 pt-1">
+          <BrandMark size={32} withWordmark />
+        </FadeInView>
 
-        {/* paged slides */}
-        <FlatList
+        <Animated.FlatList
           ref={listRef}
+          style={{ flex: 1 }}
           data={slides}
           keyExtractor={(s) => s.titleKey}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
           onViewableItemsChanged={onViewable}
           viewabilityConfig={{ itemVisiblePercentThreshold: 60 }}
-          renderItem={({ item }) => (
-            <View style={{ width }} className="flex-1">
-              <View style={{ height: panelZone }} className="items-center justify-center">
-                <CarePanel slide={item} width={width} />
-              </View>
-              <View className="flex-1 items-center px-9 pt-6">
-                <Text className="font-semibold text-[12px] uppercase tracking-[2px] text-primary">
-                  {t(item.eyebrowKey)}
-                </Text>
-                <Text
-                  className="mt-3 text-center font-display-bold text-[27px] leading-[33px] text-foreground"
-                >
-                  {t(item.titleKey)}
-                </Text>
-                <Text className="mt-3 text-center font-sans text-[15px] leading-[22px] text-muted-foreground">
-                  {t(item.subtitleKey)}
-                </Text>
-              </View>
-            </View>
+          renderItem={({ item, index: i }) => (
+            <Page slide={item} index={i} progress={progress} width={width} />
           )}
         />
 
-        {/* progress dots */}
-        <View className="mb-5 mt-1 flex-row items-center justify-center gap-2">
-          {slides.map((s, i) => (
-            <View
-              key={s.titleKey}
-              className={cn(
-                'h-2 rounded-full',
-                i === index ? 'w-7 bg-primary' : 'w-2 bg-surface-alt',
-              )}
-            />
-          ))}
-        </View>
+        <FadeInView delay={420} className="px-7 pb-2 pt-4">
+          <View className="flex-row items-center justify-between">
+            <Pressable
+              hitSlop={12}
+              accessibilityRole="link"
+              onPress={() => router.push('/(auth)/sign-in')}
+            >
+              <Text className="font-medium text-[14px] text-muted-foreground">
+                {isLast ? t('onb.login') : t('common.skip')}
+              </Text>
+            </Pressable>
 
-        {/* CTAs */}
-        <View className="gap-3 px-6 pb-3">
-          {isLast ? (
-            <FadeInView key="cta-last" className="gap-3">
-              <Button
-                label={t('onb.createAccount')}
-                iconRight="arrow-forward"
-                onPress={() => finish('/(auth)/patient-signup')}
-              />
-              <Pressable
-                className="items-center py-2"
-                hitSlop={8}
-                onPress={() => finish('/(auth)/sign-in')}
-              >
-                <Text className="font-medium text-[14px] text-muted-foreground">
-                  {t('onb.haveAccount')}{' '}
-                  <Text className="font-semibold text-primary">{t('onb.login')}</Text>
-                </Text>
-              </Pressable>
-            </FadeInView>
-          ) : (
-            <Button label={t('common.next')} iconRight="arrow-forward" onPress={goNext} />
-          )}
-        </View>
+            {/* The arrow shows no text, so the label is all a screen reader gets. */}
+            <NextButton
+              label={isLast ? t('onb.createAccount') : t('common.next')}
+              onPress={advance}
+            />
+          </View>
+
+          {/* Centred on the bar itself, so the button growing on the last slide
+              doesn't shove the ticks sideways. */}
+          <View
+            pointerEvents="none"
+            className="absolute inset-0 flex-row items-center justify-center gap-1.5"
+          >
+            {slides.map((s, i) => (
+              <Segment key={s.titleKey} index={i} progress={progress} />
+            ))}
+          </View>
+        </FadeInView>
       </SafeAreaView>
     </View>
   );

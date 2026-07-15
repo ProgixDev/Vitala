@@ -6,7 +6,7 @@ export default function TabsLayout() {
   const { booting, isLoggedIn, me } = useSession();
 
   if (booting) return null;
-  if (!isLoggedIn) return <Redirect href="/(auth)/sign-in" />;
+  if (!isLoggedIn) return <Redirect href="/onboarding" />;
   // Nurses have their own shell — never the patient tab set.
   if (me?.role === 'nurse') return <Redirect href="/(nurse)" />;
 

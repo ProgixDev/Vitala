@@ -35,13 +35,9 @@ export function EmptyState({
         </Text>
       ) : null}
       {actionLabel && onAction ? (
-        <Button
-          label={actionLabel}
-          variant="soft"
-          fullWidth={false}
-          className="mt-5"
-          onPress={onAction}
-        />
+        <View className="mt-5 w-full flex-row justify-center">
+          <Button label={actionLabel} variant="soft" fullWidth={false} onPress={onAction} />
+        </View>
       ) : null}
     </View>
   );

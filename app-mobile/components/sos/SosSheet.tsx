@@ -34,8 +34,8 @@ interface SosChannel {
  * Family → a softer amber alert.
  */
 const CHANNELS: SosChannel[] = [
-  { type: 'nurse-alert', icon: 'medkit', accent: (c) => c.primary, labelKey: 'sos.type.nurse', titleKey: 'sos.nurse.title', descKey: 'sos.nurse.desc', etaKey: 'sos.nurse.eta' },
-  { type: 'ambulance', icon: 'car-sport', accent: (c) => c.emergency, labelKey: 'sos.type.ambulance', titleKey: 'sos.ambulance.title', descKey: 'sos.ambulance.desc', etaKey: 'sos.ambulance.eta' },
+  { type: 'nurse-alert', icon: 'stethoscope', accent: (c) => c.primary, labelKey: 'sos.type.nurse', titleKey: 'sos.nurse.title', descKey: 'sos.nurse.desc', etaKey: 'sos.nurse.eta' },
+  { type: 'ambulance', icon: 'siren', accent: (c) => c.emergency, labelKey: 'sos.type.ambulance', titleKey: 'sos.ambulance.title', descKey: 'sos.ambulance.desc', etaKey: 'sos.ambulance.eta' },
   { type: 'family-alert', icon: 'people', accent: (c) => c.warning, labelKey: 'sos.type.family', titleKey: 'sos.family.title', descKey: 'sos.family.desc', etaKey: 'sos.family.eta' },
 ];
 
@@ -121,7 +121,7 @@ export function SosSheet({ visible, onClose }: { visible: boolean; onClose: () =
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={close}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View className="flex-1 justify-end">
           <Pressable className="absolute inset-0 bg-black/50" onPress={close} />
@@ -176,25 +176,25 @@ function PickStep({ colors, onPick }: { colors: ThemeColors; onPick: (ch: SosCha
             <Pressable
               key={ch.type}
               onPress={() => onPick(ch)}
-              style={{ borderColor: colors.border }}
-              className="flex-row items-center gap-3.5 rounded-[22px] border p-3.5 active:opacity-90"
+              style={{ backgroundColor: accent }}
+              className="flex-row items-center gap-3.5 rounded-[22px] p-3.5 active:opacity-90"
             >
               <View
                 className="items-center justify-center"
-                style={{ width: 48, height: 48, borderRadius: 16, backgroundColor: `${accent}1A` }}
+                style={{ width: 48, height: 48, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.22)' }}
               >
-                <Icon name={ch.icon} size={26} color={accent} weight="duotone" />
+                <Icon name={ch.icon} size={26} color="#FFFFFF" weight="fill" />
               </View>
               <View className="flex-1">
-                <Text className="font-display-bold text-[17px] leading-[21px] text-foreground">
+                <Text className="font-display-bold text-[17px] leading-[21px]" style={{ color: '#FFFFFF' }}>
                   {t(ch.titleKey)}
                 </Text>
-                <Text variant="caption" className="mt-0.5" numberOfLines={1}>
+                <Text variant="caption" className="mt-0.5" numberOfLines={1} style={{ color: 'rgba(255,255,255,0.85)' }}>
                   {t(ch.descKey)}
                 </Text>
               </View>
-              <View className="h-8 w-8 items-center justify-center rounded-full" style={{ backgroundColor: `${accent}14` }}>
-                <Icon name="chevron-forward" size={16} color={accent} weight="bold" />
+              <View className="h-8 w-8 items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.22)' }}>
+                <Icon name="chevron-forward" size={16} color="#FFFFFF" weight="bold" />
               </View>
             </Pressable>
           );
