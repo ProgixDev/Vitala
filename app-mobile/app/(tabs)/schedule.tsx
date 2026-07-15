@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { View, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Text, Chip, EmptyState, SkeletonList } from '@/components/ui';
 import { AppointmentCard } from '@/components/AppointmentCard';
 import { useAsync } from '@/hooks/useAsync';
+import { useRefetchOnFocus } from '@/hooks/useRefetchOnFocus';
 import { Endpoints } from '@/lib/endpoints';
 import { useSession } from '@/providers/SessionProvider';
 import { useTranslation } from '@/utils/i18n';
@@ -55,6 +56,15 @@ export default function Schedule() {
   const refetch = async () => {
     await Promise.all([appts.refetch(), txns.refetch()]);
   };
+
+  // This screen stays mounted while the patient cancels (or pays) on the detail
+  // screen, so without this a cancelled visit keeps sitting under Upcoming until
+  // a manual pull-to-refresh. Payments are refreshed too — the pay filter reads
+  // them.
+  const revalidate = useCallback(async () => {
+    await Promise.all([appts.revalidate(), txns.revalidate()]);
+  }, [appts.revalidate, txns.revalidate]);
+  useRefetchOnFocus(revalidate);
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">

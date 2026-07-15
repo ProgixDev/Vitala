@@ -3,6 +3,7 @@ import { View, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { Text, Icon, Well, Skeleton } from '@/components/ui';
 import { useAsync } from '@/hooks/useAsync';
+import { useRefetchOnFocus } from '@/hooks/useRefetchOnFocus';
 import { Endpoints } from '@/lib/endpoints';
 import { useTranslation } from '@/utils/i18n';
 import { useThemeColors, shadow } from '@/constants/theme';
@@ -18,7 +19,13 @@ import type { Appointment } from '@/types';
 export function ConciergeCard() {
   const { t } = useTranslation();
   const colors = useThemeColors();
-  const { data, loading } = useAsync<Appointment[]>(() => Endpoints.appointments(), []);
+  const { data, loading, revalidate } = useAsync<Appointment[]>(
+    () => Endpoints.appointments(),
+    [],
+  );
+  // Otherwise a visit cancelled from the detail screen stays the "next visit"
+  // on Home until the app is restarted.
+  useRefetchOnFocus(revalidate);
 
   const next = useMemo(() => {
     const upcoming = (data ?? [])

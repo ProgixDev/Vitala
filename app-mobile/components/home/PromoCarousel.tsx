@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   ScrollView,
@@ -9,13 +9,14 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, type Href } from 'expo-router';
+import { router, useFocusEffect, type Href } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Text, Icon } from '@/components/ui';
 import { shadow, useThemeColors } from '@/constants/theme';
 import { categoryImage } from '@/utils/status';
 import { useTranslation } from '@/utils/i18n';
 import { useSosSheet } from '@/providers/SosSheetProvider';
+import { useReduceMotion } from '@/hooks/useReduceMotion';
 
 interface Slide {
   /** i18n prefix — expects `${key}.eyebrow|title|cta`. */
@@ -39,6 +40,11 @@ const SIDE = 20; // horizontal page padding
 const GAP = 14; // space between cards
 const PEEK = 30; // how much of the next card shows
 
+/** How long each slide rests before advancing. */
+const AUTOPLAY_MS = 5000;
+/** Quiet period after a manual swipe before autoplay takes over again. */
+const RESUME_MS = 8000;
+
 /**
  * The home hero — a swipeable carousel of full-bleed care photos, each with an
  * eyebrow, a Fraunces headline and a CTA that routes to the feature. Replaces
@@ -47,18 +53,64 @@ const PEEK = 30; // how much of the next card shows
 export function PromoCarousel() {
   const { width } = useWindowDimensions();
   const [active, setActive] = useState(0);
+  const scroller = useRef<ScrollView>(null);
+  // The autoplay timer reads the index without re-arming on every slide.
+  const activeRef = useRef(0);
+  const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [interacting, setInteracting] = useState(false);
+  const [focused, setFocused] = useState(true);
+  const reduceMotion = useReduceMotion();
 
   const cardW = width - SIDE * 2 - PEEK;
   const snap = cardW + GAP;
 
+  const setIndex = useCallback((i: number) => {
+    activeRef.current = i;
+    setActive(i);
+  }, []);
+
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const i = Math.round(e.nativeEvent.contentOffset.x / snap);
-    if (i !== active) setActive(i);
+    if (i !== activeRef.current) setIndex(i);
   };
+
+  /** A manual swipe wins: hold autoplay off until they've stopped for a while. */
+  const holdAutoplay = useCallback(() => {
+    setInteracting(true);
+    if (resumeTimer.current) clearTimeout(resumeTimer.current);
+    resumeTimer.current = setTimeout(() => setInteracting(false), RESUME_MS);
+  }, []);
+
+  // Don't animate a carousel nobody is looking at — it burns battery and, on
+  // return, would silently have moved on.
+  useFocusEffect(
+    useCallback(() => {
+      setFocused(true);
+      return () => setFocused(false);
+    }, []),
+  );
+
+  useEffect(() => {
+    const paused = interacting || !focused || reduceMotion || SLIDES.length < 2;
+    if (paused) return;
+
+    const timer = setInterval(() => {
+      const next = (activeRef.current + 1) % SLIDES.length;
+      scroller.current?.scrollTo({ x: next * snap, animated: true });
+      setIndex(next);
+    }, AUTOPLAY_MS);
+    return () => clearInterval(timer);
+  }, [interacting, focused, reduceMotion, snap, setIndex]);
+
+  // Clear the resume timer on unmount so it can't fire into a dead component.
+  useEffect(() => () => {
+    if (resumeTimer.current) clearTimeout(resumeTimer.current);
+  }, []);
 
   return (
     <View>
       <ScrollView
+        ref={scroller}
         horizontal
         showsHorizontalScrollIndicator={false}
         decelerationRate="fast"
@@ -66,7 +118,11 @@ export function PromoCarousel() {
         snapToAlignment="start"
         disableIntervalMomentum
         contentContainerStyle={{ paddingHorizontal: SIDE }}
-        onMomentumScrollEnd={onScroll}
+        onScrollBeginDrag={holdAutoplay}
+        onMomentumScrollEnd={(e) => {
+          onScroll(e);
+          holdAutoplay();
+        }}
       >
         {SLIDES.map((s, i) => (
           <PromoSlide

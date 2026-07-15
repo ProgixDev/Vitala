@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { View, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Card, Badge, Icon, EmptyState, SkeletonList } from '@/components/ui';
 import { useAsync } from '@/hooks/useAsync';
+import { useRefetchOnFocus } from '@/hooks/useRefetchOnFocus';
 import { Endpoints } from '@/lib/endpoints';
 import { useSession } from '@/providers/SessionProvider';
 import { useTranslation } from '@/utils/i18n';
@@ -23,6 +24,12 @@ export default function NurseEarnings() {
 
   const appts = useAsync<Appointment[]>(() => Endpoints.appointments(), []);
   const txns = useAsync<Payment[]>(() => Endpoints.transactions().catch(() => []), []);
+
+  // A visit completed elsewhere should show up in earnings straight away.
+  const revalidate = useCallback(async () => {
+    await Promise.all([appts.revalidate(), txns.revalidate()]);
+  }, [appts.revalidate, txns.revalidate]);
+  useRefetchOnFocus(revalidate);
 
   const earn = useMemo(() => nurseEarnings(appts.data, me?.id), [appts.data, me?.id]);
   const payMap = useMemo(() => {
