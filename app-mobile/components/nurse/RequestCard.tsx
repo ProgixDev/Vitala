@@ -3,6 +3,7 @@ import { Text, Card, Button, Badge, Avatar, Icon } from '@/components/ui';
 import { useThemeColors } from '@/constants/theme';
 import { useTranslation } from '@/utils/i18n';
 import { formatDate, formatTime, formatPrice } from '@/utils/format';
+import { formatKm } from '@/utils/geo';
 import type { Appointment } from '@/types';
 
 interface RequestCardProps {
@@ -10,6 +11,8 @@ interface RequestCardProps {
   onAccept: () => void;
   onDecline: () => void;
   accepting?: boolean;
+  /** Straight-line km to the patient, or null when it can't be worked out. */
+  distanceKm?: number | null;
 }
 
 /**
@@ -17,7 +20,13 @@ interface RequestCardProps {
  * pays, and the two decisions that matter: take it or pass. Emergencies wear the
  * SOS badge so they're impossible to miss.
  */
-export function RequestCard({ appointment: a, onAccept, onDecline, accepting }: RequestCardProps) {
+export function RequestCard({
+  appointment: a,
+  onAccept,
+  onDecline,
+  accepting,
+  distanceKm,
+}: RequestCardProps) {
   const { t } = useTranslation();
   const colors = useThemeColors();
   const isEmergency = a.appointment_type === 'emergency';
@@ -32,7 +41,12 @@ export function RequestCard({ appointment: a, onAccept, onDecline, accepting }: 
       </View>
 
       <View className="flex-row items-center gap-3">
-        <Avatar name={a.patient?.full_name} uri={a.patient?.avatar_url} size={40} />
+        <Avatar
+          name={a.patient?.full_name}
+          uri={a.patient?.avatar_url}
+          size={40}
+          fallback="icon"
+        />
         <View className="flex-1">
           <Text variant="bodyMedium" numberOfLines={1}>
             {a.patient?.full_name ?? t('nurse.jobs.patient')}
@@ -57,6 +71,13 @@ export function RequestCard({ appointment: a, onAccept, onDecline, accepting }: 
         <Text variant="caption" numberOfLines={1} className="flex-1">
           {a.location_label || a.address}
         </Text>
+        {/* Straight-line, so it reads shorter than the drive. Absent rather
+            than guessed when the job has no coordinates. */}
+        {distanceKm != null ? (
+          <Text variant="caption" className="font-semibold text-primary">
+            {formatKm(distanceKm)}
+          </Text>
+        ) : null}
       </View>
 
       <View className="mt-0.5 flex-row gap-3">

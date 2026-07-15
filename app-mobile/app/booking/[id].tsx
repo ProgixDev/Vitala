@@ -8,7 +8,6 @@ import {
   Text,
   Card,
   Button,
-  Chip,
   Badge,
   Divider,
   Skeleton,
@@ -20,10 +19,11 @@ import { consumePickedLocation, usePickedLocation } from '@/lib/pickerStore';
 import { useTranslation } from '@/utils/i18n';
 import { useThemeColors } from '@/constants/theme';
 import { formatPrice, formatDuration } from '@/utils/format';
+import { TimeField } from '@/components/booking/TimeField';
+import { DurationField } from '@/components/booking/DurationField';
+import { estimatePrice } from '@/utils/booking';
 import type { GeoPoint, SavedLocation, Service } from '@/types';
 
-const DURATIONS = [30, 60, 90, 120];
-const TIME_SLOTS = ['09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00'];
 
 function nextDays(count: number): { date: string; weekday: string; day: string }[] {
   const out = [];
@@ -71,12 +71,12 @@ export default function Booking() {
   }, [pickedSignal]);
 
   useEffect(() => {
-    if (service && DURATIONS.includes(service.duration_min)) setDuration(service.duration_min);
+    // Default to the service's own duration, whatever it is — not just the presets.
+    if (service?.duration_min) setDuration(service.duration_min);
   }, [service]);
 
-  const estimate = service
-    ? Math.round(service.price * (duration / (service.duration_min || 60)))
-    : 0;
+  // Mirrors proRataPrice() on the server; the server's figure is authoritative.
+  const estimate = service ? estimatePrice(service.price, service.duration_min, duration) : 0;
 
   const savedPoints: GeoPoint[] = [
     ...extraLocs,
@@ -110,11 +110,16 @@ export default function Booking() {
         latitude: selectedLoc.latitude || undefined,
         longitude: selectedLoc.longitude || undefined,
         location_label: selectedLoc.label,
+        // The server recomputes price from this — the estimate shown above is
+        // only a preview and is never sent.
+        duration_min: duration,
         symptoms: isEmergency ? symptoms : undefined,
         notes: notes || undefined,
       });
-      Toast.show({ type: 'success', text1: t('booking.booked'), text2: t('booking.bookedDesc') });
-      router.replace(`/appointment/${created.id}`);
+      // Straight to payment: the card is authorised as part of requesting care,
+      // so a nurse never travels for a request with no valid card behind it.
+      // Nothing is captured until the visit is completed.
+      router.replace(`/pay/${created.id}`);
     } catch (e) {
       Toast.show({
         type: 'error',
@@ -161,19 +166,10 @@ export default function Booking() {
             </View>
           </Card>
 
-          {/* Duration */}
+          {/* Duration — presets plus a stepper for anything in between. */}
           <View className="gap-2">
             <Text variant="label">{t('booking.duration')}</Text>
-            <View className="flex-row flex-wrap gap-2">
-              {DURATIONS.map((d) => (
-                <Chip
-                  key={d}
-                  label={formatDuration(d)}
-                  selected={duration === d}
-                  onPress={() => setDuration(d)}
-                />
-              ))}
-            </View>
+            <DurationField value={duration} onChange={setDuration} />
           </View>
 
           {/* Date */}
@@ -208,14 +204,10 @@ export default function Booking() {
             </View>
           </View>
 
-          {/* Time */}
+          {/* Time — any time of day, not a fixed slot grid. */}
           <View className="gap-2">
             <Text variant="label">{t('booking.selectTime')}</Text>
-            <View className="flex-row flex-wrap gap-2">
-              {TIME_SLOTS.map((slot) => (
-                <Chip key={slot} label={slot} selected={time === slot} onPress={() => setTime(slot)} />
-              ))}
-            </View>
+            <TimeField value={time} onChange={setTime} />
           </View>
 
           {/* Location */}

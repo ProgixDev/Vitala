@@ -1,8 +1,11 @@
 /** Small pure formatting helpers used across screens. */
 
-export function formatPrice(amount?: number | null, currency = 'USD'): string {
+/** Charges are presented in CAD (patients are in Montreal); Stripe settles EUR. */
+const CURRENCY_SYMBOLS: Record<string, string> = { CAD: '$', USD: '$', EUR: '€' };
+
+export function formatPrice(amount?: number | null, currency = 'CAD'): string {
   const value = typeof amount === 'number' ? amount : 0;
-  const symbol = currency === 'USD' ? '$' : `${currency} `;
+  const symbol = CURRENCY_SYMBOLS[currency] ?? `${currency} `;
   return `${symbol}${value.toFixed(value % 1 === 0 ? 0 : 2)}`;
 }
 

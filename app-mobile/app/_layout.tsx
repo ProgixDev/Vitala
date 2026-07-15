@@ -23,6 +23,7 @@ import {
 } from '@expo-google-fonts/hanken-grotesk';
 import { SessionProvider } from '@/providers/SessionProvider';
 import { SosSheetProvider } from '@/providers/SosSheetProvider';
+import { IncomingJobProvider } from '@/providers/IncomingJobProvider';
 import { AnimatedSplash } from '@/components/AnimatedSplash';
 import { useToastConfig } from '@/components/AppToast';
 import { NotificationsBridge } from '@/components/NotificationsBridge';
@@ -72,29 +73,31 @@ export default function RootLayout() {
         >
           <SessionProvider>
             <NotificationsBridge />
-            <SosSheetProvider>
-              <View className="flex-1 bg-background">
-                <StatusBar style="auto" />
-                <Stack
-                  screenOptions={{
-                    headerShown: false,
-                    contentStyle: { backgroundColor: 'transparent' },
-                    animation: 'fade',
-                    animationDuration: 260,
-                  }}
-                >
-                  <Stack.Screen name="index" />
-                  <Stack.Screen name="onboarding" />
-                  <Stack.Screen name="(auth)" />
-                  <Stack.Screen name="(tabs)" />
-                  <Stack.Screen name="(nurse)" />
-                  <Stack.Screen
-                    name="booking/map"
-                    options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
-                  />
-                </Stack>
-              </View>
-            </SosSheetProvider>
+            <IncomingJobProvider>
+              <SosSheetProvider>
+                <View className="flex-1 bg-background">
+                  <StatusBar style="auto" />
+                  <Stack
+                    screenOptions={{
+                      headerShown: false,
+                      contentStyle: { backgroundColor: 'transparent' },
+                      animation: 'fade',
+                      animationDuration: 260,
+                    }}
+                  >
+                    <Stack.Screen name="index" />
+                    <Stack.Screen name="onboarding" />
+                    <Stack.Screen name="(auth)" />
+                    <Stack.Screen name="(tabs)" />
+                    <Stack.Screen name="(nurse)" />
+                    <Stack.Screen
+                      name="booking/map"
+                      options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+                    />
+                  </Stack>
+                </View>
+              </SosSheetProvider>
+            </IncomingJobProvider>
           </SessionProvider>
         </StripeProvider>
       </SafeAreaProvider>

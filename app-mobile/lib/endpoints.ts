@@ -65,6 +65,8 @@ export const Endpoints = {
   createAppointment: (dto: Record<string, unknown>) =>
     api.post<Appointment>('/appointments', dto),
   assignSelf: (id: string) => api.put<Appointment>(`/appointments/${id}/assign-self`),
+  /** Pass on an open job — hides it from this nurse, leaves it in the pool. */
+  passJob: (id: string) => api.put<{ passed: boolean }>(`/appointments/${id}/pass`),
   updateAppointmentStatus: (
     id: string,
     dto: { status: AppointmentStatus; reason?: string; completion_notes?: string },

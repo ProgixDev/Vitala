@@ -102,6 +102,10 @@ export interface NurseProfile {
   rating: number;
   total_reviews: number;
   is_online?: boolean;
+  /** Open-pool filters. Applied client-side; see hooks/useJobFilters.ts. */
+  max_radius_km?: number;
+  /** Service category slugs the nurse wants offered. Empty = all. */
+  job_categories?: string[];
 }
 
 /** A weekly availability window for a nurse. weekday: 0 = Sunday … 6 = Saturday. */

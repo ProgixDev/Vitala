@@ -2,10 +2,12 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PaymentsService } from '../payments/payments.service';
 import type { AuthUser } from '../../common/decorators/current-user.decorator';
 import {
   AppointmentStatus,
@@ -13,6 +15,23 @@ import {
   NurseLocationDto,
   UpdateStatusDto,
 } from './dto/appointment.dto';
+
+/** The slice of a profile we're willing to show a nurse before they accept. */
+interface PersonRef {
+  full_name: string;
+  avatar_url: string | null;
+}
+
+/** The columns of `appointments` this service reads back after a write. */
+interface AppointmentRow {
+  id: string;
+  patient_id: string;
+  nurse_id: string | null;
+  address: string;
+  location_label: string | null;
+  appointment_type: string;
+  status: AppointmentStatus;
+}
 
 /**
  * Legal status transitions. The old server let any status jump to any other;
@@ -28,27 +47,150 @@ const TRANSITIONS: Record<AppointmentStatus, AppointmentStatus[]> = {
   declined: [],
 };
 
+/**
+ * What the patient is told when their visit changes state. Keyed by the status
+ * being entered. Written from the patient's point of view — they don't care
+ * about our enum names.
+ */
+const PATIENT_STATUS_COPY: Partial<
+  Record<AppointmentStatus, { title: string; message: string }>
+> = {
+  'on-the-way': {
+    title: 'Your nurse is on the way',
+    message: 'Your nurse has set out and will arrive shortly.',
+  },
+  'in-progress': {
+    title: 'Your visit has started',
+    message: 'Your nurse has arrived and your visit is underway.',
+  },
+  completed: {
+    title: 'Visit complete',
+    message: 'Your visit is finished. Tap to leave a review.',
+  },
+  cancelled: {
+    title: 'Visit cancelled',
+    message: 'Your visit has been cancelled.',
+  },
+  declined: {
+    title: 'Visit declined',
+    message: 'Your nurse is unable to attend. We are finding you another.',
+  },
+};
+
+/**
+ * Price for a patient-chosen duration, scaled from the service's base rate.
+ *
+ * Rounded to whole cents so the figure the patient authorises on their card is
+ * exactly the figure stored on the appointment. Falls back to the flat price if
+ * a service somehow has no base duration, rather than dividing by zero.
+ */
+function proRataPrice(basePrice: number, baseMinutes: number, minutes: number): number {
+  if (!baseMinutes || baseMinutes <= 0) return basePrice;
+  return Math.round(basePrice * (minutes / baseMinutes) * 100) / 100;
+}
+
+/** "10:30" + 90 -> "12:00". Wraps past midnight rather than overflowing. */
+function endTime(start: string, minutes: number): string {
+  const [h, m] = start.split(':').map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return start;
+  const total = (h * 60 + m + minutes) % (24 * 60);
+  const hh = String(Math.floor(total / 60)).padStart(2, '0');
+  const mm = String(total % 60).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
 @Injectable()
 export class AppointmentsService {
+  private readonly logger = new Logger('Appointments');
+
   constructor(
     private readonly supabase: SupabaseService,
     private readonly notifications: NotificationsService,
+    private readonly payments: PaymentsService,
   ) {}
 
   private db(user: AuthUser) {
     return this.supabase.forUser(user.token);
   }
 
-  /** Patient books. Price is copied from the service (never trusted from client). */
+  /**
+   * Profile ids of nurses currently taking work. `is_online` is the duty toggle
+   * the nurse flips in the app; we also require an approved, active account so a
+   * pending or suspended nurse is never offered a job.
+   */
+  private async onDutyNurseIds(): Promise<string[]> {
+    const { data, error } = await this.supabase
+      .admin()
+      .from('nurse_profiles')
+      .select('profile_id, profiles!inner(status)')
+      .eq('is_online', true)
+      .eq('verification_status', 'approved')
+      .eq('profiles.status', 'active');
+    if (error) throw error;
+    return (data ?? []).map((r) => r.profile_id as string);
+  }
+
+  /**
+   * Attach the patient's name/photo to open-pool rows.
+   *
+   * Deliberately NOT a PostgREST join: RLS gives nurses no read on patient
+   * profiles (profiles_nurse_public covers nurse rows only), and adding one
+   * would expose every column on the row — including the patient's phone —
+   * since the client picks the column list. So we look the patients up with the
+   * service-role client and hand back exactly two fields.
+   */
+  private async withPatients<T extends { patient_id: string }>(
+    rows: T[],
+  ): Promise<(T & { patient: PersonRef | null })[]> {
+    if (!rows.length) return [];
+    const ids = [...new Set(rows.map((r) => r.patient_id))];
+    const { data, error } = await this.supabase
+      .admin()
+      .from('profiles')
+      .select('id, full_name, avatar_url')
+      .in('id', ids);
+    if (error) throw error;
+    const byId = new Map(
+      (data ?? []).map((p) => [
+        p.id as string,
+        { full_name: p.full_name as string, avatar_url: p.avatar_url as string | null },
+      ]),
+    );
+    return rows.map((r) => ({ ...r, patient: byId.get(r.patient_id) ?? null }));
+  }
+
+  /** Display name for notification copy. Falls back rather than throwing. */
+  private async nameOf(profileId: string): Promise<string> {
+    const { data } = await this.supabase
+      .admin()
+      .from('profiles')
+      .select('full_name')
+      .eq('id', profileId)
+      .maybeSingle();
+    return (data?.full_name as string) || 'Your nurse';
+  }
+
+  /**
+   * Patient books. Price is always derived server-side from the service and the
+   * requested duration — never taken from the client, which is why the DTO has
+   * no price field at all.
+   */
   async create(user: AuthUser, dto: CreateAppointmentDto) {
     const { data: service, error: svcErr } = await this.supabase
       .admin()
       .from('services')
-      .select('id, price, duration_min')
+      .select('id, name, price, duration_min')
       .eq('id', dto.service_id)
       .maybeSingle();
     if (svcErr) throw svcErr;
     if (!service) throw new BadRequestException('Unknown service');
+
+    const duration = dto.duration_min ?? (service.duration_min as number);
+    const price = proRataPrice(
+      Number(service.price),
+      service.duration_min as number,
+      duration,
+    );
 
     const { data, error } = await this.db(user)
       .from('appointments')
@@ -59,30 +201,57 @@ export class AppointmentsService {
         appointment_type: dto.appointment_type ?? 'normal',
         scheduled_date: dto.scheduled_date,
         scheduled_start: dto.scheduled_start,
-        scheduled_end: dto.scheduled_end ?? null,
         address: dto.address,
         latitude: dto.latitude ?? null,
         longitude: dto.longitude ?? null,
         location_label: dto.location_label ?? null,
         symptoms: dto.symptoms ?? null,
         notes: dto.notes ?? null,
-        price: service.price,
-        duration_min: service.duration_min,
+        price,
+        duration_min: duration,
+        scheduled_end: dto.scheduled_end ?? endTime(dto.scheduled_start, duration),
       })
       .select()
       .single();
     if (error) throw error;
 
-    if (dto.nurse_id) {
-      await this.notifications.create(dto.nurse_id, {
-        title: 'New appointment request',
-        message: 'A patient has requested you for an appointment.',
-        type: 'appointment',
-        priority: 'high',
-        related_appointment: data.id,
-      });
-    }
+    await this.announce(data, service.name as string);
     return data;
+  }
+
+  /**
+   * Tell nurses a new job exists. A hand-picked nurse gets it directly;
+   * otherwise it goes to everyone on duty, first-come-first-served.
+   *
+   * Never throws — the patient's booking already succeeded by this point, and a
+   * push failure must not turn that into an error response.
+   */
+  private async announce(appt: AppointmentRow, serviceName: string) {
+    const urgent = appt.appointment_type === 'emergency';
+    const n = {
+      title: urgent ? 'Emergency request' : 'New visit request',
+      message: `${serviceName} — ${appt.location_label || appt.address}`,
+      type: 'appointment' as const,
+      // 'urgent' is what makes the push wake the device (see pushOptsFor).
+      priority: urgent ? ('urgent' as const) : ('high' as const),
+      related_appointment: appt.id,
+    };
+    try {
+      if (appt.nurse_id) {
+        await this.notifications.create(appt.nurse_id, {
+          ...n,
+          message: `A patient has requested you — ${serviceName}.`,
+        });
+        return;
+      }
+      const nurses = await this.onDutyNurseIds();
+      const sent = await this.notifications.createMany(nurses, n);
+      this.logger.log(
+        `Job ${appt.id} announced to ${sent}/${nurses.length} on-duty nurses.`,
+      );
+    } catch (err) {
+      this.logger.error(`Failed to announce job ${appt.id}`, err as Error);
+    }
   }
 
   /** Role-aware listing: patients see theirs, nurses see assigned + open pool. */
@@ -107,7 +276,39 @@ export class AppointmentsService {
       .eq('status', 'pending')
       .order('scheduled_date');
     if (error) throw error;
-    return data;
+
+    // Jobs this nurse already passed on stay in the pool for everyone else, but
+    // must never be shown to them again. RLS scopes the read to their own rows.
+    const { data: passed, error: passErr } = await this.db(user)
+      .from('appointment_declines')
+      .select('appointment_id');
+    if (passErr) throw passErr;
+    const skip = new Set((passed ?? []).map((d) => d.appointment_id as string));
+
+    return this.withPatients(
+      (data ?? []).filter((a) => !skip.has(a.id as string)),
+    );
+  }
+
+  /**
+   * A nurse passes on an open job. This is per-nurse: the appointment stays
+   * pending and every other on-duty nurse still sees it. Distinct from the
+   * `declined` status, which is terminal and only the assigned nurse may set.
+   */
+  async pass(user: AuthUser, id: string) {
+    if (user.role !== 'nurse') throw new ForbiddenException('Nurses only');
+    const appt = await this.findOne(user, id);
+    if (appt.nurse_id)
+      throw new BadRequestException('That job is already assigned');
+
+    const { error } = await this.db(user)
+      .from('appointment_declines')
+      .upsert(
+        { appointment_id: id, nurse_id: user.id },
+        { onConflict: 'appointment_id,nurse_id' },
+      );
+    if (error) throw error;
+    return { passed: true };
   }
 
   async findOne(user: AuthUser, id: string) {
@@ -139,9 +340,10 @@ export class AppointmentsService {
     if (error) throw error;
     if (!data) throw new BadRequestException('Appointment was just taken');
 
+    const nurseName = await this.nameOf(user.id);
     await this.notifications.create(appt.patient_id, {
-      title: 'Nurse assigned',
-      message: 'A nurse has accepted your appointment.',
+      title: 'Your visit is confirmed',
+      message: `${nurseName} accepted your request and will be in touch.`,
       type: 'appointment',
       priority: 'high',
       related_appointment: id,
@@ -180,14 +382,31 @@ export class AppointmentsService {
       .single();
     if (error) throw error;
 
-    // Notify the counterparty.
+    // Money follows the visit. Both of these swallow their own errors: the
+    // status change has already been written, and a Stripe hiccup must not turn
+    // a completed visit into a failed request.
+    if (dto.status === 'completed') {
+      await this.payments.captureForAppointment(id);
+    } else if (dto.status === 'cancelled' || dto.status === 'declined') {
+      await this.payments.releaseForAppointment(id, dto.reason);
+    }
+
+    // Notify the counterparty. When the nurse drives the change the patient gets
+    // the tailored copy; a patient-driven change (only ever a cancel) falls back
+    // to the generic line, since that copy is written for the patient's eyes.
     const notify = user.id === appt.patient_id ? appt.nurse_id : appt.patient_id;
     if (notify) {
+      const copy =
+        notify === appt.patient_id ? PATIENT_STATUS_COPY[dto.status] : undefined;
       await this.notifications.create(notify, {
-        title: 'Appointment updated',
-        message: `Appointment is now "${dto.status}".`,
+        title: copy?.title ?? 'Appointment updated',
+        message: copy?.message ?? `Appointment is now "${dto.status}".`,
         type: 'appointment',
-        priority: 'medium',
+        // Arrival and cancellation are the ones worth interrupting for.
+        priority:
+          dto.status === 'on-the-way' || dto.status === 'cancelled'
+            ? 'high'
+            : 'medium',
         related_appointment: id,
       });
     }

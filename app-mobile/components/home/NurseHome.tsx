@@ -96,7 +96,12 @@ export function NurseHome() {
                   {a.appointment_type === 'emergency' ? <Badge label="SOS" tone="danger" /> : null}
                 </View>
                 <View className="flex-row items-center gap-3">
-                  <Avatar name={a.patient?.full_name} uri={a.patient?.avatar_url} size={40} />
+                  <Avatar
+                    name={a.patient?.full_name}
+                    uri={a.patient?.avatar_url}
+                    size={40}
+                    fallback="icon"
+                  />
                   <View className="flex-1">
                     <View className="flex-row items-center gap-1.5">
                       <Icon name="calendar-outline" size={13} color={colors.mutedForeground} />

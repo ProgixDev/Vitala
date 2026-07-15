@@ -46,6 +46,12 @@ export class AppointmentsController {
     return this.appointments.assignSelf(user, id);
   }
 
+  /** Pass on an open job: hides it from this nurse, leaves it in the pool. */
+  @Put(':id/pass')
+  pass(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.appointments.pass(user, id);
+  }
+
   @Put(':id/status')
   updateStatus(
     @CurrentUser() user: AuthUser,

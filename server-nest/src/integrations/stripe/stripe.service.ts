@@ -18,7 +18,10 @@ export class StripeService {
     const key = this.config.get('STRIPE_SECRET_KEY', { infer: true });
     this.webhookSecret = this.config.get('STRIPE_WEBHOOK_SECRET', { infer: true });
     this.publishableKey = this.config.get('STRIPE_PUBLISHABLE_KEY', { infer: true });
-    this.client = key ? new Stripe(key) : null;
+    // Pinned deliberately: unpinned, an SDK bump silently moves the API version
+    // under us and can change webhook payloads. Keep this in step with the
+    // version configured on the webhook endpoint in the Stripe dashboard.
+    this.client = key ? new Stripe(key, { apiVersion: '2026-06-24.dahlia' }) : null;
     if (!this.client) {
       this.logger.warn('STRIPE_SECRET_KEY not set — payment endpoints are disabled.');
     }
@@ -41,6 +44,22 @@ export class StripeService {
 
   retrievePaymentIntent(id: string) {
     return this.stripe.paymentIntents.retrieve(id);
+  }
+
+  /**
+   * Take the money that was authorised at request time. Only valid while the
+   * intent is `requires_capture`.
+   */
+  capturePaymentIntent(id: string) {
+    return this.stripe.paymentIntents.capture(id);
+  }
+
+  /**
+   * Release an authorisation without charging. This is the cancel path — the
+   * patient's hold disappears and no refund (or fee) is involved.
+   */
+  cancelPaymentIntent(id: string, reason?: Stripe.PaymentIntentCancelParams.CancellationReason) {
+    return this.stripe.paymentIntents.cancel(id, reason ? { cancellation_reason: reason } : undefined);
   }
 
   createRefund(params: Stripe.RefundCreateParams) {

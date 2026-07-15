@@ -39,7 +39,12 @@ export function AppointmentCard({
         </View>
 
         <View className="flex-row items-center gap-3">
-          <Avatar name={person?.full_name} uri={person?.avatar_url} size={40} />
+          <Avatar
+            name={person?.full_name}
+            uri={person?.avatar_url}
+            size={40}
+            fallback={counterpart === 'patient' ? 'icon' : 'initials'}
+          />
           <View className="flex-1">
             <Text variant="caption" className="text-muted-foreground">
               {counterpart === 'nurse' ? 'Nurse' : 'Patient'}

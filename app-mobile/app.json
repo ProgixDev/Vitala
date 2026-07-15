@@ -30,9 +30,10 @@
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "permissions": [
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION",
-        "CAMERA"
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ],
       "predictiveBackGestureEnabled": false
     },
@@ -76,14 +77,20 @@
           "enableGooglePay": true
         }
       ],
-      "expo-video"
+      "expo-video",
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "apiBaseUrl": "https://vitala-tau.vercel.app/api",
       "supabaseUrl": "https://dieuytwiwtjzkxeuxett.supabase.co",
       "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpZXV5dHdpd3Rqemt4ZXV4ZXR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3OTI3ODEsImV4cCI6MjA5OTM2ODc4MX0.p0w2oPwJovWOsqDYwyDmaTEXYM4JqhqzylpZnliktIU",
-      "stripePublishableKey": "REPLACE_WITH_STRIPE_PUBLISHABLE_KEY",
-      "stripeMerchantId": "merchant.com.vitala.app"
-    }
+      "stripePublishableKey": "pk_test_51TjXM3C1XrjpLABrjMTrH8EW6lIqBcxt9gvSmN5HEQsCKMdeJ3j8PP3HcwOwVhTS9tLfXN5wdKTE3Aha32Fccee900K5jMKqqX",
+      "stripeMerchantId": "merchant.com.vitala.app",
+      "router": {},
+      "eas": {
+        "projectId": "a7b6649f-ad39-46de-98c7-a3a3ca61fce2"
+      }
+    },
+    "owner": "mohameddev7"
   }
 }

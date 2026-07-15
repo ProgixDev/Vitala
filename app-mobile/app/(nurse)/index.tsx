@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -23,6 +23,7 @@ import { useSession } from '@/providers/SessionProvider';
 import { useTranslation } from '@/utils/i18n';
 import { useThemeColors } from '@/constants/theme';
 import { UPCOMING_STATUSES, appointmentStatusMeta } from '@/utils/status';
+import { useRefetchOnFocus } from '@/hooks/useRefetchOnFocus';
 import { nurseEarnings } from '@/utils/earnings';
 import { formatDate, formatTime, formatPrice } from '@/utils/format';
 import type { Appointment } from '@/types';
@@ -42,6 +43,13 @@ export default function NurseToday() {
   const refetch = async () => {
     await Promise.all([requests.refetch(), mine.refetch()]);
   };
+
+  // Coming back from the visit screen (where a visit may have just been
+  // completed) must not leave a stale "next visit" on screen.
+  const revalidate = useCallback(async () => {
+    await Promise.all([requests.revalidate(), mine.revalidate()]);
+  }, [requests.revalidate, mine.revalidate]);
+  useRefetchOnFocus(revalidate);
 
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -73,9 +81,16 @@ export default function NurseToday() {
       setBusyId(null);
     }
   };
-  const decline = (id: string) => {
+  // Optimistic pass — see the note in (nurse)/jobs.tsx.
+  const decline = async (id: string) => {
     setDismissed((d) => [...d, id]);
     Toast.show({ type: 'info', text1: t('nurse.jobs.declined') });
+    try {
+      await Endpoints.passJob(id);
+    } catch (e) {
+      setDismissed((d) => d.filter((x) => x !== id));
+      Toast.show({ type: 'error', text1: t('common.somethingWrong'), text2: msg(e) });
+    }
   };
 
   return (
@@ -213,7 +228,12 @@ function NextVisit({ appointment: a }: { appointment: Appointment }) {
           <Badge label={status.label} tone={status.tone} dot />
         </View>
         <View className="flex-row items-center gap-3">
-          <Avatar name={a.patient?.full_name} uri={a.patient?.avatar_url} size={44} />
+          <Avatar
+            name={a.patient?.full_name}
+            uri={a.patient?.avatar_url}
+            size={44}
+            fallback="icon"
+          />
           <View className="flex-1">
             <Text variant="bodyMedium" numberOfLines={1}>
               {a.patient?.full_name ?? t('nurse.jobs.patient')}

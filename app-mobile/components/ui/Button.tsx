@@ -74,7 +74,15 @@ export function Button({
         : colors.primary;
 
   return (
-    <Animated.View style={[animatedStyle, fullWidth ? undefined : { alignSelf: 'flex-start' }]}>
+    // Layout classes (flex-1, mt-*) go on the wrapper, because the wrapper — not
+    // the Pressable — is the flex child of whatever row/column holds the button.
+    // Putting flex-1 on the Pressable instead sets flexBasis:0% along the
+    // wrapper's main axis (vertical), which Yoga honours over the height in
+    // `sizes`, collapsing the button to zero height.
+    <Animated.View
+      style={[animatedStyle, fullWidth ? undefined : { alignSelf: 'flex-start' }]}
+      className={className}
+    >
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ disabled: isDisabled, busy: loading }}
@@ -94,7 +102,6 @@ export function Button({
           sizes[size],
           container[variant],
           isDisabled && 'opacity-50',
-          className,
         )}
         {...rest}
       >

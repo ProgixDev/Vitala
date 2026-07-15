@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { Text, EmptyState, SkeletonList, Icon } from '@/components/ui';
 import { AppointmentCard } from '@/components/AppointmentCard';
 import { useAsync } from '@/hooks/useAsync';
+import { useRefetchOnFocus } from '@/hooks/useRefetchOnFocus';
 import { Endpoints } from '@/lib/endpoints';
 import { useSession } from '@/providers/SessionProvider';
 import { useTranslation } from '@/utils/i18n';
@@ -22,6 +23,8 @@ export default function NurseSchedule() {
   const [tab, setTab] = useState<Tab>('upcoming');
 
   const appts = useAsync<Appointment[]>(() => Endpoints.appointments(), []);
+  // A visit completed elsewhere should move to History without a manual pull.
+  useRefetchOnFocus(appts.revalidate);
 
   const mine = (appts.data ?? [])
     .filter((a) => a.nurse_id === me?.id)

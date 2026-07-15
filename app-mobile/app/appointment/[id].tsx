@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { Screen, Header, Text, Card, Button, Badge, Avatar, Icon, type IconName } from '@/components/ui';
@@ -50,6 +50,7 @@ export default function AppointmentStatusScreen() {
   const [notesOpen, setNotesOpen] = useState(false);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState('');
@@ -87,6 +88,10 @@ export default function AppointmentStatusScreen() {
   const enRoutePhase = appt.status === 'confirmed' || appt.status === 'on-the-way';
   const isPatient = me?.role === 'patient' && appt.patient_id === me?.id;
   const canReview = isPatient && appt.status === 'completed' && !appt.review;
+  // Once the nurse is at the door and working, cancelling in-app isn't fair to
+  // them — the TRANSITIONS map on the server stops there too.
+  const canCancel =
+    isPatient && ['pending', 'confirmed', 'on-the-way'].includes(appt.status);
   const existingReview = isPatient ? appt.review : null;
 
   const advance = async () => {
@@ -98,6 +103,42 @@ export default function AppointmentStatusScreen() {
       void refetch();
     } catch (e) {
       Toast.show({ type: 'error', text1: t('status.advanceError'), text2: msg(e) });
+    }
+  };
+
+  /**
+   * Cancelling is irreversible and touches the patient's money, so confirm
+   * first. The copy tells them which it is — released hold vs refund — because
+   * "you'll get it back" means very different waits.
+   */
+  const confirmCancel = () => {
+    const held = appt.payment?.status === 'processing';
+    const paid = appt.payment?.status === 'completed';
+    Alert.alert(
+      t('status.cancelTitle'),
+      paid ? t('status.cancelRefund') : held ? t('status.cancelHold') : t('status.cancelPlain'),
+      [
+        { text: t('status.cancelKeep'), style: 'cancel' },
+        {
+          text: t('status.cancelConfirm'),
+          style: 'destructive',
+          onPress: () => void cancelVisit(),
+        },
+      ],
+    );
+  };
+
+  const cancelVisit = async () => {
+    setCancelling(true);
+    try {
+      const updated = await Endpoints.updateAppointmentStatus(id, { status: 'cancelled' });
+      setData(() => ({ ...appt, ...updated }));
+      Toast.show({ type: 'success', text1: t('status.cancelled') });
+      void refetch();
+    } catch (e) {
+      Toast.show({ type: 'error', text1: t('status.advanceError'), text2: msg(e) });
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -196,7 +237,12 @@ export default function AppointmentStatusScreen() {
         {/* Counterpart */}
         {person ? (
           <Card elevation="e1" className="flex-row items-center gap-3">
-            <Avatar name={person.full_name} uri={person.avatar_url} size={44} />
+            <Avatar
+              name={person.full_name}
+              uri={person.avatar_url}
+              size={44}
+              fallback={me?.role === 'nurse' ? 'icon' : 'initials'}
+            />
             <View className="flex-1">
               <Text variant="caption">{me?.role === 'nurse' ? t('status.patient') : t('status.nurse')}</Text>
               <Text variant="bodyMedium">{person.full_name}</Text>
@@ -242,6 +288,18 @@ export default function AppointmentStatusScreen() {
               onPress={() => router.push(`/pay/${id}`)}
             />
           </Card>
+        ) : null}
+
+        {/* Patient cancel. Allowed until the nurse is actually doing the visit;
+            the server releases the card hold (or refunds a captured payment). */}
+        {canCancel ? (
+          <Button
+            label={t('status.cancelVisit')}
+            variant="ghost"
+            icon="close"
+            loading={cancelling}
+            onPress={confirmCancel}
+          />
         ) : null}
 
         {/* Patient review prompt / summary */}

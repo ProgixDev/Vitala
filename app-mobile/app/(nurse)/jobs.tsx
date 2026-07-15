@@ -1,17 +1,22 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
-import { Text, EmptyState, SkeletonList } from '@/components/ui';
+import { Text, EmptyState, SkeletonList, Icon } from '@/components/ui';
 import { AppointmentCard } from '@/components/AppointmentCard';
 import { RequestCard } from '@/components/nurse/RequestCard';
+import { JobFiltersSheet } from '@/components/nurse/JobFiltersSheet';
 import { useAsync } from '@/hooks/useAsync';
+import { useRefetchOnFocus } from '@/hooks/useRefetchOnFocus';
+import { useJobFilters } from '@/hooks/useJobFilters';
+import { useNurseLocation } from '@/hooks/useNurseLocation';
 import { Endpoints } from '@/lib/endpoints';
 import { useSession } from '@/providers/SessionProvider';
 import { useTranslation } from '@/utils/i18n';
 import { useThemeColors } from '@/constants/theme';
 import { cn } from '@/utils/cn';
+import { rankJobs, DEFAULT_RADIUS_KM } from '@/utils/jobFilters';
 import type { Appointment, AppointmentStatus } from '@/types';
 
 type Tab = 'requests' | 'active';
@@ -24,6 +29,12 @@ export default function NurseJobs() {
   const [tab, setTab] = useState<Tab>('requests');
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const { radiusKm, categories, saving, save } = useJobFilters();
+  // Location is only worth asking for while the nurse is actually taking work.
+  const onDuty = me?.nurseProfile?.is_online ?? false;
+  const { point, denied } = useNurseLocation(onDuty);
 
   const requests = useAsync<Appointment[]>(() => Endpoints.unassignedAppointments(), []);
   const mine = useAsync<Appointment[]>(() => Endpoints.appointments(), []);
@@ -33,15 +44,21 @@ export default function NurseJobs() {
     await Promise.all([requests.refetch(), mine.refetch()]);
   };
 
-  // Open pool — emergencies first, then soonest.
-  const pending = (requests.data ?? [])
-    .filter((a) => !dismissed.includes(a.id))
-    .sort((a, b) => {
-      const ea = a.appointment_type === 'emergency' ? 0 : 1;
-      const eb = b.appointment_type === 'emergency' ? 0 : 1;
-      if (ea !== eb) return ea - eb;
-      return `${a.scheduled_date}${a.scheduled_start}`.localeCompare(`${b.scheduled_date}${b.scheduled_start}`);
-    });
+  // A visit completed on the detail screen must drop out of the Active tab.
+  const revalidate = useCallback(async () => {
+    await Promise.all([requests.revalidate(), mine.revalidate()]);
+  }, [requests.revalidate, mine.revalidate]);
+  useRefetchOnFocus(revalidate);
+
+  // Open pool — emergencies first, then nearest. Filtered to what the nurse
+  // asked for; jobs with no coordinates survive the radius and sort last.
+  const ranked = rankJobs(
+    (requests.data ?? []).filter((a) => !dismissed.includes(a.id)),
+    point,
+    { radiusKm, categories },
+  );
+  const pending = ranked.map((r) => r.appointment);
+  const kmById = new Map(ranked.map((r) => [r.appointment.id, r.km]));
 
   const active = (mine.data ?? [])
     .filter((a) => a.nurse_id === me?.id && ACTIVE_STATUSES.includes(a.status))
@@ -62,17 +79,48 @@ export default function NurseJobs() {
       setBusyId(null);
     }
   };
-  const decline = (id: string) => {
+  // Passing is optimistic: hide it immediately, persist in the background. The
+  // server keeps the job in the pool for other nurses but never offers it to
+  // this one again, so it won't reappear on refresh.
+  const decline = async (id: string) => {
     setDismissed((d) => [...d, id]);
     Toast.show({ type: 'info', text1: t('nurse.jobs.declined') });
+    try {
+      await Endpoints.passJob(id);
+    } catch (e) {
+      setDismissed((d) => d.filter((x) => x !== id)); // put it back
+      Toast.show({ type: 'error', text1: t('common.somethingWrong'), text2: msg(e) });
+    }
   };
 
   const list = tab === 'requests' ? pending : active;
+  // A non-default radius counts as one filter, plus one per chosen service.
+  const activeFilterCount =
+    (radiusKm !== DEFAULT_RADIUS_KM ? 1 : 0) + categories.length;
+  // How many open jobs the filters removed — drives the empty-state copy.
+  const filteredOut =
+    (requests.data ?? []).filter((a) => !dismissed.includes(a.id)).length - pending.length;
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <View className="px-5 pt-2">
+      <View className="flex-row items-center justify-between px-5 pt-2">
         <Text variant="title">{t('nurse.jobs.title')}</Text>
+        <Pressable
+          onPress={() => setFiltersOpen(true)}
+          className="flex-row items-center gap-1.5 rounded-full bg-surface-alt px-3 py-2 active:opacity-80"
+        >
+          <Icon name="settings-outline" size={16} color={colors.primary} />
+          <Text variant="caption" className="font-semibold text-primary">
+            {t('nurse.filters.button')}
+          </Text>
+          {activeFilterCount > 0 ? (
+            <View className="rounded-full bg-primary px-1.5">
+              <Text variant="caption" className="font-semibold text-on-primary">
+                {activeFilterCount}
+              </Text>
+            </View>
+          ) : null}
+        </Pressable>
       </View>
 
       {/* Segmented control */}
@@ -110,13 +158,40 @@ export default function NurseJobs() {
           <RefreshControl refreshing={loading} onRefresh={refetch} tintColor={colors.primary} />
         }
       >
+        {/* Without a fix we can't rank by distance and the radius does nothing,
+            so say so rather than silently showing an unsorted list. */}
+        {tab === 'requests' && denied && onDuty ? (
+          <View className="flex-row items-center gap-2 rounded-2xl bg-surface-alt px-3.5 py-2.5">
+            <Icon name="location-outline" size={14} color={colors.mutedForeground} />
+            <Text variant="caption" className="flex-1">
+              {t('nurse.filters.locationOff')}
+            </Text>
+          </View>
+        ) : null}
+
         {loading && list.length === 0 ? (
           <SkeletonList count={3} />
         ) : list.length === 0 ? (
           <EmptyState
             icon={tab === 'requests' ? 'checkmark-done-outline' : 'briefcase-outline'}
-            title={tab === 'requests' ? t('nurse.jobs.noRequests') : t('nurse.jobs.noActive')}
-            description={tab === 'requests' ? t('nurse.jobs.noRequestsDesc') : t('nurse.jobs.noActiveDesc')}
+            title={
+              tab === 'active'
+                ? t('nurse.jobs.noActive')
+                : // Distinguish "nothing came in" from "your filters hid it" —
+                  // otherwise a too-narrow radius looks like a dead market.
+                  filteredOut > 0
+                  ? t('nurse.filters.noMatch')
+                  : t('nurse.jobs.noRequests')
+            }
+            description={
+              tab === 'active'
+                ? t('nurse.jobs.noActiveDesc')
+                : filteredOut > 0
+                  ? t('nurse.filters.noMatchDesc')
+                  : t('nurse.jobs.noRequestsDesc')
+            }
+            actionLabel={filteredOut > 0 && tab === 'requests' ? t('nurse.filters.button') : undefined}
+            onAction={filteredOut > 0 && tab === 'requests' ? () => setFiltersOpen(true) : undefined}
           />
         ) : tab === 'requests' ? (
           pending.map((a) => (
@@ -124,6 +199,7 @@ export default function NurseJobs() {
               key={a.id}
               appointment={a}
               accepting={busyId === a.id}
+              distanceKm={kmById.get(a.id) ?? null}
               onAccept={() => accept(a.id)}
               onDecline={() => decline(a.id)}
             />
@@ -139,6 +215,17 @@ export default function NurseJobs() {
           ))
         )}
       </ScrollView>
+
+      <JobFiltersSheet
+        visible={filtersOpen}
+        radiusKm={radiusKm}
+        categories={categories}
+        saving={saving}
+        onClose={() => setFiltersOpen(false)}
+        onSave={async (next) => {
+          if (await save(next)) setFiltersOpen(false);
+        }}
+      />
     </SafeAreaView>
   );
 }

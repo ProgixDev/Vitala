@@ -10,6 +10,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
+import { SERVICE_CATEGORIES } from '../../services/dto/service.dto';
 import { Type } from 'class-transformer';
 
 export class UpdateProfileDto {
@@ -36,6 +37,19 @@ export class UpdateNurseDto {
   @IsOptional() @IsString() id_doc_back_url?: string;
   @IsOptional() @IsString() selfie_url?: string;
   @IsOptional() @IsBoolean() is_online?: boolean;
+
+  // ---- open-pool job filters ----
+  /** Only offer jobs within this many km. */
+  @IsOptional() @IsInt() @Min(1) @Max(200) max_radius_km?: number;
+  /**
+   * Service categories the nurse wants offered; empty means all. Validated
+   * against the canonical slugs — unlike `specializations` above, which is
+   * free-text and consequently holds a mix of labels and slugs.
+   */
+  @IsOptional()
+  @IsArray()
+  @IsIn(SERVICE_CATEGORIES, { each: true })
+  job_categories?: string[];
 }
 
 export class AvailabilitySlotDto {

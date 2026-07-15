@@ -29,8 +29,9 @@ export default function PayAppointment() {
       const init = await initPaymentSheet({
         merchantDisplayName: 'Vitala',
         paymentIntentClientSecret: intent.clientSecret,
-        applePay: { merchantCountryCode: 'US' },
-        googlePay: { merchantCountryCode: 'US', testEnv: true },
+        // Must match the charge currency (CAD) or Apple/Google Pay refuse.
+        applePay: { merchantCountryCode: 'CA' },
+        googlePay: { merchantCountryCode: 'CA', testEnv: true },
         defaultBillingDetails: { name: appt?.patient?.full_name ?? undefined },
       });
       if (init.error) throw new Error(init.error.message);
@@ -42,8 +43,10 @@ export default function PayAppointment() {
         }
         return;
       }
-      Toast.show({ type: 'success', text1: t('pay.success') });
-      router.back();
+      // The card is only authorised here — the money is captured when the visit
+      // is completed, and released untouched if the request is cancelled.
+      Toast.show({ type: 'success', text1: t('pay.authorised'), text2: t('pay.authorisedHint') });
+      router.replace(`/appointment/${id}`);
     } catch (e) {
       Toast.show({ type: 'error', text1: t('pay.failed'), text2: e instanceof Error ? e.message : '' });
     } finally {
@@ -66,8 +69,20 @@ export default function PayAppointment() {
               <View className="flex-row items-center justify-between">
                 <Text variant="subtitle">{t('booking.estimate')}</Text>
                 <Text variant="title" className="text-primary">
-                  {formatPrice(appt.price)}
+                  {formatPrice(appt.price, appt.payment?.currency)}
                 </Text>
+              </View>
+            </Card>
+
+            {/* Says plainly that this is a hold, not a charge — the single most
+                important thing to be honest about at this step. */}
+            <Card elevation="flat" className="flex-row items-start gap-3 bg-primary-soft">
+              <Icon name="lock-closed" size={18} color={colors.primary} />
+              <View className="flex-1 gap-1">
+                <Text variant="bodyMedium" className="text-primary">
+                  {t('pay.holdTitle')}
+                </Text>
+                <Text variant="caption">{t('pay.holdBody')}</Text>
               </View>
             </Card>
 
@@ -87,7 +102,9 @@ export default function PayAppointment() {
           </View>
 
           <Button
-            label={t('pay.payAmount', { amount: formatPrice(appt.price) })}
+            label={t('pay.authoriseAmount', {
+              amount: formatPrice(appt.price, appt.payment?.currency),
+            })}
             icon="lock-closed"
             loading={paying}
             disabled={!stripeReady}
