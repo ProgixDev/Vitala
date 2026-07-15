@@ -182,7 +182,15 @@ export default function AppointmentStatusScreen() {
     }
   };
 
+  /**
+   * In-app turn-by-turn when we have coordinates to route to; otherwise hand off
+   * to the device's maps app, which can at least search the address string.
+   */
   const navigate = () => {
+    if (appt.latitude != null && appt.longitude != null) {
+      router.push(`/navigate/${id}`);
+      return;
+    }
     const ok = openDirections({
       latitude: appt.latitude,
       longitude: appt.longitude,

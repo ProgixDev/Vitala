@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@badatgil/expo-mapbox-navigation": "^1.6.2",
     "@expo-google-fonts/figtree": "^0.4.1",
     "@expo-google-fonts/fraunces": "^0.4.1",
     "@expo-google-fonts/hanken-grotesk": "^0.4.3",
@@ -10,6 +11,7 @@
     "@expo/vector-icons": "^15.0.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "9.1.0",
+    "@rnmapbox/maps": "^10.3.2",
     "@stripe/stripe-react-native": "0.64.0",
     "@supabase/supabase-js": "^2.110.2",
     "expo": "~57.0.4",
@@ -53,6 +55,7 @@
     "babel-preset-expo": "^57.0.2",
     "eslint": "^9.39.5",
     "eslint-config-expo": "^57.0.0",
+    "patch-package": "^8.0.1",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "typescript": "~6.0.3"
   },
@@ -62,7 +65,8 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "postinstall": "patch-package"
   },
   "private": true
 }

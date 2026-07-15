@@ -8,15 +8,19 @@ import { JOB_CATEGORIES, RADIUS_OPTIONS } from '@/utils/jobFilters';
 
 interface JobFiltersSheetProps {
   visible: boolean;
-  radiusKm: number;
+  /** null = no maximum distance. */
+  radiusKm: number | null;
   categories: string[];
   saving?: boolean;
   onClose: () => void;
-  onSave: (next: { radiusKm: number; categories: string[] }) => void;
+  onSave: (next: { radiusKm: number | null; categories: string[] }) => void;
 }
 
 /**
  * Which jobs the nurse wants to see: how far, and what kind.
+ *
+ * Both filters are opt-in — no distance is selected until the nurse picks one,
+ * and tapping the selected distance again clears it back to no limit.
  *
  * Edits are local until Save, so backing out with the scrim leaves the saved
  * filters untouched.
@@ -31,7 +35,7 @@ export function JobFiltersSheet({
 }: JobFiltersSheetProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const [radius, setRadius] = useState(radiusKm);
+  const [radius, setRadius] = useState<number | null>(radiusKm);
   const [picked, setPicked] = useState<string[]>(categories);
 
   // Re-seed from the saved values each time it opens, so a cancelled edit
@@ -74,11 +78,15 @@ export function JobFiltersSheet({
                       key={km}
                       label={t('nurse.filters.km', { km: String(km) })}
                       selected={radius === km}
-                      onPress={() => setRadius(km)}
+                      // Tapping the selected one clears it — that's the only way
+                      // back to "no limit" once a distance has been picked.
+                      onPress={() => setRadius((r) => (r === km ? null : km))}
                     />
                   ))}
                 </View>
-                <Text variant="caption">{t('nurse.filters.radiusHint')}</Text>
+                <Text variant="caption">
+                  {radius == null ? t('nurse.filters.anyDistance') : t('nurse.filters.radiusHint')}
+                </Text>
               </View>
 
               {/* Categories */}

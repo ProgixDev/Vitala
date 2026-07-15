@@ -2,3 +2,6 @@ vitala-prod.apk
 
 # transient git worktrees created by Claude Code
 .claude/worktrees/
+
+# personal shift reports — the rest of docs/ is tracked
+docs/shift-report-*.md

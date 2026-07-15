@@ -17,7 +17,7 @@ import {
 } from './dto/appointment.dto';
 
 /** The slice of a profile we're willing to show a nurse before they accept. */
-interface PersonRef {
+export interface PersonRef {
   full_name: string;
   avatar_url: string | null;
 }
@@ -263,7 +263,9 @@ export class AppointmentsService {
     if (status) query = query.eq('status', status);
     const { data, error } = await query;
     if (error) throw error;
-    return data;
+
+    const rows = (data ?? []) as unknown as { patient_id: string }[];
+    return user.role === 'patient' ? rows : this.withPatients(rows);
   }
 
   /** Open pool of unassigned pending jobs (nurses only, enforced by RLS too). */
@@ -315,13 +317,26 @@ export class AppointmentsService {
     const { data, error } = await this.db(user)
       .from('appointments')
       .select(
-        '*, service:services(*), payment:payments(*), review:reviews(id, rating, comment, created_at)',
+        '*, service:services(*), payment:payments(*), review:reviews(id, rating, comment, created_at), nurse:profiles!appointments_nurse_id_fkey(full_name, avatar_url)',
       )
       .eq('id', id)
       .maybeSingle();
     if (error) throw error;
     if (!data) throw new NotFoundException('Appointment not found');
     return data;
+  }
+
+  /**
+   * findOne plus the patient reference. Kept separate so the internal callers
+   * (assignSelf/pass/updateStatus) don't pay for the admin profile lookup.
+   */
+  async detail(user: AuthUser, id: string) {
+    const appt = await this.findOne(user, id);
+    if (user.role === 'patient') return appt;
+    const [withPatient] = await this.withPatients([
+      appt as unknown as { patient_id: string },
+    ]);
+    return withPatient;
   }
 
   /** A nurse claims an open job. */

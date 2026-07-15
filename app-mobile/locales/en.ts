@@ -294,6 +294,14 @@ export const en: Record<string, string> = {
   'status.cancelKeep': 'Keep it',
   'status.cancelConfirm': 'Cancel request',
   'status.cancelled': 'Request cancelled',
+  // ---- nurse: in-app navigation ----
+  'nurse.visit.openInMaps': 'Open in Maps instead',
+  'nurse.visit.navNotYours': 'This visit is not assigned to you.',
+  'nurse.visit.navNoCoords': 'This visit has no map location — only an address. Use your maps app to find it.',
+  'nurse.visit.navNeedsLocation': 'Navigation needs your location. Enable it in Settings to guide you there.',
+  'nurse.visit.navLocating': 'Finding your location…',
+  'nurse.visit.navArrived': 'You\'ve arrived',
+  'nurse.visit.navFailed': 'We couldn\'t work out a route to this address.',
   // ---- service categories (canonical slugs) ----
   'service.category.general-care': 'General care',
   'service.category.wound-care': 'Wound care',
@@ -308,6 +316,7 @@ export const en: Record<string, string> = {
   'nurse.filters.radius': 'Maximum distance',
   'nurse.filters.km': '{km} km',
   'nurse.filters.radiusHint': 'Straight-line distance from where you are now — the drive will be longer.',
+  'nurse.filters.anyDistance': 'Optional — no distance limit. Pick one to only see jobs nearby.',
   'nurse.filters.services': 'Services',
   'nurse.filters.allServices': 'All services — no filter applied.',
   'nurse.filters.someServices': '{count} selected',

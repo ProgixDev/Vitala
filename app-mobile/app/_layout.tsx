@@ -94,6 +94,11 @@ export default function RootLayout() {
                       name="booking/map"
                       options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
                     />
+                    {/* Mapbox owns the whole screen while navigating. */}
+                    <Stack.Screen
+                      name="navigate/[id]"
+                      options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
+                    />
                   </Stack>
                 </View>
               </SosSheetProvider>

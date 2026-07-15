@@ -3,7 +3,6 @@ import Toast from 'react-native-toast-message';
 import { Endpoints } from '@/lib/endpoints';
 import { useSession } from '@/providers/SessionProvider';
 import { useTranslation } from '@/utils/i18n';
-import { DEFAULT_RADIUS_KM } from '@/utils/jobFilters';
 
 /**
  * The nurse's open-pool filters, persisted on their profile so they survive a
@@ -19,11 +18,12 @@ export function useJobFilters() {
   const [saving, setSaving] = useState(false);
 
   const np = me?.nurseProfile;
-  const radiusKm = np?.max_radius_km ?? DEFAULT_RADIUS_KM;
+  // No radius set means no distance limit — the nurse has to opt into one.
+  const radiusKm = np?.max_radius_km ?? null;
   const categories = np?.job_categories ?? [];
 
   const save = useCallback(
-    async (next: { radiusKm: number; categories: string[] }) => {
+    async (next: { radiusKm: number | null; categories: string[] }) => {
       setSaving(true);
       try {
         await Endpoints.updateNurse({

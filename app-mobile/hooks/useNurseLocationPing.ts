@@ -2,7 +2,14 @@ import { useEffect, useState } from 'react';
 import * as Location from 'expo-location';
 import { Endpoints } from '@/lib/endpoints';
 
-const PING_INTERVAL_MS = 15000;
+/**
+ * How often the nurse's position is pushed while they're on the way.
+ *
+ * 30s trades map smoothness for battery: a GPS fix plus a request every 15s was
+ * twice the drain for a marker that barely moves between city blocks. The
+ * patient's map interpolates between fixes, so it still reads as live.
+ */
+const PING_INTERVAL_MS = 30000;
 
 /**
  * While a nurse is on the way, push their live location to the visit every few

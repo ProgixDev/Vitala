@@ -295,6 +295,14 @@ export const fr: Record<string, string> = {
   'status.cancelKeep': 'Garder',
   'status.cancelConfirm': 'Annuler la demande',
   'status.cancelled': 'Demande annulée',
+  // ---- nurse: in-app navigation ----
+  'nurse.visit.openInMaps': 'Ouvrir dans Plans',
+  'nurse.visit.navNotYours': 'Cette visite ne vous est pas attribuée.',
+  'nurse.visit.navNoCoords': 'Cette visite n’a pas de position sur la carte, seulement une adresse. Utilisez votre application de cartes.',
+  'nurse.visit.navNeedsLocation': 'La navigation a besoin de votre position. Activez-la dans les réglages.',
+  'nurse.visit.navLocating': 'Recherche de votre position…',
+  'nurse.visit.navArrived': 'Vous êtes arrivé',
+  'nurse.visit.navFailed': 'Impossible de calculer un itinéraire vers cette adresse.',
   // ---- service categories (canonical slugs) ----
   'service.category.general-care': 'Soins généraux',
   'service.category.wound-care': 'Soins de plaies',
@@ -309,6 +317,7 @@ export const fr: Record<string, string> = {
   'nurse.filters.radius': 'Distance maximale',
   'nurse.filters.km': '{km} km',
   'nurse.filters.radiusHint': 'Distance à vol d’oiseau depuis votre position — le trajet sera plus long.',
+  'nurse.filters.anyDistance': 'Optionnel — aucune limite de distance. Choisissez-en une pour ne voir que les visites à proximité.',
   'nurse.filters.services': 'Services',
   'nurse.filters.allServices': 'Tous les services — aucun filtre.',
   'nurse.filters.someServices': '{count} sélectionné(s)',

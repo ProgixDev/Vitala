@@ -23,6 +23,15 @@ export const config = {
   supabaseAnonKey: extra.supabaseAnonKey ?? '',
   stripePublishableKey: extra.stripePublishableKey ?? '',
   stripeMerchantId: extra.stripeMerchantId ?? 'merchant.com.vitala.app',
+  /**
+   * Mapbox PUBLIC token (pk.) — safe in the bundle; it's what the Maps SDK and
+   * the Directions API authenticate with.
+   *
+   * The SECRET download token (sk.) is deliberately NOT here: it's only read by
+   * the native build at prebuild time from RNMAPBOX_MAPS_DOWNLOAD_TOKEN, and
+   * must never reach the JS bundle.
+   */
+  mapboxToken: process.env.EXPO_PUBLIC_MAPBOX_PUBLIC_TOKEN ?? '',
 } as const;
 
 /** True when a config value is still an unfilled placeholder. */

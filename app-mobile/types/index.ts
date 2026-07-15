@@ -102,8 +102,11 @@ export interface NurseProfile {
   rating: number;
   total_reviews: number;
   is_online?: boolean;
-  /** Open-pool filters. Applied client-side; see hooks/useJobFilters.ts. */
-  max_radius_km?: number;
+  /**
+   * Open-pool filters. Applied client-side; see hooks/useJobFilters.ts.
+   * null/absent = no distance limit, which is the starting state.
+   */
+  max_radius_km?: number | null;
   /** Service category slugs the nurse wants offered. Empty = all. */
   job_categories?: string[];
 }

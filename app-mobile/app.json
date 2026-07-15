@@ -78,7 +78,20 @@
         }
       ],
       "expo-video",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsVersion": "11.11.0"
+        }
+      ],
+      [
+        "@badatgil/expo-mapbox-navigation",
+        {
+          "accessToken": "pk.eyJ1IjoibW9oYW1lZGJ6YSIsImEiOiJjbXAyM3NtazkwY2VzMnNxeXp0MWdqZnhpIn0.atkw_dqMmBEGIts_WbUrcA",
+          "mapboxMapsVersion": "11.11.0"
+        }
+      ]
     ],
     "extra": {
       "apiBaseUrl": "https://vitala-tau.vercel.app/api",

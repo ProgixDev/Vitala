@@ -39,8 +39,8 @@ export class UpdateNurseDto {
   @IsOptional() @IsBoolean() is_online?: boolean;
 
   // ---- open-pool job filters ----
-  /** Only offer jobs within this many km. */
-  @IsOptional() @IsInt() @Min(1) @Max(200) max_radius_km?: number;
+  /** Only offer jobs within this many km. null = no limit, and the default. */
+  @IsOptional() @IsInt() @Min(1) @Max(200) max_radius_km?: number | null;
   /**
    * Service categories the nurse wants offered; empty means all. Validated
    * against the canonical slugs — unlike `specializations` above, which is

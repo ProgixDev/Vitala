@@ -16,7 +16,7 @@ import { useSession } from '@/providers/SessionProvider';
 import { useTranslation } from '@/utils/i18n';
 import { useThemeColors } from '@/constants/theme';
 import { cn } from '@/utils/cn';
-import { rankJobs, DEFAULT_RADIUS_KM } from '@/utils/jobFilters';
+import { rankJobs } from '@/utils/jobFilters';
 import type { Appointment, AppointmentStatus } from '@/types';
 
 type Tab = 'requests' | 'active';
@@ -94,9 +94,8 @@ export default function NurseJobs() {
   };
 
   const list = tab === 'requests' ? pending : active;
-  // A non-default radius counts as one filter, plus one per chosen service.
-  const activeFilterCount =
-    (radiusKm !== DEFAULT_RADIUS_KM ? 1 : 0) + categories.length;
+  // A chosen radius counts as one filter, plus one per chosen service.
+  const activeFilterCount = (radiusKm != null ? 1 : 0) + categories.length;
   // How many open jobs the filters removed — drives the empty-state copy.
   const filteredOut =
     (requests.data ?? []).filter((a) => !dismissed.includes(a.id)).length - pending.length;

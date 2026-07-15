@@ -20,10 +20,8 @@ export const JOB_CATEGORIES = [
   'emergency',
 ] as const;
 
-/** Radius choices, km. The last one is effectively "anywhere". */
+/** Radius choices, km. Picking none means no limit — see rankJobs. */
 export const RADIUS_OPTIONS = [5, 10, 25, 50, 100, 200] as const;
-
-export const DEFAULT_RADIUS_KM = 25;
 
 export interface RankedJob {
   appointment: Appointment;
@@ -35,6 +33,8 @@ export interface RankedJob {
  * Rank and filter the open pool for one nurse.
  *
  * Rules worth stating plainly:
+ * - A null radius means the nurse hasn't set a maximum distance, which is the
+ *   starting state — nothing is hidden by distance until they choose one.
  * - A job whose distance is unknown (no coordinates on the appointment, or the
  *   nurse declined location) is NEVER hidden by the radius — it just sorts last
  *   and shows no distance. Roughly half of appointments are address-only, and a
@@ -46,7 +46,7 @@ export interface RankedJob {
 export function rankJobs(
   jobs: Appointment[],
   from: GeoPoint | null,
-  opts: { radiusKm: number; categories: string[] },
+  opts: { radiusKm: number | null; categories: string[] },
 ): RankedJob[] {
   const ranked = jobs.map((appointment) => ({
     appointment,
@@ -61,7 +61,7 @@ export function rankJobs(
       return false;
     }
     // Unknown distance survives the radius on purpose — see above.
-    if (km != null && km > opts.radiusKm) return false;
+    if (opts.radiusKm != null && km != null && km > opts.radiusKm) return false;
     return true;
   });
 

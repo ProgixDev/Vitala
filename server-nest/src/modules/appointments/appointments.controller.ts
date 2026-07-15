@@ -38,7 +38,7 @@ export class AppointmentsController {
 
   @Get(':id')
   findOne(@CurrentUser() user: AuthUser, @Param('id') id: string) {
-    return this.appointments.findOne(user, id);
+    return this.appointments.detail(user, id);
   }
 
   @Put(':id/assign-self')
