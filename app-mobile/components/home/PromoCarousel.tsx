@@ -41,7 +41,7 @@ const GAP = 14; // space between cards
 const PEEK = 30; // how much of the next card shows
 
 /** How long each slide rests before advancing. */
-const AUTOPLAY_MS = 5000;
+const AUTOPLAY_MS = 3000;
 /** Quiet period after a manual swipe before autoplay takes over again. */
 const RESUME_MS = 8000;
 
@@ -57,6 +57,10 @@ export function PromoCarousel() {
   // The autoplay timer reads the index without re-arming on every slide.
   const activeRef = useRef(0);
   const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Autoplay's own scrollTo also fires onMomentumScrollEnd, so we need to know
+  // whether a finger caused this scroll — otherwise autoplay keeps pausing
+  // itself and drifts to the resume cadence instead of its own.
+  const dragged = useRef(false);
   const [interacting, setInteracting] = useState(false);
   const [focused, setFocused] = useState(true);
   const reduceMotion = useReduceMotion();
@@ -118,10 +122,17 @@ export function PromoCarousel() {
         snapToAlignment="start"
         disableIntervalMomentum
         contentContainerStyle={{ paddingHorizontal: SIDE }}
-        onScrollBeginDrag={holdAutoplay}
+        onScrollBeginDrag={() => {
+          dragged.current = true;
+          holdAutoplay();
+        }}
         onMomentumScrollEnd={(e) => {
           onScroll(e);
-          holdAutoplay();
+          // Only a real swipe re-arms the hold; an autoplay scroll must not.
+          if (dragged.current) {
+            dragged.current = false;
+            holdAutoplay();
+          }
         }}
       >
         {SLIDES.map((s, i) => (
