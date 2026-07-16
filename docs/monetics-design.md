@@ -300,6 +300,56 @@ service-role write only — mirrors the existing `payments_owner_read` / admin-w
 
 ---
 
+## 8a. The payout release job — and why it can't be an in-process cron
+
+```
+releaseDuePayouts()                ← every N minutes; idempotent, safe to re-run
+  select a.* from appointments a
+   where a.status = 'completed'
+     and a.completed_at < now() - interval '3 days'
+     and not exists (select 1 from reports  r where r.appointment_id = a.id and r.status = 'open')
+     and not exists (select 1 from payouts  p where p.appointment_id = a.id and p.status in ('paid','scheduled'))
+     and exists     (select 1 from payments pm where pm.appointment_id = a.id and pm.status = 'completed')
+
+  for each:
+    ├─ nurse payouts_enabled?  no → insert payouts(status='blocked', blocked_reason='onboarding')
+    └─ yes →
+         insert payouts(status='scheduled')                    ← unique(appointment_id) = the guard
+         stripe.transfers.create({
+           amount: price - commission,
+           currency: 'cad',
+           destination: nurse.stripe_account_id,
+           source_transaction: payment.stripe_charge_id,       ← §9.2, essential
+         }, { idempotencyKey: `payout_${appointment_id}` })    ← §9.1, essential
+         update payouts set status='paid', stripe_transfer_id, released_at=now()
+```
+
+Two independent guards against paying twice — the `unique(appointment_id)` constraint and the
+idempotency key — because this is the one job where a bug spends real money. Blocked payouts
+are a **queue, not a dead end**: re-run them when `account.updated` reports `payouts_enabled`.
+
+### The trigger must come from outside the process
+
+**Nest `@Cron` (@nestjs/schedule) cannot be used here.** The API deploys to **Vercel
+serverless functions** (`vercel.json` → `functions` + `rewrites`), which are ephemeral: an
+in-process timer only fires while some instance happens to be warm. It would look fine in dev,
+fire erratically in staging, and quietly stop paying nurses in production — the same shape of
+trap as the `expo-server-sdk` ESM import (fine on a long-lived local process, broken on the
+real host). Neither a scheduler nor a cron entry exists in this repo today.
+
+| Option | Verdict |
+|---|---|
+| **Vercel Cron** → `vercel.json` `"crons"` hitting a guarded endpoint | Native, no new infra. **Check the plan's frequency limit** — Hobby is ~1×/day, fine for a T+3 sweep, useless for minutes |
+| **Supabase `pg_cron`** | Can schedule SQL but **cannot call Stripe** — at most it can mark payouts *due* |
+| **External** (Railway cron, GitHub Actions) | Works; one more moving part |
+
+Whatever fires it, the endpoint must be **authenticated** (Vercel sends
+`Authorization: Bearer $CRON_SECRET`), **idempotent**, and **safe to run concurrently** — two
+overlapping runs must not double-pay. Make it hand-runnable too: triggering it yourself is the
+first thing you'll want during an incident.
+
+---
+
 ## 9. Reliability — what actually breaks
 
 ### 9.1 Idempotency (and its limits)
@@ -509,29 +559,39 @@ explainable.
 
 ## 11. Phasing
 
-- **Phase 1 — Enforce invariant 1 + invariant 5.** `awaiting_payment`; `create()` stops
-  announcing; flip to `pending` on the synchronous auth result (webhook + sweep as backstops);
-  `MAX_BOOKING_LEAD_DAYS` server-side. Existing RLS enforces the nurse-facing half for free.
-  **Stops nurses working for free today. Depends on nothing else here. ~1–2 days.**
+- **Phase 1 — ✅ DONE (2026-07-16).** `awaiting_payment` (migration 0012); `create()` no longer
+  announces; `MAX_BOOKING_LEAD_DAYS = 6` enforced server-side; coordinates required at booking;
+  patients can no longer cancel an `in-progress` visit (§10.4a). Existing RLS enforces the
+  nurse-facing half for free — an unfunded request is **404 to a nurse**, not merely
+  unclaimable. Verified end-to-end with a real Stripe hold.
+- **Phase 3 — ✅ DONE (2026-07-16), taken before Phase 2.** Idempotency keys on the
+  money-moving Stripe calls; `stripe_events` dedupe (0013); webhook-driven activation backstop
+  via an `payment.authorised` event (`emitAsync`, so it settles before the function can be
+  frozen). **Reconciliation sweep deliberately deferred to Phase 5** — see below.
 - **Phase 2 — Card at onboarding.** SetupIntent + `stripe_customer_id`; booking authorises
   off-session; `/pay/{id}` becomes the 3DS/failure fallback rather than the happy path.
-- **Phase 3 — Idempotency + `stripe_events` + reconciliation.** Unglamorous, cheap, and it's
-  what makes the money-moving phases survivable. **Before payouts, not after.**
+  Now the next piece of real product value.
 - **Phase 4 — Connect Express onboarding.** `stripe_account_id`, Account Links,
   `account.updated`, nurse UI + nudges. **Build against a Canadian test account** (§10.2) —
   onboarding requirements are country-specific, so the EU sandbox tests the wrong form.
-- **Phase 5 — `payouts` + the release job.** The escrow proper.
+- **Phase 5 — `payouts` + the release job (§8a).** The escrow proper. **Brings the cron
+  infrastructure**, and therefore the reconciliation sweep (§9.4) with it.
 - **Phase 6 — Reports/disputes** + patient confirm-visit early release (§10.4).
-
-**Slot in early — cancellation policy (§10.4a).** Removing `cancelled` from the patient's
-allowed transitions at `in-progress` is a ~3-line change to `assertActorAllowed` and closes a
-live theft vector; it belongs in **Phase 1** alongside the other invariant work. The graduated
-fee (partial capture at `on-the-way`) is a separate, larger piece — it needs a fee schedule
-and patient-facing copy, so it fits naturally with Phase 5/6.
 - **Deferred** — T-48h re-authorisation (only needed if the booking horizon grows past the
-  hold, §4); instant payouts; tips; reserves; multi-nurse splits.
+  hold, §4); graduated cancellation fee via partial capture (§10.4a — needs a fee schedule and
+  bilingual copy, so it fits with Phase 5/6); instant payouts; tips; reserves; splits.
 
-Phases 1–3 need **no Connect decisions and no legal answers**, and each has standalone value.
+### Why the reconciliation sweep waits for Phase 5
+
+It was scoped into Phase 3 as the third net under activation. Three paths now cover that —
+`confirm-payment`, the pay screen's self-heal on reopen, and the webhook backstop — so a sweep
+today would find almost nothing, and the residual failure is benign (the hold expires in ~7
+days and nobody is charged).
+
+Its real work is the list in §9.4 — payments stuck `processing`, completed visits with no
+payout, `scheduled` payouts with no transfer — **which only exists once payouts do**. It also
+needs an out-of-process trigger (§8a) that Phase 5 has to build anyway. Building the cron now
+to sweep for nothing would be speculative infrastructure.
 
 ---
 
