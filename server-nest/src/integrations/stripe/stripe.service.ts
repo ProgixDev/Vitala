@@ -21,6 +21,19 @@ export class StripeService {
     // Pinned deliberately: unpinned, an SDK bump silently moves the API version
     // under us and can change webhook payloads. Keep this in step with the
     // version configured on the webhook endpoint in the Stripe dashboard.
+    //
+    // Note what this option does and does not do: it sets `Stripe-Version` on
+    // OUTGOING requests only. Incoming webhook payloads are built with the
+    // WEBHOOK ENDPOINT's own `api_version`, which this cannot influence, and
+    // constructEvent() verifies the signature without checking the version. So
+    // if the endpoint's version drifts from the SDK's, our types describe one
+    // shape while the JSON is another — no error, just a field that is silently
+    // undefined. Aligning that is an endpoint-side fix, not a code-side one.
+    //
+    // The SDK also hard-pins this literal to its own bundled version, so it
+    // cannot be lowered without a cast; the endpoint is what has to move.
+    // KNOWN DRIFT (2026-07): endpoint is 2026-05-27.dahlia, this is
+    // 2026-06-24.dahlia. See docs/monetics-design.md §9.3.
     this.client = key ? new Stripe(key, { apiVersion: '2026-06-24.dahlia' }) : null;
     if (!this.client) {
       this.logger.warn('STRIPE_SECRET_KEY not set — payment endpoints are disabled.');
@@ -38,8 +51,22 @@ export class StripeService {
     return this.client;
   }
 
-  createPaymentIntent(params: Stripe.PaymentIntentCreateParams) {
-    return this.stripe.paymentIntents.create(params);
+  /**
+   * `idempotencyKey` is not optional in spirit — pass one for anything that
+   * moves money. Without it a retried request (a redeploy mid-flight, a socket
+   * reset, the SDK's own automatic retries) creates a SECOND intent and the
+   * patient is authorised twice.
+   *
+   * Stripe honours a key for 24h only, so it protects the retry window and
+   * nothing longer. Anything that must never happen twice for the life of a
+   * visit needs a database constraint as well — see the `payouts` table's
+   * unique(appointment_id) in docs/monetics-design.md §9.1.
+   */
+  createPaymentIntent(params: Stripe.PaymentIntentCreateParams, idempotencyKey?: string) {
+    return this.stripe.paymentIntents.create(
+      params,
+      idempotencyKey ? { idempotencyKey } : undefined,
+    );
   }
 
   retrievePaymentIntent(id: string) {
@@ -62,8 +89,9 @@ export class StripeService {
     return this.stripe.paymentIntents.cancel(id, reason ? { cancellation_reason: reason } : undefined);
   }
 
-  createRefund(params: Stripe.RefundCreateParams) {
-    return this.stripe.refunds.create(params);
+  /** See createPaymentIntent on why the key matters — a double refund is real money. */
+  createRefund(params: Stripe.RefundCreateParams, idempotencyKey?: string) {
+    return this.stripe.refunds.create(params, idempotencyKey ? { idempotencyKey } : undefined);
   }
 
   /** Verifies a webhook signature and returns the typed event. */

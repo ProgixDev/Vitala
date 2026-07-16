@@ -320,7 +320,34 @@ everyone hits this in production.**
 it and releases when that charge settles. A ~3-day window and T+2 settlement roughly line up
 — but **rely on `source_transaction`, not on the timing coincidence.**
 
-### 9.3 Webhook dedupe and ordering
+### 9.3 Webhook dedupe, ordering, and the API-version trap
+
+> **Live drift (2026-07) — measured harmless, deliberately deferred.** The endpoint is
+> `2026-05-27.dahlia`; the SDK is `2026-06-24.dahlia`.
+>
+> This cannot be fixed in code. The SDK's `apiVersion` option only sets `Stripe-Version` on
+> *outgoing requests*; incoming payloads are built with the **endpoint's** `api_version`, and
+> `constructEvent()` checks the signature, not the version. Lowering the SDK pin is also
+> impossible — its types hard-pin the literal — and would merely invert the mismatch. An
+> endpoint's `api_version` is **immutable** (confirmed in the dashboard: the field is
+> read-only), so the only fix is recreating the endpoint, which mints a **new signing
+> secret** requiring a simultaneous `.env` + Vercel update on a live payment path.
+>
+> **Verified against real payloads** rather than assumed: every field `handleWebhook()` reads
+> — `id`, `status`, `latest_charge` — is present on live `2026-05-27.dahlia` events for
+> `amount_capturable_updated`, `succeeded` and `canceled`. Nothing is missing, so the drift
+> costs nothing today. (`charge.refunded` / `charge.dispute.created` had no recent samples;
+> they read only `amount_refunded` and `payment_intent`.)
+>
+> **Fix it when the Canadian account is created** (§10.2) — that needs a fresh endpoint
+> anyway, so the correct version comes free with no rotation risk. Re-check this if the
+> handler starts reading newer or less-established fields.
+>
+> Why it went unnoticed: the endpoint URL was `https://vitala-tau.vercel.app/` (bare root)
+> instead of `/api/payments/webhook`, so `handleWebhook` had **never run once** in
+> production. Every event since launch sat undelivered (`pending_webhooks=1`). Both were
+> fixed 2026-07-16; the version drift is what's left.
+
 Stripe **retries any non-2xx** and does **not guarantee order**. The existing code already
 defends against `succeeded` arriving before `amount_capturable_updated` — generalise that
 instinct with `stripe_events` (§8). Under manual capture, `succeeded` fires at **capture**,

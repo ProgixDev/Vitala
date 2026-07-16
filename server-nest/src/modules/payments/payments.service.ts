@@ -81,15 +81,24 @@ export class PaymentsService {
     }
 
     const amountCents = Math.round(Number(appt.price) * 100);
-    const pi = await this.stripe.createPaymentIntent({
-      amount: amountCents,
-      currency: CURRENCY.toLowerCase(),
-      // Hold the funds now, take them when the visit is done. Cancelling before
-      // capture releases the hold outright — no charge, no refund, no fee.
-      capture_method: 'manual',
-      metadata: { appointment_id: appt.id, user_id: user.id },
-      automatic_payment_methods: { enabled: true },
-    });
+    const pi = await this.stripe.createPaymentIntent(
+      {
+        amount: amountCents,
+        currency: CURRENCY.toLowerCase(),
+        // Hold the funds now, take them when the visit is done. Cancelling before
+        // capture releases the hold outright — no charge, no refund, no fee.
+        capture_method: 'manual',
+        metadata: { appointment_id: appt.id, user_id: user.id },
+        automatic_payment_methods: { enabled: true },
+      },
+      // One authorisation per visit. The reuse checks above already catch the
+      // common retry, but they lose a genuine race: two taps land together, both
+      // read "no existing payment", and both create an intent — the upsert below
+      // then keeps only one id and the other hold is orphaned on the patient's
+      // card, invisible to us and released only when it expires. The key makes
+      // Stripe return the FIRST intent instead of minting a second.
+      `auth_${appt.id}`,
+    );
 
     await admin.from('payments').upsert(
       {
@@ -229,10 +238,16 @@ export class PaymentsService {
       const pi = await this.stripe.retrievePaymentIntent(payment.stripe_payment_intent_id);
 
       if (pi.status === 'succeeded') {
-        await this.stripe.createRefund({
-          payment_intent: pi.id,
-          reason: 'requested_by_customer',
-        });
+        await this.stripe.createRefund(
+          {
+            payment_intent: pi.id,
+            reason: 'requested_by_customer',
+          },
+          // Always the full amount, at most once per visit — so the appointment
+          // id is a safe key. (The admin refund below is deliberately NOT keyed:
+          // partial refunds are legitimately repeatable.)
+          `refund_${appointmentId}`,
+        );
         await admin
           .from('payments')
           .update({
@@ -264,6 +279,14 @@ export class PaymentsService {
     }
 
     const admin = this.supabase.admin();
+
+    // Claim the event before doing anything with it. Stripe retries on any
+    // non-2xx and can redeliver out of order, so the same event arrives more
+    // than once as a matter of course — this is the one guard that covers every
+    // branch below, including the ones that will move money later.
+    if (!(await this.claimEvent(event))) {
+      return { received: true };
+    }
 
     // Under manual capture, `succeeded` fires at CAPTURE (visit complete), not
     // when the patient finishes the sheet. The authorisation lands as
@@ -323,6 +346,37 @@ export class PaymentsService {
       }
     }
     return { received: true };
+  }
+
+  /**
+   * Record this event id, and report whether WE are the ones who claimed it.
+   *
+   * The primary key does the arbitration — insert and inspect the conflict,
+   * rather than read-then-write, which would race two concurrent redeliveries
+   * into both believing they were first.
+   *
+   * Fails OPEN, unlike isAuthorised(): if the dedupe table itself is unreachable
+   * we process the event anyway. Processing twice is recoverable (the handlers
+   * are individually idempotent — `settle()` has its own `neq` guard); dropping
+   * a payment event silently is not.
+   */
+  private async claimEvent(event: Stripe.Event): Promise<boolean> {
+    const { error } = await this.supabase
+      .admin()
+      .from('stripe_events')
+      .insert({ event_id: event.id, type: event.type });
+
+    if (!error) return true;
+    // 23505 = unique_violation: someone already handled this one.
+    if ((error as { code?: string }).code === '23505') {
+      this.logger.log(`Duplicate webhook ${event.type} (${event.id}) — skipped.`);
+      return false;
+    }
+    this.logger.error(
+      `Could not record webhook ${event.id}; processing it anyway`,
+      error as unknown as Error,
+    );
+    return true;
   }
 
   async listTransactions(user: AuthUser) {
