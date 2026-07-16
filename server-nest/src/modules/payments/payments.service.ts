@@ -35,6 +35,177 @@ export class PaymentsService {
     return { publishableKey: this.stripe.publishableKey, enabled: this.stripe.isEnabled };
   }
 
+  // ---- card on file -------------------------------------------------------
+
+  /**
+   * The patient's Stripe Customer, created on first use.
+   *
+   * Lazy rather than at signup: most Stripe Customers would sit empty forever,
+   * and a customer with no payment method buys nothing. The id is written back
+   * immediately, so this is create-once even though it's called on every card
+   * operation.
+   */
+  private async ensureCustomer(user: AuthUser): Promise<string> {
+    const admin = this.supabase.admin();
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('stripe_customer_id, full_name')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (profile?.stripe_customer_id) return profile.stripe_customer_id as string;
+
+    const customer = await this.stripe.createCustomer(
+      {
+        name: (profile?.full_name as string) ?? undefined,
+        metadata: { profile_id: user.id },
+      },
+      // One customer per profile even if two requests race.
+      `customer_${user.id}`,
+    );
+    await admin
+      .from('profiles')
+      .update({ stripe_customer_id: customer.id })
+      .eq('id', user.id);
+    return customer.id;
+  }
+
+  /**
+   * Start "add a card". The client drives Stripe's sheet with the returned
+   * secret; no card data ever touches this server, which is the whole point —
+   * it keeps the app out of PCI scope.
+   */
+  async createSetupIntent(user: AuthUser) {
+    if (!this.stripe.isEnabled) throw new BadRequestException('Payments not configured');
+    const customerId = await this.ensureCustomer(user);
+    const si = await this.stripe.createSetupIntent({
+      customer: customerId,
+      // Consent to charge later without the patient present — what booking's
+      // off-session authorisation relies on.
+      usage: 'off_session',
+      automatic_payment_methods: { enabled: true },
+      metadata: { profile_id: user.id },
+    });
+    return { clientSecret: si.client_secret, setupIntentId: si.id };
+  }
+
+  /**
+   * Finish "add a card": read the SetupIntent back and remember its result.
+   *
+   * The client tells us the sheet closed; Stripe tells us what actually got
+   * attached. Same rule as activateIfAuthorised — the client triggers, Stripe
+   * decides. A client claiming success for an intent that never succeeded gets
+   * nothing.
+   */
+  async saveCardFromSetupIntent(user: AuthUser, setupIntentId: string) {
+    if (!this.stripe.isEnabled) throw new BadRequestException('Payments not configured');
+
+    let si: Stripe.SetupIntent;
+    try {
+      si = await this.stripe.retrieveSetupIntent(setupIntentId);
+    } catch (err) {
+      // An id Stripe doesn't recognise is bad input, not a server fault. Letting
+      // the raw Stripe error escape would surface as an opaque 500 with no clue
+      // for the caller — the same trap as a raw Supabase error.
+      const e = err as Stripe.errors.StripeError;
+      if (e?.type === 'StripeInvalidRequestError') {
+        throw new BadRequestException(`Unknown setup intent: ${setupIntentId}`);
+      }
+      throw err;
+    }
+
+    if (si.metadata?.profile_id !== user.id) {
+      throw new ForbiddenException('Not your setup intent');
+    }
+    if (si.status !== 'succeeded' || !si.payment_method) {
+      throw new BadRequestException(`Card was not saved (setup intent is ${si.status})`);
+    }
+    const pm = typeof si.payment_method === 'string' ? si.payment_method : si.payment_method.id;
+    await this.supabase
+      .admin()
+      .from('profiles')
+      .update({ default_payment_method: pm })
+      .eq('id', user.id);
+    return this.listCards(user);
+  }
+
+  /**
+   * Cards on file, straight from Stripe rather than a local copy.
+   *
+   * Stripe is the only source of truth for what is chargeable: a card can expire
+   * or be detached without telling us, so a mirrored brand/last4 in our database
+   * would drift into lying to the patient.
+   */
+  async listCards(user: AuthUser) {
+    if (!this.stripe.isEnabled) return [];
+    const admin = this.supabase.admin();
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('stripe_customer_id, default_payment_method')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (!profile?.stripe_customer_id) return [];
+
+    const pms = await this.stripe.listPaymentMethods(profile.stripe_customer_id as string);
+    return pms.data.map((pm) => ({
+      id: pm.id,
+      brand: pm.card?.brand ?? 'card',
+      last4: pm.card?.last4 ?? '????',
+      expMonth: pm.card?.exp_month ?? null,
+      expYear: pm.card?.exp_year ?? null,
+      isDefault: pm.id === profile.default_payment_method,
+    }));
+  }
+
+  async deleteCard(user: AuthUser, paymentMethodId: string) {
+    if (!this.stripe.isEnabled) throw new BadRequestException('Payments not configured');
+    const admin = this.supabase.admin();
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('stripe_customer_id, default_payment_method')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (!profile?.stripe_customer_id) throw new NotFoundException('No cards on file');
+
+    // Never detach on the client's say-so alone: confirm Stripe agrees this card
+    // belongs to this customer, or one patient could remove another's.
+    const pms = await this.stripe.listPaymentMethods(profile.stripe_customer_id as string);
+    if (!pms.data.some((pm) => pm.id === paymentMethodId)) {
+      throw new ForbiddenException('Not your card');
+    }
+    await this.stripe.detachPaymentMethod(paymentMethodId);
+
+    // Promote another card rather than silently leaving the patient with none
+    // selected — otherwise booking quietly falls back to the payment sheet and
+    // nobody knows why.
+    if (profile.default_payment_method === paymentMethodId) {
+      const remaining = pms.data.find((pm) => pm.id !== paymentMethodId);
+      await admin
+        .from('profiles')
+        .update({ default_payment_method: remaining?.id ?? null })
+        .eq('id', user.id);
+    }
+    return this.listCards(user);
+  }
+
+  async setDefaultCard(user: AuthUser, paymentMethodId: string) {
+    const admin = this.supabase.admin();
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('stripe_customer_id')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (!profile?.stripe_customer_id) throw new NotFoundException('No cards on file');
+    const pms = await this.stripe.listPaymentMethods(profile.stripe_customer_id as string);
+    if (!pms.data.some((pm) => pm.id === paymentMethodId)) {
+      throw new ForbiddenException('Not your card');
+    }
+    await admin
+      .from('profiles')
+      .update({ default_payment_method: paymentMethodId })
+      .eq('id', user.id);
+    return this.listCards(user);
+  }
+
   /**
    * Create (or reuse) a Stripe PaymentIntent for a confirmed appointment.
    * Amount is derived from the appointment row — never trusted from the client.
@@ -116,6 +287,86 @@ export class PaymentsService {
     );
 
     return { clientSecret: pi.client_secret, amount: appt.price, currency: CURRENCY };
+  }
+
+  /**
+   * Authorise a visit against the patient's saved card, with nobody watching.
+   *
+   * This is what makes booking one tap: no payment sheet, no second screen —
+   * the request is funded and open to nurses in the same call that created it.
+   *
+   * Returns whether the hold is now in place. NEVER THROWS: every failure here
+   * is a normal, expected outcome, not an error. No card on file, a decline, an
+   * expired card, a bank demanding 3DS — all of them just mean "we couldn't do
+   * it silently", and the answer is the same in every case: leave the request at
+   * `awaiting_payment` and let the patient finish on /pay/:id, which is exactly
+   * the flow that existed before. Failing soft is what keeps this a shortcut
+   * rather than a new way to lose a booking.
+   */
+  async authoriseOffSession(user: AuthUser, appointmentId: string): Promise<boolean> {
+    if (!this.stripe.isEnabled) return false;
+    const admin = this.supabase.admin();
+
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('stripe_customer_id, default_payment_method')
+      .eq('id', user.id)
+      .maybeSingle();
+    // The common case for a new patient — not worth a log line.
+    if (!profile?.stripe_customer_id || !profile.default_payment_method) return false;
+
+    const { data: appt } = await admin
+      .from('appointments')
+      .select('id, price, patient_id')
+      .eq('id', appointmentId)
+      .maybeSingle();
+    if (!appt || appt.patient_id !== user.id) return false;
+
+    try {
+      const pi = await this.stripe.createPaymentIntent(
+        {
+          amount: Math.round(Number(appt.price) * 100),
+          currency: CURRENCY.toLowerCase(),
+          capture_method: 'manual',
+          customer: profile.stripe_customer_id as string,
+          payment_method: profile.default_payment_method as string,
+          // `off_session` tells the bank the cardholder isn't here, which is what
+          // makes the saved consent from the SetupIntent count. `confirm` does it
+          // in one call rather than handing a secret to a client that isn't
+          // listening.
+          off_session: true,
+          confirm: true,
+          metadata: { appointment_id: appt.id, user_id: user.id },
+        },
+        // Same key as the on-session path: a visit gets one authorisation,
+        // whichever route creates it.
+        `auth_${appt.id}`,
+      );
+
+      await admin.from('payments').upsert(
+        {
+          appointment_id: appt.id,
+          user_id: user.id,
+          amount: appt.price,
+          currency: CURRENCY,
+          method: 'stripe',
+          status: pi.status === 'requires_capture' ? 'processing' : 'pending',
+          stripe_payment_intent_id: pi.id,
+        },
+        { onConflict: 'appointment_id' },
+      );
+      return pi.status === 'requires_capture';
+    } catch (err) {
+      // `authentication_required` lands here and is the interesting one: the
+      // card is fine, the bank just wants the patient present. /pay/:id can
+      // recover it — createIntent reuses an intent in `requires_payment_method`
+      // or `requires_confirmation`.
+      const code = (err as Stripe.errors.StripeError)?.code ?? 'unknown';
+      this.logger.log(
+        `Off-session authorisation declined for ${appointmentId} (${code}) — falling back to the payment sheet.`,
+      );
+      return false;
+    }
   }
 
   /**

@@ -219,6 +219,27 @@ export class AppointmentsService {
       .single();
     if (error) throw error;
 
+    // Try to fund it right here with the patient's saved card. When it works the
+    // request is authorised, promoted and announced before this response is
+    // written — booking becomes one tap and /pay/:id is never seen.
+    //
+    // Every failure path is the same and is not an error: no card on file, a
+    // decline, a bank wanting 3DS. The request simply stays `awaiting_payment`
+    // (invisible to nurses, per 0012) and the client sends the patient to
+    // /pay/:id — the flow that existed before this shortcut. The caller decides
+    // what to do by reading `status`, so a booking never fails because a
+    // convenience didn't apply.
+    if (await this.payments.authoriseOffSession(user, data.id as string)) {
+      const activated = await this.activate(data.id as string).catch((err) => {
+        this.logger.error(
+          `Off-session authorisation succeeded but activation failed for ${data.id}`,
+          err as Error,
+        );
+        return null;
+      });
+      if (activated) return activated;
+    }
+
     return data;
   }
 

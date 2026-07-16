@@ -94,6 +94,38 @@ export class StripeService {
     return this.stripe.refunds.create(params, idempotencyKey ? { idempotencyKey } : undefined);
   }
 
+  // ---- customers & saved cards -------------------------------------------
+
+  createCustomer(params: Stripe.CustomerCreateParams, idempotencyKey?: string) {
+    return this.stripe.customers.create(
+      params,
+      idempotencyKey ? { idempotencyKey } : undefined,
+    );
+  }
+
+  /**
+   * A SetupIntent validates a card and stores it for later, without charging.
+   * `usage: 'off_session'` is the important part: it records the cardholder's
+   * consent to be charged when they aren't present, which is what lets booking
+   * authorise silently. Without it, later off-session charges are far more
+   * likely to be declined for authentication.
+   */
+  createSetupIntent(params: Stripe.SetupIntentCreateParams) {
+    return this.stripe.setupIntents.create(params);
+  }
+
+  retrieveSetupIntent(id: string) {
+    return this.stripe.setupIntents.retrieve(id);
+  }
+
+  listPaymentMethods(customerId: string) {
+    return this.stripe.paymentMethods.list({ customer: customerId, type: 'card' });
+  }
+
+  detachPaymentMethod(paymentMethodId: string) {
+    return this.stripe.paymentMethods.detach(paymentMethodId);
+  }
+
   /** Verifies a webhook signature and returns the typed event. */
   constructEvent(payload: Buffer | string, signature: string): Stripe.Event {
     return this.stripe.webhooks.constructEvent(payload, signature, this.webhookSecret);
