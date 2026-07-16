@@ -2,14 +2,14 @@ import { View, ScrollView, RefreshControl, Pressable, Alert } from 'react-native
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Text, Card, Badge, EmptyState, SkeletonList, Divider, Icon } from '@/components/ui';
-import { useCards, type StoredCard } from '@/hooks/useCards';
+import { useCards } from '@/hooks/useCards';
 import { useAsync } from '@/hooks/useAsync';
 import { Endpoints } from '@/lib/endpoints';
 import { useTranslation } from '@/utils/i18n';
 import { useThemeColors } from '@/constants/theme';
 import { paymentStatusMeta } from '@/utils/status';
 import { formatPrice, maskCard, formatDate } from '@/utils/format';
-import type { Payment } from '@/types';
+import type { Payment, SavedCard } from '@/types';
 
 export default function PaymentTab() {
   const { t } = useTranslation();
@@ -109,7 +109,7 @@ function CardRow({
   onSetDefault,
   onDelete,
 }: {
-  card: StoredCard;
+  card: SavedCard;
   onSetDefault: () => void;
   onDelete: () => void;
 }) {
@@ -122,10 +122,14 @@ function CardRow({
           <Icon name="card" size={20} color="#FFFFFF" weight="fill" />
         </View>
         <View className="flex-1">
-          <Text variant="bodyMedium">
+          <Text variant="bodyMedium" className="capitalize">
             {card.brand} · {card.last4}
           </Text>
-          <Text variant="caption">{card.exp}</Text>
+          {card.expMonth && card.expYear ? (
+            <Text variant="caption">
+              {String(card.expMonth).padStart(2, '0')}/{String(card.expYear).slice(-2)}
+            </Text>
+          ) : null}
         </View>
         {card.isDefault ? <Badge label={t('pay.default')} tone="success" /> : null}
       </View>

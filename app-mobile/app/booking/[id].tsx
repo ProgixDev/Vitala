@@ -125,9 +125,19 @@ export default function Booking() {
         symptoms: isEmergency ? symptoms : undefined,
         notes: notes || undefined,
       });
-      // Straight to payment: the card is authorised as part of requesting care,
-      // so a nurse never travels for a request with no valid card behind it.
-      // Nothing is captured until the visit is completed.
+      // A request is only shown to nurses once the money behind it is secured,
+      // so every path here ends in an authorised card — the question is just
+      // whether we had to ask.
+      //
+      // With a card on file the server already authorised it and opened the
+      // request before answering, so there is nothing left to do: skip the
+      // payment sheet entirely. Otherwise /pay/:id collects one, exactly as
+      // before. Nothing is captured either way until the visit is completed.
+      if (created.status !== 'awaiting_payment') {
+        Toast.show({ type: 'success', text1: t('booking.sent'), text2: t('booking.sentHint') });
+        router.replace(`/appointment/${created.id}`);
+        return;
+      }
       router.replace(`/pay/${created.id}`);
     } catch (e) {
       Toast.show({

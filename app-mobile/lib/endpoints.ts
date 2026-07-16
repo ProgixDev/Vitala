@@ -10,6 +10,7 @@ import type {
   GeoPoint,
   Me,
   Payment,
+  SavedCard,
   Review,
   SavedLocation,
   Service,
@@ -117,6 +118,18 @@ export const Endpoints = {
       { appointment_id: appointmentId },
     ),
   transactions: () => api.get<Payment[]>('/payments/transactions'),
+
+  // ---- cards on file ----
+  // The card itself goes straight from the Stripe sheet to Stripe; we only ever
+  // pass ids around, which is what keeps the app out of PCI scope.
+  setupIntent: () =>
+    api.post<{ clientSecret: string; setupIntentId: string }>('/payments/setup-intent'),
+  /** Call once the sheet closes — the server re-reads the intent to see what stuck. */
+  saveCard: (setupIntentId: string) =>
+    api.post<SavedCard[]>('/payments/cards', { setup_intent_id: setupIntentId }),
+  cards: () => api.get<SavedCard[]>('/payments/cards'),
+  setDefaultCard: (id: string) => api.put<SavedCard[]>(`/payments/cards/${id}/default`),
+  deleteCard: (id: string) => api.del<SavedCard[]>(`/payments/cards/${id}`),
 
   // ---- reviews ----
   nurseReviews: (nurseId: string) =>

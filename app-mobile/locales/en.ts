@@ -283,6 +283,12 @@ export const en: Record<string, string> = {
   // ---- payment authorisation + cancel ----
   'pay.authorised': 'Card authorised',
   'pay.authorisedHint': 'You\'ll only be charged after your visit.',
+  'pay.addCardTitle': 'Save a card — you won\'t be charged',
+  'pay.addCardBody':
+    'Nothing is taken now. Your card is kept securely by Stripe so your next request goes out in one tap — payment is only taken once your visit is done.',
+  'pay.cardSaved': 'Card saved',
+  'pay.cardSavedHint': 'Your next request will go out in one tap.',
+  'pay.cardFailed': 'Couldn\'t save that card',
   'pay.notActivated': 'Request not sent yet',
   'pay.notActivatedHint':
     'We couldn\'t confirm the hold on your card. No nurse has been notified — please try again.',
@@ -438,6 +444,9 @@ export const en: Record<string, string> = {
   'review.nurseResponse': 'Response from the nurse',
 
   // ---- booking ----
+  'booking.sent': 'Request sent',
+  'booking.sentHint':
+    'We\'re letting nurses near you know. A hold is on your card — you\'ll only be charged after the visit.',
   'booking.title': 'Book appointment',
   'booking.emergencyTitle': 'Emergency booking',
   'booking.emergencyBadge': 'Emergency',

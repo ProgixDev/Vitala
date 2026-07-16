@@ -284,6 +284,12 @@ export const fr: Record<string, string> = {
   // ---- payment authorisation + cancel ----
   'pay.authorised': 'Carte autorisée',
   'pay.authorisedHint': 'Vous ne serez débité qu’après votre visite.',
+  'pay.addCardTitle': 'Enregistrer une carte, sans être débité',
+  'pay.addCardBody':
+    'Rien n’est prélevé maintenant. Votre carte est conservée en sécurité par Stripe pour que vos prochaines demandes partent en un seul geste — le paiement n’est pris qu’une fois la visite terminée.',
+  'pay.cardSaved': 'Carte enregistrée',
+  'pay.cardSavedHint': 'Vos prochaines demandes partiront en un seul geste.',
+  'pay.cardFailed': 'Impossible d’enregistrer la carte',
   'pay.notActivated': 'Demande pas encore envoyée',
   'pay.notActivatedHint':
     'Nous n’avons pas pu confirmer l’autorisation sur votre carte. Aucun·e infirmier·ère n’a été prévenu·e — réessayez.',
@@ -439,6 +445,9 @@ export const fr: Record<string, string> = {
   'review.nurseResponse': 'Réponse de l’infirmier·ère',
 
   // ---- booking ----
+  'booking.sent': 'Demande envoyée',
+  'booking.sentHint':
+    'Nous prévenons les infirmier·ère·s à proximité. Une autorisation a été placée sur votre carte — vous ne serez débité qu’après la visite.',
   'booking.title': 'Réserver un rendez-vous',
   'booking.emergencyTitle': 'Réservation d’urgence',
   'booking.emergencyBadge': 'Urgence',

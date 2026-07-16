@@ -27,6 +27,19 @@ export type AppointmentStatus =
   | 'cancelled'
   | 'declined';
 
+/**
+ * A card on file, as Stripe reports it. Display data only — the instrument
+ * itself never leaves Stripe, and `id` is an opaque PaymentMethod reference.
+ */
+export interface SavedCard {
+  id: string;
+  brand: string;
+  last4: string;
+  expMonth: number | null;
+  expYear: number | null;
+  isDefault: boolean;
+}
+
 export type PaymentStatus =
   | 'pending'
   | 'processing'
