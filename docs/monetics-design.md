@@ -568,9 +568,20 @@ explainable.
   money-moving Stripe calls; `stripe_events` dedupe (0013); webhook-driven activation backstop
   via an `payment.authorised` event (`emitAsync`, so it settles before the function can be
   frozen). **Reconciliation sweep deliberately deferred to Phase 5** — see below.
-- **Phase 2 — Card at onboarding.** SetupIntent + `stripe_customer_id`; booking authorises
-  off-session; `/pay/{id}` becomes the 3DS/failure fallback rather than the happy path.
-  Now the next piece of real product value.
+- **Phase 2 — ✅ DONE (2026-07-16).** `stripe_customer_id` + `default_payment_method` (0014);
+  SetupIntent flow for adding a card; `authoriseOffSession()` at booking, so a request with a
+  card on file is authorised, promoted and announced inside the create call — one tap, no
+  payment sheet. `/pay/{id}` is now the fallback (no card / decline / 3DS), not the happy path.
+  Every failure is soft: the request simply stays `awaiting_payment`, which is the pre-Phase-2
+  flow, so this can only add speed and never removes a way to book.
+
+  > **Also deleted a fake wallet.** `app/cards/add.tsx` collected a real PAN and CVV in plain
+  > TextInputs, discarded them, and kept a hand-typed brand/last4 in SecureStore — under a
+  > "only your card brand and last 4 digits are stored on this device" reassurance. It reached
+  > Stripe never, could be charged never, and vanished on reinstall. It also put the app in
+  > **PCI scope**, since touching a raw PAN is what does that whether or not you keep it. Cards
+  > are now read from Stripe rather than mirrored, because a mirror starts lying the moment a
+  > card expires or is detached from another device.
 - **Phase 4 — Connect Express onboarding.** `stripe_account_id`, Account Links,
   `account.updated`, nurse UI + nudges. **Build against a Canadian test account** (§10.2) —
   onboarding requirements are country-specific, so the EU sandbox tests the wrong form.
