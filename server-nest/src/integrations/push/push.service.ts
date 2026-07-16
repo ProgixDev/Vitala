@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Expo, ExpoPushMessage } from 'expo-server-sdk';
+// TYPE-ONLY: erased at compile time, so it never becomes a require().
+import type { Expo, ExpoPushMessage } from 'expo-server-sdk';
 
 export interface PushItem {
   token: string | null | undefined;
@@ -17,14 +18,37 @@ export interface PushOptions {
   ttlSeconds?: number;
 }
 
-const isExpoToken = (t: string | null | undefined): t is string =>
-  !!t && Expo.isExpoPushToken(t);
-
 /** Expo push notifications. Safe to call with invalid/absent tokens. */
 @Injectable()
 export class PushService {
   private readonly logger = new Logger('Push');
-  private readonly expo = new Expo();
+  private sdk?: typeof import('expo-server-sdk');
+  private expo?: Expo;
+
+  /**
+   * Load the SDK lazily, on first push.
+   *
+   * expo-server-sdk v6 is ESM-only ("type": "module") while this service
+   * compiles to CommonJS, so a top-level `import` becomes `require()` — which
+   * throws ERR_REQUIRE_ESM on any runtime that can't require an ES module.
+   * Node 22.12+ can, which is exactly why this passed locally (Node 26) and
+   * crashed the whole Vercel function on boot: every route 500'd because one
+   * import in one service couldn't resolve.
+   *
+   * A dynamic import() is preserved by tsc under `module: nodenext` and works
+   * on every runtime, so it doesn't depend on the host's Node version. Keep it
+   * this way even if Vercel's Node is later bumped.
+   */
+  private async load(): Promise<{
+    Expo: typeof import('expo-server-sdk').Expo;
+    expo: Expo;
+  }> {
+    if (!this.sdk) {
+      this.sdk = await import('expo-server-sdk');
+      this.expo = new this.sdk.Expo();
+    }
+    return { Expo: this.sdk.Expo, expo: this.expo! };
+  }
 
   async send(
     expoToken: string | null | undefined,
@@ -60,6 +84,20 @@ export class PushService {
    * Never throws: a failed push must not fail the request that triggered it.
    */
   async sendEach(items: PushItem[], opts?: PushOptions): Promise<void> {
+    let Expo: typeof import('expo-server-sdk').Expo;
+    let expo: Expo;
+    try {
+      ({ Expo, expo } = await this.load());
+    } catch (err) {
+      // Same contract as the send failure below: a push must never break the
+      // request that triggered it — least of all by failing to load.
+      this.logger.error('Failed to load expo-server-sdk', err as Error);
+      return;
+    }
+
+    const isExpoToken = (t: string | null | undefined): t is string =>
+      !!t && Expo.isExpoPushToken(t);
+
     const seen = new Set<string>();
     const messages: ExpoPushMessage[] = [];
     for (const it of items) {
@@ -82,9 +120,9 @@ export class PushService {
       return;
     }
     try {
-      const chunks = this.expo.chunkPushNotifications(messages);
+      const chunks = expo.chunkPushNotifications(messages);
       for (const chunk of chunks) {
-        const tickets = await this.expo.sendPushNotificationsAsync(chunk);
+        const tickets = await expo.sendPushNotificationsAsync(chunk);
         tickets.forEach((ticket, i) => {
           if (ticket.status === 'error') {
             // DeviceNotRegistered means the token is dead — worth pruning, but

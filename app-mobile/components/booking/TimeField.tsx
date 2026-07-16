@@ -1,9 +1,6 @@
 import { useState } from 'react';
 import { Modal, Platform, Pressable, View } from 'react-native';
-import DateTimePicker, {
-  DateTimePickerAndroid,
-  type DateTimePickerEvent,
-} from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, Button, Icon } from '@/components/ui';
 import { shadow, useThemeColors } from '@/constants/theme';
@@ -55,10 +52,11 @@ export function TimeField({ value, onChange, placeholder }: TimeFieldProps) {
         mode: 'time',
         is24Hour: true,
         minuteInterval: 5,
-        onChange: (event: DateTimePickerEvent, picked?: Date) => {
-          // 'dismissed' means they backed out — don't overwrite their choice.
-          if (event.type === 'set' && picked) onChange(toHHmm(picked));
-        },
+        onValueChange: (_event, picked) => onChange(toHHmm(picked)),
+        // Backing out leaves the existing choice alone, so there is nothing to do.
+        onDismiss: () => {},
+        // open() swallows native failures unless this is here.
+        onError: (err) => console.warn('TimeField: time picker failed to open', err),
       });
       return;
     }
@@ -95,13 +93,20 @@ export function TimeField({ value, onChange, placeholder }: TimeFieldProps) {
                 <View className="h-1 w-10 rounded-full bg-border" />
               </View>
               <Text variant="heading">{t('booking.selectTime')}</Text>
+              {/*
+                Height is explicit on purpose. Under the New Architecture the picker is a
+                leaf Yoga node that lays out at 0x0 until the native view measures itself
+                and pushes a size back through state — so a collapsed wheel is the failure
+                mode here, not a styling nicety. 216 is the standard iOS wheel height.
+              */}
               <DateTimePicker
                 value={draft}
                 mode="time"
                 display="spinner"
                 minuteInterval={5}
                 themeVariant={colors.scheme}
-                onChange={(_e, picked) => picked && setDraft(picked)}
+                style={{ height: 216, alignSelf: 'stretch' }}
+                onValueChange={(_e, picked) => setDraft(picked)}
               />
               <Button
                 label={t('common.done')}
