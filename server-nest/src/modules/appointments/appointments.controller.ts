@@ -41,6 +41,19 @@ export class AppointmentsController {
     return this.appointments.detail(user, id);
   }
 
+  /**
+   * "I've finished the payment sheet — check the hold and open my request."
+   *
+   * The client is a trigger, not a source of truth: the server re-reads the
+   * authorisation from Stripe before letting anything into the open pool.
+   * Idempotent, so it's also the recovery path — a patient whose app died after
+   * paying can land back on the request and have it heal itself.
+   */
+  @Post(':id/confirm-payment')
+  confirmPayment(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.appointments.activateIfAuthorised(user, id);
+  }
+
   @Put(':id/assign-self')
   assignSelf(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.appointments.assignSelf(user, id);

@@ -49,8 +49,8 @@ export class PaymentsService {
     if (error) throw error;
     if (!appt) throw new NotFoundException('Appointment not found');
     if (appt.patient_id !== user.id) throw new ForbiddenException('Not your appointment');
-    // Authorised at request time, so `pending` is the normal case — the card is
-    // held before a nurse commits to travelling. Terminal states can't be paid.
+    // `awaiting_payment` is the normal case: the request is not announced to any
+    // nurse until this authorisation succeeds. Terminal states can't be paid.
     if (['cancelled', 'declined'].includes(appt.status)) {
       throw new BadRequestException('That appointment is no longer active');
     }
@@ -105,6 +105,37 @@ export class PaymentsService {
     );
 
     return { clientSecret: pi.client_secret, amount: appt.price, currency: CURRENCY };
+  }
+
+  /**
+   * Is the money for this visit actually held right now?
+   *
+   * Asks Stripe rather than reading our own `payments.status`, because this is
+   * the check that decides whether a nurse gets dispatched — the one place worth
+   * paying a round-trip for the authoritative answer. Our row can lag: the
+   * webhook may not have landed yet, or may never land.
+   *
+   * `requires_capture` is precisely "the card is held and we can take it later".
+   * Any other state — still collecting, failed, already captured, cancelled —
+   * is not a live hold.
+   */
+  async isAuthorised(appointmentId: string): Promise<boolean> {
+    if (!this.stripe.isEnabled) return false;
+    const { data: payment } = await this.supabase
+      .admin()
+      .from('payments')
+      .select('stripe_payment_intent_id')
+      .eq('appointment_id', appointmentId)
+      .maybeSingle();
+    if (!payment?.stripe_payment_intent_id) return false;
+    try {
+      const pi = await this.stripe.retrievePaymentIntent(payment.stripe_payment_intent_id);
+      return pi.status === 'requires_capture';
+    } catch (err) {
+      // Fail closed: if we can't prove the money is held, it isn't held.
+      this.logger.error(`Authorisation check failed for ${appointmentId}`, err as Error);
+      return false;
+    }
   }
 
   /**

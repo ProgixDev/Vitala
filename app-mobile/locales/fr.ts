@@ -284,6 +284,9 @@ export const fr: Record<string, string> = {
   // ---- payment authorisation + cancel ----
   'pay.authorised': 'Carte autorisée',
   'pay.authorisedHint': 'Vous ne serez débité qu’après votre visite.',
+  'pay.notActivated': 'Demande pas encore envoyée',
+  'pay.notActivatedHint':
+    'Nous n’avons pas pu confirmer l’autorisation sur votre carte. Aucun·e infirmier·ère n’a été prévenu·e — réessayez.',
   'pay.authoriseAmount': 'Autoriser {amount}',
   'pay.holdTitle': 'Vous n’êtes pas encore débité',
   'pay.holdBody': 'Nous plaçons une autorisation temporaire sur votre carte afin qu’un·e infirmier·ère puisse accepter votre demande. Le paiement n’est prélevé qu’une fois la visite terminée — annulez avant et l’autorisation est levée.',
@@ -487,6 +490,10 @@ export const fr: Record<string, string> = {
   'time.unit.w': ' sem.',
 
   'status.title': 'Rendez-vous',
+  'status.step.awaitingPayment': 'Paiement à finaliser',
+  'status.desc.awaitingPayment':
+    'Votre demande n’a pas encore été envoyée. Autorisez votre carte et nous la proposons aussitôt aux infirmier·ère·s à proximité.',
+  'status.resumePayment': 'Finaliser le paiement',
   'status.step.pending': 'Confirmation du service',
   'status.step.confirmed': 'Confirmé',
   'status.step.onway': 'En route',

@@ -1,0 +1,23 @@
+-- A request must not reach a nurse until the money behind it is secured.
+--
+-- 0001 started every appointment at `pending`, which is also the status both
+-- open-pool RLS policies key on (appt_open_pool_read / appt_open_pool_claim in
+-- 0002 and 0006). So the row became a claimable job the instant it was inserted
+-- — before the patient had authorised anything. `announce()` pushed it to every
+-- on-duty nurse in the same request, and assign-self never checked payment.
+-- Live evidence when this was written: one `in-progress` and one `completed`
+-- visit with no payments row at all. A nurse worked for nothing.
+--
+-- `awaiting_payment` is the state between "the patient asked" and "the card is
+-- held". Because both open-pool policies test `status = 'pending'` literally, a
+-- row in this state is invisible AND unclaimable at the database level — the
+-- guarantee holds even if the application layer is wrong later. That is the
+-- whole reason this is a status rather than a boolean column.
+--
+-- Placed before 'pending' so the enum reads in lifecycle order.
+alter type public.appointment_status add value if not exists 'awaiting_payment' before 'pending';
+
+-- NOTE: a value added by ALTER TYPE cannot be *used* in the same transaction
+-- that adds it. Nothing here does — the application starts writing it only
+-- after this migration has committed. Any future migration that backfills rows
+-- into this state must live in its own file.

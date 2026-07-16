@@ -16,6 +16,9 @@ import { openDirections } from '@/utils/maps';
 import type { Appointment, AppointmentStatus } from '@/types';
 
 const STEP_ORDER: AppointmentStatus[] = [
+  // `awaiting_payment` is deliberately not a step: it sits before the journey
+  // starts, and a request that never gets paid for never joins it. It gets its
+  // own card (see below) rather than a dot on the timeline.
   'pending',
   'confirmed',
   'on-the-way',
@@ -92,6 +95,8 @@ export default function AppointmentStatusScreen() {
   if (!appt) return null;
 
   const terminal = appt.status === 'cancelled' || appt.status === 'declined';
+  /** Requested but not paid for: inert, invisible to nurses, patient's move. */
+  const unfunded = appt.status === 'awaiting_payment';
   const currentIndex = STEP_ORDER.indexOf(appt.status);
   /**
    * Two separate questions, and conflating them is what puts patient copy in
@@ -372,6 +377,30 @@ export default function AppointmentStatusScreen() {
             </View>
             {existingReview.comment ? (
               <Text variant="body">{existingReview.comment}</Text>
+            ) : null}
+          </Card>
+        ) : null}
+
+        {/* An unfunded request hasn't started its journey — no nurse can see it
+            yet, and saying so plainly is the honest thing: the patient is the
+            only one who can move it forward. */}
+        {unfunded ? (
+          <Card elevation="e2" className="gap-3">
+            <View className="flex-row items-center gap-3">
+              <View className="h-9 w-9 items-center justify-center rounded-full bg-warning/15">
+                <Icon name="hourglass-outline" size={20} color={colors.warning} />
+              </View>
+              <View className="flex-1">
+                <Text variant="bodyMedium">{t('status.step.awaitingPayment')}</Text>
+                <Text variant="caption">{t('status.desc.awaitingPayment')}</Text>
+              </View>
+            </View>
+            {!viewerIsNurse ? (
+              <Button
+                label={t('status.resumePayment')}
+                icon="lock-closed"
+                onPress={() => router.push(`/pay/${id}`)}
+              />
             ) : null}
           </Card>
         ) : null}

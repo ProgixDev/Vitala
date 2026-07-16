@@ -17,6 +17,8 @@ export type ServiceCategory =
 export type AppointmentType = 'normal' | 'emergency';
 
 export type AppointmentStatus =
+  /** Requested but not yet funded — no nurse has been told it exists. */
+  | 'awaiting_payment'
   | 'pending'
   | 'confirmed'
   | 'on-the-way'

@@ -12,6 +12,7 @@ import type { AuthUser } from '../../common/decorators/current-user.decorator';
 import {
   AppointmentStatus,
   CreateAppointmentDto,
+  MAX_BOOKING_LEAD_DAYS,
   NurseLocationDto,
   UpdateStatusDto,
 } from './dto/appointment.dto';
@@ -38,9 +39,14 @@ interface AppointmentRow {
  * here the state-machine is explicit and enforced, keyed by who is acting.
  */
 const TRANSITIONS: Record<AppointmentStatus, AppointmentStatus[]> = {
+  // Left only by activateIfAuthorised() once Stripe confirms the hold, or
+  // abandoned by the patient. It is never announced, so no nurse can act on it.
+  awaiting_payment: ['pending', 'cancelled'],
   pending: ['confirmed', 'declined', 'cancelled'],
   confirmed: ['on-the-way', 'cancelled'],
   'on-the-way': ['in-progress', 'cancelled'],
+  // 'cancelled' stays reachable here, but only for the NURSE — a patient
+  // cancelling mid-visit is theft, not a cancellation. See assertActorAllowed.
   'in-progress': ['completed', 'cancelled'],
   completed: [],
   cancelled: [],
@@ -176,6 +182,8 @@ export class AppointmentsService {
     if (svcErr) throw svcErr;
     if (!service) throw new BadRequestException('Unknown service');
 
+    this.assertBookableDate(dto.scheduled_date);
+
     const duration = dto.duration_min ?? (service.duration_min as number);
     const price = proRataPrice(
       Number(service.price),
@@ -193,21 +201,101 @@ export class AppointmentsService {
         scheduled_date: dto.scheduled_date,
         scheduled_start: dto.scheduled_start,
         address: dto.address,
-        latitude: dto.latitude ?? null,
-        longitude: dto.longitude ?? null,
+        latitude: dto.latitude,
+        longitude: dto.longitude,
         location_label: dto.location_label ?? null,
         symptoms: dto.symptoms ?? null,
         notes: dto.notes ?? null,
         price,
         duration_min: duration,
         scheduled_end: dto.scheduled_end ?? endTime(dto.scheduled_start, duration),
+        // Born unfunded, and deliberately NOT announced. The card is authorised
+        // next (the client is sent straight to /pay/:id); activateIfAuthorised()
+        // is what promotes this to `pending` and tells nurses it exists.
+        status: 'awaiting_payment',
       })
       .select()
       .single();
     if (error) throw error;
 
-    await this.announce(data, service.name as string);
     return data;
+  }
+
+  /**
+   * Promote a paid-for request into the open pool — the ONLY way an appointment
+   * becomes visible to nurses.
+   *
+   * Deliberately re-reads the hold from Stripe rather than trusting the caller:
+   * the client says "the sheet closed", Stripe says whether the money is
+   * actually held, and only Stripe is authoritative. A client that lies gets
+   * nothing.
+   *
+   * Idempotent and safe to call from anywhere, as often as you like — the
+   * `.eq('status', 'awaiting_payment')` guard means only the first call through
+   * announces, so the patient's pay screen, a resumed session, and (later) the
+   * reconciliation sweep can all race harmlessly.
+   */
+  async activateIfAuthorised(user: AuthUser, id: string) {
+    const appt = await this.findOne(user, id);
+    if (appt.patient_id !== user.id && user.role !== 'admin') {
+      throw new ForbiddenException('Not your appointment');
+    }
+    // Already live (or long since finished) — nothing to do, and say so plainly
+    // rather than erroring: the pay screen calls this on a retry.
+    if (appt.status !== 'awaiting_payment') return appt;
+
+    // Not an error: the caller may be a screen re-checking on focus, not a
+    // freshly-completed payment sheet. Hand back the row and let it read the
+    // status — `awaiting_payment` still means "not funded".
+    if (!(await this.payments.isAuthorised(id))) return appt;
+
+    const { data, error } = await this.supabase
+      .admin()
+      .from('appointments')
+      .update({ status: 'pending' })
+      .eq('id', id)
+      // The guard AND the idempotency: a second caller updates zero rows.
+      .eq('status', 'awaiting_payment')
+      .select()
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return this.findOne(user, id); // someone else won the race
+
+    const { data: service } = await this.supabase
+      .admin()
+      .from('services')
+      .select('name')
+      .eq('id', data.service_id as string)
+      .maybeSingle();
+
+    await this.announce(
+      data as AppointmentRow,
+      (service?.name as string) ?? '',
+    );
+    return data;
+  }
+
+  /**
+   * A visit must be capturable while its authorisation is still alive. See
+   * MAX_BOOKING_LEAD_DAYS — this is a Stripe constraint wearing a validation
+   * error, not a product rule.
+   */
+  private assertBookableDate(scheduledDate: string) {
+    const day = 24 * 60 * 60 * 1000;
+    const today = new Date(new Date().toISOString().slice(0, 10)).getTime();
+    const target = new Date(scheduledDate).getTime();
+    if (Number.isNaN(target)) {
+      throw new BadRequestException('scheduled_date must be YYYY-MM-DD');
+    }
+    const leadDays = Math.round((target - today) / day);
+    if (leadDays < 0) {
+      throw new BadRequestException('Cannot book a visit in the past');
+    }
+    if (leadDays > MAX_BOOKING_LEAD_DAYS) {
+      throw new BadRequestException(
+        `Visits can be booked at most ${MAX_BOOKING_LEAD_DAYS} days ahead`,
+      );
+    }
   }
 
   /**
@@ -450,14 +538,37 @@ export class AppointmentsService {
 
   private assertActorAllowed(
     user: AuthUser,
-    appt: { patient_id: string; nurse_id: string | null },
+    appt: {
+      patient_id: string;
+      nurse_id: string | null;
+      status: AppointmentStatus;
+    },
     next: AppointmentStatus,
   ) {
     const isPatient = user.id === appt.patient_id;
     const isNurse = user.id === appt.nurse_id;
     if (user.role === 'admin') return;
-    // Patients may cancel; nurses drive the fulfilment lifecycle.
-    if (next === 'cancelled' && (isPatient || isNurse)) return;
+
+    if (next === 'cancelled') {
+      // The nurse may always abort — she is the one in the room, and the reasons
+      // are real: nobody home, an unsafe situation, a patient who needs an
+      // ambulance instead.
+      if (isNurse) return;
+      if (isPatient) {
+        // But a patient cancelling mid-visit is theft, not a cancellation. The
+        // money is only ever HELD until the visit completes, so cancelling from
+        // `in-progress` voided the hold after the nurse had already delivered
+        // the whole service: free care, one tap. Their recourse once treatment
+        // has started is a report, which blocks the nurse's payout and goes to
+        // a human — not a silent unilateral refund.
+        if (appt.status === 'in-progress') {
+          throw new ForbiddenException(
+            'A visit in progress cannot be cancelled — report a problem instead',
+          );
+        }
+        return;
+      }
+    }
     if (['confirmed', 'declined', 'on-the-way', 'in-progress', 'completed'].includes(next)) {
       if (!isNurse) throw new ForbiddenException('Only the assigned nurse can do that');
       return;

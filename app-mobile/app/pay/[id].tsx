@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useStripe } from '@stripe/stripe-react-native';
@@ -21,6 +21,27 @@ export default function PayAppointment() {
 
   const { data: appt, loading } = useAsync<Appointment>(() => Endpoints.appointment(id), [id]);
   const stripeReady = !isPlaceholder(config.stripePublishableKey);
+  const healed = useRef(false);
+
+  /**
+   * Self-heal a request that was paid for but never opened.
+   *
+   * If the app died between the payment sheet closing and confirm-payment
+   * landing, the hold exists but the request is still inert — and asking for a
+   * new intent would fail ("This visit is already authorised"), stranding the
+   * patient on a pay screen for a card that has already been charged. Re-running
+   * the confirmation is idempotent, so simply arriving here fixes it.
+   */
+  useEffect(() => {
+    if (!appt || healed.current || appt.status !== 'awaiting_payment') return;
+    healed.current = true;
+    Endpoints.confirmPayment(id)
+      .then((a) => {
+        if (a.status !== 'awaiting_payment') router.replace(`/appointment/${id}`);
+      })
+      // Nothing to recover — the normal "you still need to pay" path. Stay put.
+      .catch(() => {});
+  }, [appt, id]);
 
   const pay = async () => {
     setPaying(true);
@@ -45,6 +66,16 @@ export default function PayAppointment() {
       }
       // The card is only authorised here — the money is captured when the visit
       // is completed, and released untouched if the request is cancelled.
+      //
+      // Until this call lands the request is inert: no nurse has been told it
+      // exists. The server re-checks the hold with Stripe rather than taking our
+      // word for it, so a failure here means the request stays closed — which is
+      // the safe direction, and recoverable by reopening it.
+      const activated = await Endpoints.confirmPayment(id);
+      if (activated.status === 'awaiting_payment') {
+        Toast.show({ type: 'error', text1: t('pay.notActivated'), text2: t('pay.notActivatedHint') });
+        return;
+      }
       Toast.show({ type: 'success', text1: t('pay.authorised'), text2: t('pay.authorisedHint') });
       router.replace(`/appointment/${id}`);
     } catch (e) {

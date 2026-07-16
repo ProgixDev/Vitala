@@ -9,6 +9,7 @@ import type {
 /** Human-readable labels + badge tones per status. */
 
 const appointmentMeta: Record<AppointmentStatus, { tone: BadgeTone; label: string }> = {
+  awaiting_payment: { tone: 'warning', label: 'Payment to finish' },
   pending: { tone: 'warning', label: 'Pending' },
   confirmed: { tone: 'primary', label: 'Confirmed' },
   'on-the-way': { tone: 'info', label: 'On the way' },
@@ -50,6 +51,10 @@ export function emergencyStatusMeta(status: EmergencyStatus) {
 
 /** Which appointment statuses are "active" (Upcoming) vs "history". */
 export const UPCOMING_STATUSES: AppointmentStatus[] = [
+  // Upcoming rather than hidden: an unpaid request is the one state where only
+  // the patient can move things along, so burying it guarantees it stalls. A
+  // nurse never sees these — RLS scopes the open pool to `pending`.
+  'awaiting_payment',
   'pending',
   'confirmed',
   'on-the-way',

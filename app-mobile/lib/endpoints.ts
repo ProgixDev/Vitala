@@ -64,6 +64,12 @@ export const Endpoints = {
   appointment: (id: string) => api.get<Appointment>(`/appointments/${id}`),
   createAppointment: (dto: Record<string, unknown>) =>
     api.post<Appointment>('/appointments', dto),
+  /**
+   * Tell the server the payment sheet is done so it can verify the hold with
+   * Stripe and open the request to nurses. Safe to call more than once — the
+   * server re-checks and only the first call through announces.
+   */
+  confirmPayment: (id: string) => api.post<Appointment>(`/appointments/${id}/confirm-payment`),
   assignSelf: (id: string) => api.put<Appointment>(`/appointments/${id}/assign-self`),
   /** Pass on an open job — hides it from this nurse, leaves it in the pool. */
   passJob: (id: string) => api.put<{ passed: boolean }>(`/appointments/${id}/pass`),

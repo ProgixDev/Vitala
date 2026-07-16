@@ -283,6 +283,9 @@ export const en: Record<string, string> = {
   // ---- payment authorisation + cancel ----
   'pay.authorised': 'Card authorised',
   'pay.authorisedHint': 'You\'ll only be charged after your visit.',
+  'pay.notActivated': 'Request not sent yet',
+  'pay.notActivatedHint':
+    'We couldn\'t confirm the hold on your card. No nurse has been notified — please try again.',
   'pay.authoriseAmount': 'Authorise {amount}',
   'pay.holdTitle': 'You won\'t be charged yet',
   'pay.holdBody': 'We place a temporary hold on your card so a nurse can accept your request. The payment is only taken once your visit is complete — cancel before then and the hold is released.',
@@ -486,6 +489,10 @@ export const en: Record<string, string> = {
   'time.unit.w': 'w',
 
   'status.title': 'Appointment',
+  'status.step.awaitingPayment': 'Payment to finish',
+  'status.desc.awaitingPayment':
+    'Your request hasn\'t been sent yet. Authorise your card and we\'ll offer it to nurses near you straight away.',
+  'status.resumePayment': 'Finish payment',
   'status.step.pending': 'Service confirmation',
   'status.step.confirmed': 'Confirmed',
   'status.step.onway': 'On the way',

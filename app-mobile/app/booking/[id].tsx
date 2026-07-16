@@ -80,13 +80,17 @@ export default function Booking() {
   // Mirrors proRataPrice() on the server; the server's figure is authoritative.
   const estimate = service ? estimatePrice(service.price, service.duration_min, duration) : 0;
 
+  // A saved address with no coordinates can't be routed to, geofenced, or used
+  // as evidence in a dispute — so it isn't offerable, and pretending otherwise
+  // with a `?? 0` sentinel only moved the failure somewhere less obvious (0,0
+  // is a real place in the Gulf of Guinea). Drop them instead of faking them.
   const savedPoints: GeoPoint[] = [
     ...extraLocs,
     ...((locations.data ?? [])
-      .filter((l) => l.address)
+      .filter((l) => l.address && l.latitude != null && l.longitude != null)
       .map((l) => ({
-        latitude: l.latitude ?? 0,
-        longitude: l.longitude ?? 0,
+        latitude: l.latitude as number,
+        longitude: l.longitude as number,
         address: l.address,
         label: l.label ?? undefined,
       })) as GeoPoint[]),
@@ -109,8 +113,11 @@ export default function Booking() {
         scheduled_date: date,
         scheduled_start: time,
         address: selectedLoc.address,
-        latitude: selectedLoc.latitude || undefined,
-        longitude: selectedLoc.longitude || undefined,
+        // `|| undefined` here used to drop a legitimate 0 as if it were missing;
+        // the server now requires both, and savedPoints can no longer carry a
+        // fake one, so send them straight through.
+        latitude: selectedLoc.latitude,
+        longitude: selectedLoc.longitude,
         location_label: selectedLoc.label,
         // The server recomputes price from this — the estimate shown above is
         // only a preview and is never sent.
