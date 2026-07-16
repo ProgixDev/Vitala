@@ -97,7 +97,7 @@
       "apiBaseUrl": "https://vitala-tau.vercel.app/api",
       "supabaseUrl": "https://dieuytwiwtjzkxeuxett.supabase.co",
       "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpZXV5dHdpd3Rqemt4ZXV4ZXR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3OTI3ODEsImV4cCI6MjA5OTM2ODc4MX0.p0w2oPwJovWOsqDYwyDmaTEXYM4JqhqzylpZnliktIU",
-      "stripePublishableKey": "pk_test_51TjXM3C1XrjpLABrjMTrH8EW6lIqBcxt9gvSmN5HEQsCKMdeJ3j8PP3HcwOwVhTS9tLfXN5wdKTE3Aha32Fccee900K5jMKqqX",
+      "stripePublishableKey": "pk_test_51TtiNhJExkcnGVAZFyhNZbWkUyuG60f8plBjwltfJJ2mJQJrdkFvHGeeOi8XsVI8vwtN5r8zWR59PLFxsW6Lyjpn00DgQcnt61",
       "stripeMerchantId": "merchant.com.vitala.app",
       "router": {},
       "eas": {
