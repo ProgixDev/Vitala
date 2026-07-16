@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import Stripe from 'stripe';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { StripeService } from '../../integrations/stripe/stripe.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -27,6 +28,7 @@ export class PaymentsService {
     private readonly supabase: SupabaseService,
     private readonly stripe: StripeService,
     private readonly notifications: NotificationsService,
+    private readonly events: EventEmitter2,
   ) {}
 
   config() {
@@ -327,6 +329,17 @@ export class PaymentsService {
           .from('payments')
           .update({ status: next, stripe_charge_id: (pi.latest_charge as string) ?? null })
           .eq('id', payment.id);
+
+        // The hold is now in place. Say so, and let appointments decide what it
+        // means — this is the BACKSTOP for a request whose patient closed the app
+        // between the payment sheet succeeding and confirm-payment landing.
+        // Without it that request sits unfunded-looking forever while the money
+        // is actually held, and no nurse is ever told the job exists.
+        if (event.type === 'payment_intent.amount_capturable_updated' && payment.appointment_id) {
+          this.events.emit('payment.authorised', {
+            appointmentId: payment.appointment_id as string,
+          });
+        }
       }
     } else if (event.type === 'charge.refunded') {
       const charge = event.data.object as Stripe.Charge;

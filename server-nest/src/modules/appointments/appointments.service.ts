@@ -5,6 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PaymentsService } from '../payments/payments.service';
@@ -244,22 +245,68 @@ export class AppointmentsService {
     // rather than erroring: the pay screen calls this on a retry.
     if (appt.status !== 'awaiting_payment') return appt;
 
-    // Not an error: the caller may be a screen re-checking on focus, not a
-    // freshly-completed payment sheet. Hand back the row and let it read the
-    // status — `awaiting_payment` still means "not funded".
-    if (!(await this.payments.isAuthorised(id))) return appt;
+    const activated = await this.activate(id);
+    // Not an error when nothing happened: the caller may be a screen re-checking
+    // on focus, not a freshly-completed payment sheet. Hand back the current row
+    // and let it read the status — `awaiting_payment` still means "not funded".
+    return activated ?? this.findOne(user, id);
+  }
+
+  /**
+   * The webhook's backstop for the same transition.
+   *
+   * `confirm-payment` covers the normal case, but it depends on the app being
+   * alive to make the call. If the patient closes it between the payment sheet
+   * succeeding and that request landing, their money is held and nothing else
+   * would ever open the request — Stripe's `amount_capturable_updated` is then
+   * the only thing that knows. The pay screen also self-heals on reopen; this
+   * makes the fix arrive without the patient having to come back at all.
+   *
+   * Never throws. It is a background reaction to someone else's event: failing
+   * here must not turn a delivered webhook into a retried one, because the
+   * payment row is already updated by the time we're called.
+   */
+  @OnEvent('payment.authorised')
+  async onPaymentAuthorised({ appointmentId }: { appointmentId: string }) {
+    try {
+      const activated = await this.activate(appointmentId);
+      if (activated) {
+        this.logger.log(`Job ${appointmentId} opened by webhook backstop.`);
+      }
+    } catch (err) {
+      this.logger.error(
+        `Backstop activation failed for ${appointmentId}`,
+        err as Error,
+      );
+    }
+  }
+
+  /**
+   * Promote awaiting_payment -> pending, once, and announce. Returns the row if
+   * THIS call did it, null if the money isn't held or someone else got there
+   * first.
+   *
+   * Runs with the admin client on purpose: it is a system decision derived from
+   * Stripe's answer, not a write the caller is authoring, and the webhook path
+   * has no user context at all.
+   */
+  private async activate(id: string): Promise<AppointmentRow | null> {
+    // Stripe is the authority, not the caller. A client that lies gets nothing.
+    if (!(await this.payments.isAuthorised(id))) return null;
 
     const { data, error } = await this.supabase
       .admin()
       .from('appointments')
       .update({ status: 'pending' })
       .eq('id', id)
-      // The guard AND the idempotency: a second caller updates zero rows.
+      // The guard AND the idempotency: a second caller updates zero rows, so
+      // the pay screen, the webhook and a resumed session can all race
+      // harmlessly and only one of them announces.
       .eq('status', 'awaiting_payment')
       .select()
       .maybeSingle();
     if (error) throw error;
-    if (!data) return this.findOne(user, id); // someone else won the race
+    if (!data) return null;
 
     const { data: service } = await this.supabase
       .admin()
@@ -268,11 +315,8 @@ export class AppointmentsService {
       .eq('id', data.service_id as string)
       .maybeSingle();
 
-    await this.announce(
-      data as AppointmentRow,
-      (service?.name as string) ?? '',
-    );
-    return data;
+    await this.announce(data as AppointmentRow, (service?.name as string) ?? '');
+    return data as AppointmentRow;
   }
 
   /**

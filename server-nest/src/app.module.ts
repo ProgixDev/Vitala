@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { APP_GUARD } from '@nestjs/core';
 import { validateEnv } from './config/env';
 import { SupabaseModule } from './supabase/supabase.module';
@@ -24,6 +25,14 @@ import { IntegrationsModule } from './integrations/integrations.module';
       cache: true,
       validate: validateEnv,
     }),
+    // Lets payments tell appointments "this visit's card is now held" without
+    // the two modules depending on each other. Appointments already depends on
+    // payments (capture on completion, release on cancel); making payments
+    // depend back would need forwardRef and a circular graph. An event keeps the
+    // arrow pointing one way — payments states a fact, appointments decides what
+    // it means. Delivery is in-process and best-effort: it is a BACKSTOP, never
+    // the only path (see AppointmentsService.activateIfAuthorised).
+    EventEmitterModule.forRoot(),
     SupabaseModule,
     IntegrationsModule,
     StorageModule,
