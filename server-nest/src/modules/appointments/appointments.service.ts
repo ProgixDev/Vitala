@@ -48,34 +48,21 @@ const TRANSITIONS: Record<AppointmentStatus, AppointmentStatus[]> = {
 };
 
 /**
- * What the patient is told when their visit changes state. Keyed by the status
- * being entered. Written from the patient's point of view — they don't care
- * about our enum names.
+ * Which statuses have copy written for the patient's eyes. Keyed by the status
+ * being entered; the strings themselves live in the i18n catalogue, since the
+ * patient may read them in either language.
+ *
+ * 'confirmed' is here because a hand-picked nurse confirms through updateStatus
+ * rather than assignSelf — without it that patient gets the generic fallback.
  */
-const PATIENT_STATUS_COPY: Partial<
-  Record<AppointmentStatus, { title: string; message: string }>
-> = {
-  'on-the-way': {
-    title: 'Your nurse is on the way',
-    message: 'Your nurse has set out and will arrive shortly.',
-  },
-  'in-progress': {
-    title: 'Your visit has started',
-    message: 'Your nurse has arrived and your visit is underway.',
-  },
-  completed: {
-    title: 'Visit complete',
-    message: 'Your visit is finished. Tap to leave a review.',
-  },
-  cancelled: {
-    title: 'Visit cancelled',
-    message: 'Your visit has been cancelled.',
-  },
-  declined: {
-    title: 'Visit declined',
-    message: 'Your nurse is unable to attend. We are finding you another.',
-  },
-};
+const PATIENT_STATUS_COPY: AppointmentStatus[] = [
+  'confirmed',
+  'on-the-way',
+  'in-progress',
+  'completed',
+  'cancelled',
+  'declined',
+];
 
 /**
  * Price for a patient-chosen duration, scaled from the service's base rate.
@@ -159,15 +146,19 @@ export class AppointmentsService {
     return rows.map((r) => ({ ...r, patient: byId.get(r.patient_id) ?? null }));
   }
 
-  /** Display name for notification copy. Falls back rather than throwing. */
-  private async nameOf(profileId: string): Promise<string> {
+  /**
+   * Display name for notification copy, or null if we haven't got one — the
+   * caller supplies a translatable stand-in, since a hardcoded fallback would
+   * put an English phrase inside a French sentence.
+   */
+  private async nameOf(profileId: string): Promise<string | null> {
     const { data } = await this.supabase
       .admin()
       .from('profiles')
       .select('full_name')
       .eq('id', profileId)
       .maybeSingle();
-    return (data?.full_name as string) || 'Your nurse';
+    return (data?.full_name as string) || null;
   }
 
   /**
@@ -229,8 +220,9 @@ export class AppointmentsService {
   private async announce(appt: AppointmentRow, serviceName: string) {
     const urgent = appt.appointment_type === 'emergency';
     const n = {
-      title: urgent ? 'Emergency request' : 'New visit request',
-      message: `${serviceName} — ${appt.location_label || appt.address}`,
+      titleKey: urgent ? 'notif.job.emergencyTitle' : 'notif.job.title',
+      messageKey: 'notif.job.message',
+      vars: { service: serviceName, place: appt.location_label || appt.address },
       type: 'appointment' as const,
       // 'urgent' is what makes the push wake the device (see pushOptsFor).
       priority: urgent ? ('urgent' as const) : ('high' as const),
@@ -240,7 +232,7 @@ export class AppointmentsService {
       if (appt.nurse_id) {
         await this.notifications.create(appt.nurse_id, {
           ...n,
-          message: `A patient has requested you — ${serviceName}.`,
+          messageKey: 'notif.job.direct',
         });
         return;
       }
@@ -357,8 +349,11 @@ export class AppointmentsService {
 
     const nurseName = await this.nameOf(user.id);
     await this.notifications.create(appt.patient_id, {
-      title: 'Your visit is confirmed',
-      message: `${nurseName} accepted your request and will be in touch.`,
+      titleKey: 'notif.confirmed.title',
+      messageKey: 'notif.confirmed.message',
+      ...(nurseName
+        ? { vars: { nurse: nurseName } }
+        : { varKeys: { nurse: 'notif.confirmed.fallbackNurse' } }),
       type: 'appointment',
       priority: 'high',
       related_appointment: id,
@@ -411,11 +406,17 @@ export class AppointmentsService {
     // to the generic line, since that copy is written for the patient's eyes.
     const notify = user.id === appt.patient_id ? appt.nurse_id : appt.patient_id;
     if (notify) {
-      const copy =
-        notify === appt.patient_id ? PATIENT_STATUS_COPY[dto.status] : undefined;
+      const tailored =
+        notify === appt.patient_id && PATIENT_STATUS_COPY.includes(dto.status);
       await this.notifications.create(notify, {
-        title: copy?.title ?? 'Appointment updated',
-        message: copy?.message ?? `Appointment is now "${dto.status}".`,
+        titleKey: tailored
+          ? `notif.status.${dto.status}.title`
+          : 'notif.status.fallback.title',
+        messageKey: tailored
+          ? `notif.status.${dto.status}.message`
+          : 'notif.status.fallback.message',
+        // The fallback names the status in words; the raw enum is ours, not theirs.
+        varKeys: { status: `status.name.${dto.status}` },
         type: 'appointment',
         // Arrival and cancellation are the ones worth interrupting for.
         priority:

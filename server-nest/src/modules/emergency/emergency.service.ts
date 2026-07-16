@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { TwilioService } from '../../integrations/twilio/twilio.service';
+import { resolveLanguage, translate } from '../../i18n/messages';
 import type { AuthUser } from '../../common/decorators/current-user.decorator';
 import { CreateEmergencyDto, UpsertContactDto } from './dto/emergency.dto';
 
@@ -64,14 +65,27 @@ export class EmergencyService {
       .from('emergency_contacts')
       .select('name, phone')
       .eq('profile_id', user.id);
-    const where = dto.address ? ` near ${dto.address}` : '';
+
+    // Contacts aren't app users, so there's no language of their own to read.
+    // The patient's is the best proxy — the people they listed are the people
+    // they speak to.
+    const { data: settings } = await this.supabase
+      .admin()
+      .from('user_settings')
+      .select('language')
+      .eq('profile_id', user.id)
+      .maybeSingle();
+    const lang = resolveLanguage(settings?.language as string | null);
+
+    const where = dto.address
+      ? translate(lang, 'sms.emergency.near', { address: dto.address })
+      : '';
+    const body = translate(lang, 'sms.emergency', {
+      where,
+      description: dto.description,
+    });
     await Promise.all(
-      (contacts ?? []).map((c) =>
-        this.twilio.sendSms(
-          c.phone,
-          `Vitala emergency alert: your contact needs help${where}. ${dto.description}`,
-        ),
-      ),
+      (contacts ?? []).map((c) => this.twilio.sendSms(c.phone, body)),
     );
   }
 

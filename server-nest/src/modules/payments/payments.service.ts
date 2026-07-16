@@ -168,8 +168,8 @@ export class PaymentsService {
 
     if (changed && status === 'completed') {
       await this.notifications.create(userId, {
-        title: 'Payment received',
-        message: 'Your visit has been paid. Thank you!',
+        titleKey: 'notif.payment.title',
+        messageKey: 'notif.payment.message',
         type: 'payment',
         priority: 'medium',
         related_payment: paymentId,

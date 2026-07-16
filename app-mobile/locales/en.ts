@@ -423,6 +423,16 @@ export const en: Record<string, string> = {
   'review.alreadyRated': 'Already reviewed',
   'review.yourRating': 'You rated this visit',
   'review.pickRating': 'Tap a star to rate',
+  // A patient reading a nurse's public profile — not the nurse's own review tab.
+  'about.verifiedNurses': 'Verified nurses',
+  'about.verifiedNursesValue': 'Licensed & screened',
+  'about.payments': 'Payments',
+  'about.paymentsValue': 'Secured by Stripe',
+  'about.languages': 'Languages',
+
+  'review.listTitle': 'Reviews',
+  'review.listNone': 'No reviews yet',
+  'review.nurseResponse': 'Response from the nurse',
 
   // ---- booking ----
   'booking.title': 'Book appointment',
@@ -467,6 +477,14 @@ export const en: Record<string, string> = {
   'schedule.filterAll': 'All',
 
   // ---- status / tracker ----
+  // Relative timestamps. {value} is a count glued to a unit, e.g. "5m".
+  'time.justNow': 'just now',
+  'time.ago': '{value} ago',
+  'time.unit.m': 'm',
+  'time.unit.h': 'h',
+  'time.unit.d': 'd',
+  'time.unit.w': 'w',
+
   'status.title': 'Appointment',
   'status.step.pending': 'Service confirmation',
   'status.step.confirmed': 'Confirmed',
@@ -482,6 +500,18 @@ export const en: Record<string, string> = {
   'status.desc.completed': 'This visit is complete. Thank you!',
   'status.desc.cancelled': 'This appointment was cancelled.',
   'status.desc.declined': 'This request was declined.',
+
+  // The stepper is shared, but its wording can't be: the patient is the one
+  // being cared for, the nurse is the one giving the care. Same statuses, told
+  // from the other side. Falls back to the patient copy if a key is missing.
+  'nurse.status.desc.pending': 'This request is waiting to be accepted.',
+  'nurse.status.desc.confirmed': 'You accepted this visit.',
+  'nurse.status.desc.onway': 'You’re on the way to the patient.',
+  'nurse.status.desc.inprogress': 'You’re with the patient.',
+  'nurse.status.desc.completed': 'Visit completed. Thank you for the care.',
+  'nurse.status.desc.cancelled': 'This visit was cancelled.',
+  'nurse.status.desc.declined': 'You declined this request.',
+  'nurse.status.step.pending': 'Awaiting acceptance',
   'status.waiting': 'Waiting for a nurse to accept…',
   'status.payPrompt': 'Your visit is confirmed. Complete payment to secure it.',
   'status.payNow': 'Pay now',
@@ -491,6 +521,8 @@ export const en: Record<string, string> = {
   'status.nurse': 'Your nurse',
   'status.patient': 'Patient',
   'status.details': 'Visit details',
+  // "Patient notes" is how the nurse reads them; to the patient they're just theirs.
+  'status.yourNotes': 'Your notes',
 
   // ---- SOS ----
   'sos.title': 'Emergency',

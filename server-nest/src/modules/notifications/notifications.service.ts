@@ -1,11 +1,29 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { PushService } from '../../integrations/push/push.service';
+import {
+  DEFAULT_LANGUAGE,
+  resolveLanguage,
+  translate,
+} from '../../i18n/messages';
 import type { AuthUser } from '../../common/decorators/current-user.decorator';
 
 export interface CreateNotification {
-  title: string;
-  message: string;
+  /**
+   * Copy is passed as catalogue keys, not literals: each recipient is told in
+   * their own language, and a broadcast can reach nurses who don't share one.
+   * Resolved per recipient against `user_settings.language`.
+   */
+  titleKey: string;
+  messageKey: string;
+  /** Interpolated as-is — names, addresses, anything already in final form. */
+  vars?: Record<string, string | number>;
+  /**
+   * Interpolated after being translated themselves. For values that are our own
+   * vocabulary rather than the user's data — a status name, say — and so have to
+   * follow the recipient into their language.
+   */
+  varKeys?: Record<string, string>;
   type:
     | 'appointment'
     | 'payment'
@@ -22,11 +40,28 @@ export interface CreateNotification {
   metadata?: Record<string, unknown>;
 }
 
+/** The rendered copy for one recipient, in their language. */
+interface Rendered {
+  title: string;
+  message: string;
+}
+
+const renderFor = (n: CreateNotification, lang: string): Rendered => {
+  const vars: Record<string, string | number> = { ...n.vars };
+  for (const [name, key] of Object.entries(n.varKeys ?? {})) {
+    vars[name] = translate(lang, key);
+  }
+  return {
+    title: translate(lang, n.titleKey, vars),
+    message: translate(lang, n.messageKey, vars),
+  };
+};
+
 /** Row shape for a notification insert. */
-const rowFor = (userId: string, n: CreateNotification) => ({
+const rowFor = (userId: string, n: CreateNotification, text: Rendered) => ({
   user_id: userId,
-  title: n.title,
-  message: n.message,
+  title: text.title,
+  message: text.message,
   type: n.type,
   priority: n.priority ?? 'medium',
   related_appointment: n.related_appointment ?? null,
@@ -69,23 +104,31 @@ export class NotificationsService {
    */
   async create(userId: string, n: CreateNotification) {
     const admin = this.supabase.admin();
+
+    // Settings are read before the insert, not after: the inbox row stores
+    // rendered text, so we need the recipient's language to write it.
+    const { data: settings } = await admin
+      .from('user_settings')
+      .select('notify_push, expo_push_token, language')
+      .eq('profile_id', userId)
+      .maybeSingle();
+    const text = renderFor(
+      n,
+      resolveLanguage(settings?.language as string | null),
+    );
+
     const { data, error } = await admin
       .from('notifications')
-      .insert(rowFor(userId, n))
+      .insert(rowFor(userId, n, text))
       .select()
       .single();
     if (error) throw error;
 
-    const { data: settings } = await admin
-      .from('user_settings')
-      .select('notify_push, expo_push_token')
-      .eq('profile_id', userId)
-      .maybeSingle();
     if (settings?.notify_push && settings.expo_push_token) {
       await this.push.send(
         settings.expo_push_token,
-        n.title,
-        n.message,
+        text.title,
+        text.message,
         dataFor(n, data.id),
         pushOptsFor(n),
       );
@@ -106,19 +149,32 @@ export class NotificationsService {
     if (!ids.length) return 0;
 
     const admin = this.supabase.admin();
+
+    // One broadcast, many languages: read everyone's language up front and
+    // render each row on its own. A nurse with no settings row still gets the
+    // notification, in the default language.
+    const { data: settings } = await admin
+      .from('user_settings')
+      .select('profile_id, notify_push, expo_push_token, language')
+      .in('profile_id', ids);
+    const langOf = new Map(
+      (settings ?? []).map((s) => [
+        s.profile_id as string,
+        resolveLanguage(s.language as string | null),
+      ]),
+    );
+    const textOf = new Map(
+      ids.map((id) => [id, renderFor(n, langOf.get(id) ?? DEFAULT_LANGUAGE)]),
+    );
+
     const { data, error } = await admin
       .from('notifications')
-      .insert(ids.map((id) => rowFor(id, n)))
+      .insert(ids.map((id) => rowFor(id, n, textOf.get(id) as Rendered)))
       .select('id, user_id');
     if (error) {
       this.logger.error('Broadcast insert failed', error as unknown as Error);
       return 0;
     }
-
-    const { data: settings } = await admin
-      .from('user_settings')
-      .select('profile_id, notify_push, expo_push_token')
-      .in('profile_id', ids);
 
     // Each recipient's push carries their OWN notificationId, so marking one
     // read from a tap doesn't touch somebody else's row.
@@ -126,12 +182,16 @@ export class NotificationsService {
     await this.push.sendEach(
       (settings ?? [])
         .filter((s) => s.notify_push && s.expo_push_token)
-        .map((s) => ({
-          token: s.expo_push_token,
-          title: n.title,
-          body: n.message,
-          data: dataFor(n, byProfile.get(s.profile_id) as string),
-        })),
+        .map((s) => {
+          const profileId = s.profile_id as string;
+          const text = textOf.get(profileId) as Rendered;
+          return {
+            token: s.expo_push_token,
+            title: text.title,
+            body: text.message,
+            data: dataFor(n, byProfile.get(profileId) as string),
+          };
+        }),
       pushOptsFor(n),
     );
     return data.length;

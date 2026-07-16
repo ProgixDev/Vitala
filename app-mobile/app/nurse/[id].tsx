@@ -45,7 +45,7 @@ export default function NurseProfile() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerClassName="gap-4 px-1 pb-8 pt-2">
         <Card elevation="e2" className="items-center gap-2 py-6">
           <Avatar name={nurse?.full_name} uri={nurse?.avatar_url} size={84} />
-          <Text variant="heading">{nurse?.full_name ?? 'Nurse'}</Text>
+          <Text variant="heading">{nurse?.full_name ?? t('auth.nurse')}</Text>
           <View className="flex-row items-center gap-2">
             <Stars rating={avg} />
             <Text variant="caption">
@@ -53,7 +53,10 @@ export default function NurseProfile() {
             </Text>
           </View>
           {nurse?.nurseProfile?.experience_years ? (
-            <Badge label={`${nurse.nurseProfile.experience_years} yrs experience`} tone="info" />
+            <Badge
+              label={t('nurse.profile.years', { count: nurse.nurseProfile.experience_years })}
+              tone="info"
+            />
           ) : null}
           {nurse?.nurseProfile?.specializations?.length ? (
             <View className="mt-2 flex-row flex-wrap justify-center gap-2">
@@ -69,19 +72,19 @@ export default function NurseProfile() {
         </Card>
 
         <Text variant="heading" className="px-1">
-          Reviews
+          {t('review.listTitle')}
         </Text>
         {reviews.loading && !reviews.data ? (
           <SkeletonList count={3} />
         ) : list.length === 0 ? (
-          <EmptyState icon="star-outline" title="No reviews yet" />
+          <EmptyState icon="star-outline" title={t('review.listNone')} />
         ) : (
           list.map((r) => (
             <Card key={r.id} elevation="e1" className="gap-2">
               <View className="flex-row items-center gap-3">
                 <Avatar name={r.patient?.full_name} uri={r.patient?.avatar_url} size={36} />
                 <View className="flex-1">
-                  <Text variant="bodyMedium">{r.patient?.full_name ?? 'Patient'}</Text>
+                  <Text variant="bodyMedium">{r.patient?.full_name ?? t('status.patient')}</Text>
                   <Text variant="caption">{timeAgo(r.created_at)}</Text>
                 </View>
                 <Stars rating={r.rating} size={14} />
@@ -90,7 +93,7 @@ export default function NurseProfile() {
               {r.nurse_response ? (
                 <View className="ml-3 border-l-2 border-border pl-3">
                   <Text variant="caption" className="text-muted-foreground">
-                    Nurse response
+                    {t('review.nurseResponse')}
                   </Text>
                   <Text variant="caption">{r.nurse_response}</Text>
                 </View>

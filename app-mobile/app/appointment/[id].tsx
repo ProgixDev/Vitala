@@ -9,7 +9,7 @@ import { useAsync } from '@/hooks/useAsync';
 import { useNurseLocationPing } from '@/hooks/useNurseLocationPing';
 import { Endpoints } from '@/lib/endpoints';
 import { useSession } from '@/providers/SessionProvider';
-import { useTranslation } from '@/utils/i18n';
+import { useTranslation, hasKey } from '@/utils/i18n';
 import { useThemeColors } from '@/constants/theme';
 import { formatDate, formatTime, formatPrice } from '@/utils/format';
 import { openDirections } from '@/utils/maps';
@@ -30,6 +30,18 @@ const stepMeta: Record<string, { icon: IconName; titleKey: string; descKey: stri
   'in-progress': { icon: 'medkit-outline', titleKey: 'status.step.inprogress', descKey: 'status.desc.inprogress' },
   completed: { icon: 'ribbon-outline', titleKey: 'status.step.completed', descKey: 'status.desc.completed' },
 };
+
+/**
+ * This screen serves both sides of the same visit, so every line of shared copy
+ * has to be checked for who it's addressed to. The stepper's patient voice
+ * ("Your nurse is on the way to you") is nonsense to the nurse who's driving —
+ * prefer a "nurse."-prefixed variant for her, and fall back to the shared key
+ * where the wording is already role-neutral.
+ */
+function voiced(key: string, isNurse: boolean): string {
+  const variant = `nurse.${key}`;
+  return isNurse && hasKey(variant) ? variant : key;
+}
 
 const NEXT_STATUS: Partial<Record<AppointmentStatus, AppointmentStatus>> = {
   confirmed: 'on-the-way',
@@ -81,10 +93,18 @@ export default function AppointmentStatusScreen() {
 
   const terminal = appt.status === 'cancelled' || appt.status === 'declined';
   const currentIndex = STEP_ORDER.indexOf(appt.status);
-  const isNurse = me?.role === 'nurse' && appt.nurse_id === me?.id;
+  /**
+   * Two separate questions, and conflating them is what puts patient copy in
+   * front of nurses. `viewerIsNurse` decides whose voice to speak in;
+   * `isMyVisit` decides who may act. An open request has no nurse_id yet, so a
+   * nurse reading one isn't its nurse — but she's still a nurse, and must not
+   * be told "we're matching you with a nearby nurse".
+   */
+  const viewerIsNurse = me?.role === 'nurse';
+  const isMyVisit = viewerIsNurse && appt.nurse_id === me?.id;
   const next = NEXT_STATUS[appt.status];
   const unpaid = appt.payment?.status !== 'completed';
-  const person = me?.role === 'nurse' ? appt.patient : appt.nurse;
+  const person = viewerIsNurse ? appt.patient : appt.nurse;
   const enRoutePhase = appt.status === 'confirmed' || appt.status === 'on-the-way';
   const isPatient = me?.role === 'patient' && appt.patient_id === me?.id;
   const canReview = isPatient && appt.status === 'completed' && !appt.review;
@@ -249,10 +269,10 @@ export default function AppointmentStatusScreen() {
               name={person.full_name}
               uri={person.avatar_url}
               size={44}
-              fallback={me?.role === 'nurse' ? 'icon' : 'initials'}
+              fallback={viewerIsNurse ? 'icon' : 'initials'}
             />
             <View className="flex-1">
-              <Text variant="caption">{me?.role === 'nurse' ? t('status.patient') : t('status.nurse')}</Text>
+              <Text variant="caption">{viewerIsNurse ? t('status.patient') : t('status.nurse')}</Text>
               <Text variant="bodyMedium">{person.full_name}</Text>
             </View>
             <Icon name="call-outline" size={22} color={colors.primary} />
@@ -267,7 +287,11 @@ export default function AppointmentStatusScreen() {
               <DetailLine icon="alert-circle-outline" label={t('nurse.visit.symptoms')} value={appt.symptoms} />
             ) : null}
             {appt.notes ? (
-              <DetailLine icon="chatbox-outline" label={t('nurse.visit.notes')} value={appt.notes} />
+              <DetailLine
+                icon="chatbox-outline"
+                label={t(viewerIsNurse ? 'nurse.visit.notes' : 'status.yourNotes')}
+                value={appt.notes}
+              />
             ) : null}
             {appt.completion_notes ? (
               <DetailLine icon="checkmark-circle-outline" label={t('nurse.visit.careNotes')} value={appt.completion_notes} />
@@ -276,7 +300,7 @@ export default function AppointmentStatusScreen() {
         ) : null}
 
         {/* Waiting / pay prompts */}
-        {appt.status === 'pending' && !isNurse ? (
+        {appt.status === 'pending' && !viewerIsNurse ? (
           <Card elevation="flat" className="flex-row items-center gap-3 bg-warning/10">
             <Icon name="hourglass-outline" size={22} color={colors.warning} />
             <Text variant="caption" className="flex-1">
@@ -285,7 +309,7 @@ export default function AppointmentStatusScreen() {
           </Card>
         ) : null}
 
-        {appt.status === 'confirmed' && unpaid && !isNurse ? (
+        {appt.status === 'confirmed' && unpaid && !viewerIsNurse ? (
           <Card elevation="flat" className="gap-3 bg-primary-soft">
             <Text variant="bodyMedium" className="text-primary">
               {t('status.payPrompt')}
@@ -361,10 +385,10 @@ export default function AppointmentStatusScreen() {
               </View>
               <View className="flex-1">
                 <Text variant="bodyMedium" className="text-emergency">
-                  {t(appt.status === 'cancelled' ? 'status.step.cancelled' : 'status.step.declined')}
+                  {t(voiced(appt.status === 'cancelled' ? 'status.step.cancelled' : 'status.step.declined', viewerIsNurse))}
                 </Text>
                 <Text variant="caption">
-                  {t(appt.status === 'cancelled' ? 'status.desc.cancelled' : 'status.desc.declined')}
+                  {t(voiced(appt.status === 'cancelled' ? 'status.desc.cancelled' : 'status.desc.declined', viewerIsNurse))}
                 </Text>
               </View>
             </View>
@@ -398,11 +422,11 @@ export default function AppointmentStatusScreen() {
                       variant="bodyMedium"
                       className={active ? 'text-primary' : done ? 'text-foreground' : 'text-muted-foreground'}
                     >
-                      {t(meta.titleKey)}
+                      {t(voiced(meta.titleKey, viewerIsNurse))}
                     </Text>
                     {active ? (
                       <Text variant="caption" className="mt-0.5">
-                        {t(meta.descKey)}
+                        {t(voiced(meta.descKey, viewerIsNurse))}
                       </Text>
                     ) : null}
                   </View>
@@ -413,7 +437,7 @@ export default function AppointmentStatusScreen() {
         </Card>
 
         {/* Nurse active-visit controls */}
-        {isNurse && !terminal ? (
+        {isMyVisit && !terminal ? (
           <View className="gap-3">
             {appt.status === 'on-the-way' && sharing ? (
               <View className="flex-row items-center gap-2 self-start rounded-full bg-primary-soft px-3 py-1.5">

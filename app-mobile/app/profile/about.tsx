@@ -11,9 +11,14 @@ export default function About() {
   const version = Constants.expoConfig?.version ?? '1.0.0';
 
   const rows: { icon: IconName; label: string; value: string }[] = [
-    { icon: 'shield-checkmark-outline', label: 'Verified nurses', value: 'Licensed & screened' },
-    { icon: 'lock-closed-outline', label: 'Payments', value: 'Secured by Stripe' },
-    { icon: 'globe-outline', label: 'Languages', value: 'English · Français' },
+    {
+      icon: 'shield-checkmark-outline',
+      label: t('about.verifiedNurses'),
+      value: t('about.verifiedNursesValue'),
+    },
+    { icon: 'lock-closed-outline', label: t('about.payments'), value: t('about.paymentsValue') },
+    // Language names stay in their own language, as everyone writes them.
+    { icon: 'globe-outline', label: t('about.languages'), value: 'Français · English' },
   ];
 
   return (

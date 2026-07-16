@@ -25,7 +25,9 @@ import { estimatePrice } from '@/utils/booking';
 import type { GeoPoint, SavedLocation, Service } from '@/types';
 
 
-function nextDays(count: number): { date: string; weekday: string; day: string }[] {
+/** Day strip labels follow the app language, not the phone's. */
+function nextDays(count: number, language: string): { date: string; weekday: string; day: string }[] {
+  const locale = language === 'fr' ? 'fr-CA' : 'en-CA';
   const out = [];
   const base = new Date();
   for (let i = 0; i < count; i++) {
@@ -33,7 +35,7 @@ function nextDays(count: number): { date: string; weekday: string; day: string }
     d.setDate(base.getDate() + i);
     out.push({
       date: d.toISOString().slice(0, 10),
-      weekday: d.toLocaleDateString(undefined, { weekday: 'short' }),
+      weekday: d.toLocaleDateString(locale, { weekday: 'short' }),
       day: String(d.getDate()),
     });
   }
@@ -42,7 +44,7 @@ function nextDays(count: number): { date: string; weekday: string; day: string }
 
 export default function Booking() {
   const { id, emergency } = useLocalSearchParams<{ id: string; emergency?: string }>();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const colors = useThemeColors();
   const isEmergency = emergency === '1';
 
@@ -51,7 +53,7 @@ export default function Booking() {
   const pickedSignal = usePickedLocation();
 
   const [duration, setDuration] = useState(60);
-  const [date, setDate] = useState(nextDays(1)[0].date);
+  const [date, setDate] = useState(nextDays(1, language)[0].date);
   const [time, setTime] = useState<string | null>(null);
   const [selectedLoc, setSelectedLoc] = useState<GeoPoint | null>(null);
   const [extraLocs, setExtraLocs] = useState<GeoPoint[]>([]);
@@ -59,7 +61,7 @@ export default function Booking() {
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const days = useMemo(() => nextDays(7), []);
+  const days = useMemo(() => nextDays(7, language), [language]);
 
   // Pull in a location returned by the map picker.
   useEffect(() => {

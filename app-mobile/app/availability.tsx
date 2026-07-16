@@ -36,7 +36,7 @@ const hhmm = (t: string) => t.slice(0, 5);
 function weekdayName(weekday: number, language: string): string {
   // 2023-01-01 is a Sunday, so getDay() of (1 + weekday) equals `weekday`.
   const d = new Date(2023, 0, 1 + weekday);
-  return d.toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { weekday: 'long' });
+  return d.toLocaleDateString(language === 'fr' ? 'fr-CA' : 'en-CA', { weekday: 'long' });
 }
 
 export default function Availability() {

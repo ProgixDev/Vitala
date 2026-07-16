@@ -1,5 +1,6 @@
 import { Pressable, View } from 'react-native';
 import { Text, Card, Badge, Avatar, Icon } from '@/components/ui';
+import { useTranslation } from '@/utils/i18n';
 import { useThemeColors } from '@/constants/theme';
 import { appointmentStatusMeta, paymentStatusMeta } from '@/utils/status';
 import { formatDate, formatTime } from '@/utils/format';
@@ -19,6 +20,7 @@ export function AppointmentCard({
   paymentStatus,
   onPress,
 }: AppointmentCardProps) {
+  const { t } = useTranslation();
   const colors = useThemeColors();
   const status = appointmentStatusMeta(appointment.status);
   const person = counterpart === 'nurse' ? appointment.nurse : appointment.patient;
@@ -47,10 +49,13 @@ export function AppointmentCard({
           />
           <View className="flex-1">
             <Text variant="caption" className="text-muted-foreground">
-              {counterpart === 'nurse' ? 'Nurse' : 'Patient'}
+              {counterpart === 'nurse' ? t('status.nurse') : t('status.patient')}
             </Text>
             <Text variant="bodyMedium" numberOfLines={1}>
-              {person?.full_name ?? (counterpart === 'nurse' ? 'Awaiting assignment' : '—')}
+              {/* No nurse yet is the patient's "we're looking" state, not a
+                  dispatcher's "unassigned" — say it the way the rest of the app
+                  says it. */}
+              {person?.full_name ?? (counterpart === 'nurse' ? t('home.findingNurse') : '—')}
             </Text>
           </View>
           {pay ? <Badge label={paymentStatusMeta(pay).label} tone={paymentStatusMeta(pay).tone} /> : null}

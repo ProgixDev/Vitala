@@ -28,6 +28,7 @@ import { AnimatedSplash } from '@/components/AnimatedSplash';
 import { useToastConfig } from '@/components/AppToast';
 import { NotificationsBridge } from '@/components/NotificationsBridge';
 import { config, isPlaceholder } from '@/lib/config';
+import { restoreLanguage } from '@/utils/i18n';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -50,15 +51,25 @@ export default function RootLayout() {
 
   const [splashDone, setSplashDone] = useState(false);
 
+  // Read the cached language before the first paint, so an English user doesn't
+  // watch the app come up in French. Held behind the same gate as the fonts —
+  // it's one AsyncStorage read, and the splash is already covering us.
+  const [langReady, setLangReady] = useState(false);
+  useEffect(() => {
+    void restoreLanguage().finally(() => setLangReady(true));
+  }, []);
+
+  const ready = fontsLoaded && langReady;
+
   const onReady = useCallback(() => {
-    if (fontsLoaded) void SplashScreen.hideAsync();
-  }, [fontsLoaded]);
+    if (ready) void SplashScreen.hideAsync();
+  }, [ready]);
 
   useEffect(() => {
     onReady();
   }, [onReady]);
 
-  if (!fontsLoaded) return null;
+  if (!ready) return null;
 
   const stripeKey = isPlaceholder(config.stripePublishableKey)
     ? ''

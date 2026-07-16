@@ -10,7 +10,7 @@ import {
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { Endpoints } from '@/lib/endpoints';
-import { setLanguage } from '@/utils/i18n';
+import { setLanguage, DEFAULT_LANGUAGE } from '@/utils/i18n';
 import type { Me } from '@/types';
 
 interface SessionContextValue {
@@ -82,6 +82,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setMe(null);
+    // The next person to open the app is a stranger — start them in French
+    // rather than in whatever the last user happened to pick. This also
+    // overwrites the cached language, so the next cold start opens in French.
+    setLanguage(DEFAULT_LANGUAGE);
   }, []);
 
   const value = useMemo<SessionContextValue>(

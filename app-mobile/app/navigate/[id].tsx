@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Platform } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { MapboxNavigationView } from '@badatgil/expo-mapbox-navigation';
 import Toast from 'react-native-toast-message';
@@ -12,6 +12,19 @@ import { useTranslation, getLanguage } from '@/utils/i18n';
 import { useThemeColors } from '@/constants/theme';
 import { openDirections } from '@/utils/maps';
 import type { Appointment } from '@/types';
+
+/**
+ * iOS needs the profile fully qualified ("mapbox/driving-traffic"); Android
+ * wants the bare id. Passing the bare id on iOS makes the online router 404
+ * ("OnlineRouter::getRoute failed w/error: Not Found"), the SDK then falls back
+ * to offline routing tiles it can't fetch, and the surfaced error is the
+ * misleading "No suitable edges near location" — nothing to do with the
+ * coordinates.
+ */
+const ROUTE_PROFILE = Platform.select({
+  ios: 'mapbox/driving-traffic',
+  default: 'driving-traffic',
+});
 
 /**
  * Turn-by-turn navigation to a visit, in-app.
@@ -98,22 +111,33 @@ export default function NavigateToVisit() {
     );
   }
 
+  const origin = { latitude: point.latitude, longitude: point.longitude };
+
   return (
     <View className="flex-1">
       <MapboxNavigationView
         style={{ flex: 1 }}
-        coordinates={[{ latitude: point.latitude, longitude: point.longitude }, dest]}
+        coordinates={[origin, dest]}
+        // Frame the map on the nurse straight away, before the route resolves.
+        initialLocation={{ ...origin, zoom: 15 }}
         // Guidance follows the app's language, not the phone's.
-        locale={getLanguage() === 'fr' ? 'fr-CA' : 'en-CA'}
-        routeProfile="driving-traffic"
+        locale={getLanguage() === 'fr' ? 'fr' : 'en'}
+        routeProfile={ROUTE_PROFILE}
         onCancelNavigation={() => router.back()}
         onFinalDestinationArrival={() => {
           Toast.show({ type: 'success', text1: t('nurse.visit.navArrived') });
           router.back();
         }}
-        onRouteFailedToLoad={({ nativeEvent }) =>
-          setFailed(nativeEvent?.errorMessage || t('nurse.visit.navFailed'))
-        }
+        onRouteFailedToLoad={({ nativeEvent }) => {
+          // The SDK's own message is an internal diagnostic in English
+          // ("OnlineRouter::getRoute failed w/error: Not Found") — useless to a
+          // nurse at the wheel, and untranslated. She gets the written line; the
+          // detail goes to the log, where it's actually of use.
+          if (nativeEvent?.errorMessage) {
+            console.warn(`[navigate] route failed: ${nativeEvent.errorMessage}`);
+          }
+          setFailed(t('nurse.visit.navFailed'));
+        }}
       />
     </View>
   );
