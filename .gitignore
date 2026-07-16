@@ -5,3 +5,6 @@ vitala-prod.apk
 
 # personal shift reports — the rest of docs/ is tracked
 docs/shift-report-*.md
+
+# macOS finder noise — tracked by accident, conflicts across machines
+.DS_Store

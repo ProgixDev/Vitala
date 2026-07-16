@@ -336,7 +336,16 @@ export class PaymentsService {
         // Without it that request sits unfunded-looking forever while the money
         // is actually held, and no nurse is ever told the job exists.
         if (event.type === 'payment_intent.amount_capturable_updated' && payment.appointment_id) {
-          this.events.emit('payment.authorised', {
+          // AWAITED, deliberately. `emit()` would dispatch and return, leaving an
+          // async listener running while we reply to Stripe — and on a
+          // serverless host the function can be frozen the moment the response
+          // goes out, so the activation would silently never finish. Exactly the
+          // kind of thing that works on a long-lived local process and not in
+          // production. emitAsync settles every listener before we answer.
+          //
+          // The listener swallows its own errors, so this cannot turn a handled
+          // webhook into a retried one.
+          await this.events.emitAsync('payment.authorised', {
             appointmentId: payment.appointment_id as string,
           });
         }
